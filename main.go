@@ -90,6 +90,7 @@ func main() {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
+	// TODO this should be abstracted to be also used with custom drivers
 	r, err := srv.Files.List().
 		Q("'root' in parents").
 		Fields("nextPageToken, files(id, name)").
@@ -123,4 +124,22 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+
+	res, err := srv.Files.List().
+		Q("'steamsave' in parents").
+		Fields("nextPageToken, files(id, name)").
+		Do()
+
+	if err != nil {
+		log.Fatalf("Unable to retrieve files: %v", err)
+	}
+
+	if len(res.Files) == 0 {
+		fmt.Println("No files found.")
+	} else {
+		for _, i := range res.Files {
+			fmt.Printf("%s (%s)\n", i.Name, i.Id)
+		}
+	}
+
 }
