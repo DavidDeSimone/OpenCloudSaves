@@ -16,7 +16,10 @@ import (
 )
 
 type Options struct {
-	Verbose []bool `short:"v" long:"verbose" description:"Show verbose debug information"`
+	Verbose  []bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
+	Gamename string   `short:"g" long:"gamename" description:"The name of the game you will attempt to sync"`
+	Gamepath []string `short:"p" long:"gamepath" description:"The path to your game"`
+	Pull     []bool   `short:"u" long:"pull" description:"Pull save data from the cloud"`
 }
 
 const SAVE_FOLDER string = "steamsave"
@@ -76,7 +79,7 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func main() {
+func makeService() *drive.Service {
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")
 	if err != nil {
@@ -84,7 +87,7 @@ func main() {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, drive.DriveFileScope, drive.DriveMetadataReadonlyScope)
+	config, err := google.ConfigFromJSON(b, drive.DriveFileScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
@@ -95,8 +98,10 @@ func main() {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
-	// TODO this should be abstracted to be also used with custom drivers
-	// right now this is really just my scratchpad for google drive upload APIs
+	return srv
+}
+
+func validateAndCreateParentFolder(srv *drive.Service) string {
 	r, err := srv.Files.List().
 		Q("'root' in parents").
 		Fields("nextPageToken, files(id, name)").
@@ -105,7 +110,6 @@ func main() {
 		log.Fatalf("Unable to retrieve files: %v", err)
 	}
 	fmt.Println("Files:")
-
 	createSaveFolder := true
 	var saveFolderId string
 	if len(r.Files) == 0 {
@@ -116,7 +120,7 @@ func main() {
 				createSaveFolder = false
 				saveFolderId = i.Id
 			}
-			fmt.Printf("%s (%s)\n", i.Name, i.Id)
+			fmt.Printf("%s (%s) (%s)\n", i.Name, i.Id, i.ModifiedByMeTime)
 		}
 	}
 
@@ -134,49 +138,98 @@ func main() {
 		}
 	}
 
+	return saveFolderId
+}
+
+func updateFiles(parentId string, files []string) error {
+	return nil
+}
+
+func getGameFileId(srv *drive.Service, parentId string, name string) (string, error) {
+	var resultId string
 	res, err := srv.Files.List().
-		Q(fmt.Sprintf("'%v' in parents", saveFolderId)).
+		Q(fmt.Sprintf("'%v' in parents", parentId)).
 		Fields("nextPageToken, files(id, name)").
 		Do()
 
-	if len(res.Files) == 0 {
-		fmt.Println(err)
-		fmt.Println("No files in steamsave....")
-		// log.Fatalf("Unable to retrieve files: %v", err)
-		ff := &drive.File{
-			Name: "TestFile",
-			// ModifiedTime: time.Now().GoString(),
-			Parents: []string{saveFolderId},
-		}
+	if err != nil || len(res.Files) == 0 {
+		return resultId, err
+	}
 
-		osf, err := os.Open("test_payload.file")
-		defer osf.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		_, err = srv.Files.Create(ff).Media(osf).Do()
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		if len(res.Files) == 0 {
-			fmt.Println("No files found.")
-		} else {
-			for _, i := range res.Files {
-				fmt.Println(i.ModifiedTime)
-				fmt.Printf("%s (%s)\n", i.Name, i.Id)
-			}
+	for _, i := range res.Files {
+		if i.Name == name {
+			resultId = i.Id
+			break
 		}
 	}
 
+	return resultId, nil
+}
+
+func main() {
 	ops := &Options{}
-	_, err = flags.Parse(ops)
+	_, err := flags.Parse(ops)
 
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(len(ops.Verbose))
+
+	gamename := ops.Gamename
+
+	dm := &DriverManager{
+		drivers: map[string]Driver{},
+	}
+
+	files, err := dm.GetFilesForGame(gamename)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	srv := makeService()
+	saveFolderId := validateAndCreateParentFolder(srv)
+	id, err := getGameFileId(srv, saveFolderId, gamename)
+	err = updateFiles(id, files)
+
+	// res, err := srv.Files.List().
+	// 	Q(fmt.Sprintf("'%v' in parents", saveFolderId)).
+	// 	Fields("nextPageToken, files(id, name)").
+	// 	Do()
+
+	// if len(res.Files) == 0 {
+	// 	fmt.Println(err)
+	// 	fmt.Println("No files in steamsave....")
+	// 	// log.Fatalf("Unable to retrieve files: %v", err)
+	// 	ff := &drive.File{
+	// 		Name: "TestFile",
+	// 		// ModifiedTime: time.Now().GoString(),
+	// 		Parents: []string{saveFolderId},
+	// 	}
+
+	// 	osf, err := os.Open("test_payload.file")
+	// 	defer osf.Close()
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+
+	// 	_, err = srv.Files.Create(ff).Media(osf).Do()
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// } else {
+	// 	if len(res.Files) == 0 {
+	// 		fmt.Println("No files found.")
+	// 	} else {
+	// 		for _, i := range res.Files {
+	// 			gg, err := srv.Files.Get(i.Id).Fields("modifiedTime").Do()
+	// 			if err != nil {
+	// 				log.Fatal(err)
+	// 			}
+	// 			fmt.Println(gg.ModifiedTime)
+	// 			fmt.Printf("%s (%s)\n", i.Name, i.Id)
+	// 		}
+	// 	}
+	// }
+
 	// dm := &DriverManager{}
 	// dm.Push("game", []string{"foo"})
 

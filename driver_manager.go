@@ -1,18 +1,29 @@
 package main
 
+import "log"
+
 type DriverManager struct {
-	pathToSteam string
-	drivers     map[string]Driver
+	drivers map[string]Driver
 }
 
-func (d *DriverManager) Push(id string, files []string) ([]string, error) {
-	driver := d.drivers[id]
-	driver.Push(files)
+func (d *DriverManager) LoadDefaultGameMap() {
+	// TODO
+}
 
-	return nil, nil
+func (d *DriverManager) GetFilesForGame(id string) ([]string, error) {
+	driver, ok := d.drivers[id]
+	if !ok {
+		log.Fatalf("Failed to find game (%v)", id)
+	}
+	return driver.GetFilenames()
+}
+
+// This is to poss. hook up different platforms having different names for the games.
+// It would be better to move to steamid
+func (d *DriverManager) GetCanonicalNameForGame(id string) string {
+	return id
 }
 
 type Driver interface {
-	Pull([]string)
-	Push([]string)
+	GetFilenames() ([]string, error)
 }
