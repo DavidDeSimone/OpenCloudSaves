@@ -14,6 +14,8 @@ import (
 	"google.golang.org/api/option"
 )
 
+const SAVE_FOLDER string = "steamsave"
+
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
@@ -77,7 +79,7 @@ func main() {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, drive.DriveMetadataReadonlyScope)
+	config, err := google.ConfigFromJSON(b, drive.DriveFileScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
@@ -88,17 +90,37 @@ func main() {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
-	r, err := srv.Files.List().PageSize(10).
-		Fields("nextPageToken, files(id, name)").Do()
+	r, err := srv.Files.List().
+		Q("'root' in parents").
+		Fields("nextPageToken, files(id, name)").
+		Do()
 	if err != nil {
 		log.Fatalf("Unable to retrieve files: %v", err)
 	}
 	fmt.Println("Files:")
+
+	createSaveFolder := true
 	if len(r.Files) == 0 {
 		fmt.Println("No files found.")
 	} else {
 		for _, i := range r.Files {
+			if i.Name == SAVE_FOLDER {
+				createSaveFolder = false
+			}
 			fmt.Printf("%s (%s)\n", i.Name, i.Id)
+		}
+	}
+
+	if createSaveFolder {
+		f := &drive.File{
+			Name:     SAVE_FOLDER,
+			MimeType: "application/vnd.google-apps.folder",
+		}
+
+		fmt.Println("Creating steamsaves folder....")
+		_, err = srv.Files.Create(f).Do()
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 }
