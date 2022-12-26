@@ -1,32 +1,18 @@
 package main
 
 type DriverManager struct {
-	drivers map[uint64]Driver
+	pathToSteam string
+	drivers     map[string]Driver
 }
 
-func (d *DriverManager) GetId(name string) uint64 {
-	return 0
-}
-
-func (d *DriverManager) Push(id uint64) ([]string, error) {
-	driver := d.getDriver(id)
-	driver.PrePush()
-	driver.Push()
-	driver.PostPush()
+func (d *DriverManager) Push(id string, files []string) ([]string, error) {
+	driver := d.drivers[id]
+	driver.Push(files)
 
 	return nil, nil
 }
 
-func (d *DriverManager) getDriver(id uint64) Driver {
-	return nil
-}
-
 type Driver interface {
-	PrePull()
-	Pull()
-	PostPull()
-
-	PrePush()
-	Push()
-	PostPush()
+	Pull([]string)
+	Push([]string)
 }

@@ -8,11 +8,16 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/jessevdk/go-flags"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 )
+
+type Options struct {
+	Verbose []bool `short:"v" long:"verbose" description:"Show verbose debug information"`
+}
 
 const SAVE_FOLDER string = "steamsave"
 
@@ -79,7 +84,7 @@ func main() {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, drive.DriveFileScope)
+	config, err := google.ConfigFromJSON(b, drive.DriveFileScope, drive.DriveMetadataReadonlyScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
@@ -130,15 +135,17 @@ func main() {
 	}
 
 	res, err := srv.Files.List().
-		Q("'steamsave' in parents").
+		Q(fmt.Sprintf("'%v' in parents", saveFolderId)).
 		Fields("nextPageToken, files(id, name)").
 		Do()
 
-	if err != nil {
+	if len(res.Files) == 0 {
+		fmt.Println(err)
 		fmt.Println("No files in steamsave....")
 		// log.Fatalf("Unable to retrieve files: %v", err)
 		ff := &drive.File{
-			Name:    "TestFile",
+			Name: "TestFile",
+			// ModifiedTime: time.Now().GoString(),
 			Parents: []string{saveFolderId},
 		}
 
@@ -152,15 +159,25 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		return
-	}
-
-	if len(res.Files) == 0 {
-		fmt.Println("No files found.")
 	} else {
-		for _, i := range res.Files {
-			fmt.Printf("%s (%s)\n", i.Name, i.Id)
+		if len(res.Files) == 0 {
+			fmt.Println("No files found.")
+		} else {
+			for _, i := range res.Files {
+				fmt.Println(i.ModifiedTime)
+				fmt.Printf("%s (%s)\n", i.Name, i.Id)
+			}
 		}
 	}
+
+	ops := &Options{}
+	_, err = flags.Parse(ops)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(len(ops.Verbose))
+	// dm := &DriverManager{}
+	// dm.Push("game", []string{"foo"})
 
 }
