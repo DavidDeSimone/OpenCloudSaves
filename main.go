@@ -91,6 +91,7 @@ func main() {
 	}
 
 	// TODO this should be abstracted to be also used with custom drivers
+	// right now this is really just my scratchpad for google drive upload APIs
 	r, err := srv.Files.List().
 		Q("'root' in parents").
 		Fields("nextPageToken, files(id, name)").
@@ -101,12 +102,14 @@ func main() {
 	fmt.Println("Files:")
 
 	createSaveFolder := true
+	var saveFolderId string
 	if len(r.Files) == 0 {
 		fmt.Println("No files found.")
 	} else {
 		for _, i := range r.Files {
 			if i.Name == SAVE_FOLDER {
 				createSaveFolder = false
+				saveFolderId = i.Id
 			}
 			fmt.Printf("%s (%s)\n", i.Name, i.Id)
 		}
@@ -119,7 +122,8 @@ func main() {
 		}
 
 		fmt.Println("Creating steamsaves folder....")
-		_, err = srv.Files.Create(f).Do()
+		x, err := srv.Files.Create(f).Do()
+		saveFolderId = x.Id
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -131,7 +135,24 @@ func main() {
 		Do()
 
 	if err != nil {
-		log.Fatalf("Unable to retrieve files: %v", err)
+		fmt.Println("No files in steamsave....")
+		// log.Fatalf("Unable to retrieve files: %v", err)
+		ff := &drive.File{
+			Name:    "TestFile",
+			Parents: []string{saveFolderId},
+		}
+
+		osf, err := os.Open("test_payload.file")
+		defer osf.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		_, err = srv.Files.Create(ff).Media(osf).Do()
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
 	}
 
 	if len(res.Files) == 0 {
