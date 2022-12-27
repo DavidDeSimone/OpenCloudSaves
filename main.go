@@ -16,10 +16,12 @@ import (
 )
 
 type Options struct {
-	Verbose  []bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
-	Gamename string   `short:"g" long:"gamename" description:"The name of the game you will attempt to sync"`
-	Gamepath []string `short:"p" long:"gamepath" description:"The path to your game"`
-	Pull     []bool   `short:"u" long:"pull" description:"Pull save data from the cloud"`
+	Verbose     []bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
+	Gamename    string   `short:"g" long:"gamename" description:"The name of the game you will attempt to sync"`
+	Gamepath    []string `short:"p" long:"gamepath" description:"The path to your game"`
+	Pull        []bool   `short:"u" long:"pull" description:"Pull save data from the cloud"`
+	Push        []bool   `short:"s" long:"push" description:"Push save data to the cloud"`
+	PullAndPush []bool   `short:"a" long:"all" description:"Pull/Push from the server, with a prompt on conflict"`
 }
 
 const SAVE_FOLDER string = "steamsave"
@@ -142,6 +144,12 @@ func validateAndCreateParentFolder(srv *drive.Service) string {
 }
 
 func updateFiles(parentId string, files []string) error {
+	// Test if folder exists, and if it does, what it contains
+	// Update folder with data if file names match and files are newer
+	return nil
+}
+
+func fetchFiles(parentId string, localLocation string) error {
 	return nil
 }
 
@@ -175,20 +183,31 @@ func main() {
 	}
 
 	gamename := ops.Gamename
+	pullAndPush := len(ops.PullAndPush) == 1
+	push := len(ops.Push) == 1
+	pull := len(ops.Pull) == 1
 
-	dm := &DriverManager{
-		drivers: map[string]Driver{},
-	}
-
-	files, err := dm.GetFilesForGame(gamename)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	dm := MakeDriverManager()
 	srv := makeService()
 	saveFolderId := validateAndCreateParentFolder(srv)
 	id, err := getGameFileId(srv, saveFolderId, gamename)
-	err = updateFiles(id, files)
+	if pullAndPush || pull {
+		sync, err := dm.GetSyncpathForGame(gamename)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = fetchFiles(id, sync)
+	}
+
+	if pullAndPush || push {
+		files, err := dm.GetFilesForGame(gamename)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = updateFiles(id, files)
+	}
 
 	// res, err := srv.Files.List().
 	// 	Q(fmt.Sprintf("'%v' in parents", saveFolderId)).
