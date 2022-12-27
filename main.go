@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/jessevdk/go-flags"
 	"golang.org/x/oauth2"
@@ -25,6 +26,14 @@ type Options struct {
 }
 
 const SAVE_FOLDER string = "steamsave"
+
+var verboseLogging bool = false
+
+func LogVerbose(v ...any) {
+	if verboseLogging {
+		log.Println(v...)
+	}
+}
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
@@ -182,15 +191,21 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gamename := ops.Gamename
+	gamename := strings.TrimSpace(ops.Gamename)
 	pullAndPush := len(ops.PullAndPush) == 1
 	push := len(ops.Push) == 1
 	pull := len(ops.Pull) == 1
+	verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
+	LogVerbose("Verbose logging enabled...")
 
 	dm := MakeDriverManager()
 	srv := makeService()
 	saveFolderId := validateAndCreateParentFolder(srv)
 	id, err := getGameFileId(srv, saveFolderId, gamename)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if pullAndPush || pull {
 		sync, err := dm.GetSyncpathForGame(gamename)
 		if err != nil {
@@ -198,15 +213,22 @@ func main() {
 		}
 
 		err = fetchFiles(id, sync)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	if pullAndPush || push {
 		files, err := dm.GetFilesForGame(gamename)
+		fmt.Println(files)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		err = updateFiles(id, files)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// res, err := srv.Files.List().
