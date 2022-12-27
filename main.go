@@ -13,6 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"fyne.io/fyne"
+	"fyne.io/fyne/app"
+	"fyne.io/fyne/container"
+	"fyne.io/fyne/widget"
 	"github.com/jessevdk/go-flags"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -26,6 +30,7 @@ type Options struct {
 	Gamepath  []string `short:"p" long:"gamepath" description:"The path to your game"`
 	Sync      []bool   `short:"s" long:"sync" description:"Pull/Push from the server, with a prompt on conflict"`
 	DryRun    []bool   `short:"d" long:"dry-run" description:"Run through the sync process without uploading/downloading from the cloud"`
+	GUI       []bool   `short:"u" long:"gui" description:"Shows a GUI to manage cloud uploads (if available)"`
 }
 
 //go:embed credentials.json
@@ -353,20 +358,12 @@ func getGameFileId(srv *drive.Service, parentId string, name string) (string, er
 	return resultId, nil
 }
 
-func main() {
-	ops := &Options{}
-	_, err := flags.Parse(ops)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func cliMain(ops *Options, dm *GameDefManager) {
 	sync := len(ops.Sync) == 1 && ops.Sync[0]
 	verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
 	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
 	LogVerbose("Verbose logging enabled...")
 
-	dm := MakeDriverManager()
 	srv := makeService()
 	saveFolderId := validateAndCreateParentFolder(srv)
 	for _, gamename := range ops.Gamenames {
@@ -396,5 +393,51 @@ func main() {
 				continue
 			}
 		}
+	}
+}
+
+func main() {
+	ops := &Options{}
+	_, err := flags.Parse(ops)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gui := len(ops.GUI) == 1 && ops.GUI[0]
+	dm := MakeGameDefManager()
+
+	if gui {
+		a := app.New()
+		w := a.NewWindow("Steam Custom Cloud Uploads")
+		w.Resize(fyne.NewSize(500, 500))
+		cont := container.NewVBox(widget.NewLabel("Steam Custom Cloud Uploads"))
+
+		syncMap := make(map[string]bool)
+		for k, v := range dm.GetGameDefMap() {
+			key := k
+			cont.Add(widget.NewCheck(v.Display_name, func(b bool) {
+				syncMap[key] = b
+			}))
+		}
+
+		cont.Add(widget.NewButton("Sync", func() {
+			ops.Gamenames = []string{}
+			for k, v := range syncMap {
+				if v {
+					ops.Gamenames = append(ops.Gamenames, k)
+				}
+			}
+
+			fmt.Println(ops.Gamenames)
+			cliMain(ops, dm)
+		}))
+
+		scroll := container.NewVScroll(cont)
+		w.SetContent(scroll)
+
+		w.ShowAndRun()
+	} else {
+		cliMain(ops, dm)
 	}
 }
