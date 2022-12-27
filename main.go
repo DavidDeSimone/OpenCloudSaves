@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"embed"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,10 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"fyne.io/fyne"
-	"fyne.io/fyne/app"
-	"fyne.io/fyne/container"
-	"fyne.io/fyne/widget"
 	"github.com/jessevdk/go-flags"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -358,7 +353,7 @@ func getGameFileId(srv *drive.Service, parentId string, name string) (string, er
 	return resultId, nil
 }
 
-func cliMain(ops *Options, dm *GameDefManager) {
+func CliMain(ops *Options, dm *GameDefManager) {
 	sync := len(ops.Sync) == 1 && ops.Sync[0]
 	verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
 	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
@@ -408,36 +403,8 @@ func main() {
 	dm := MakeGameDefManager()
 
 	if gui {
-		a := app.New()
-		w := a.NewWindow("Steam Custom Cloud Uploads")
-		w.Resize(fyne.NewSize(500, 500))
-		cont := container.NewVBox(widget.NewLabel("Steam Custom Cloud Uploads"))
-
-		syncMap := make(map[string]bool)
-		for k, v := range dm.GetGameDefMap() {
-			key := k
-			cont.Add(widget.NewCheck(v.Display_name, func(b bool) {
-				syncMap[key] = b
-			}))
-		}
-
-		cont.Add(widget.NewButton("Sync", func() {
-			ops.Gamenames = []string{}
-			for k, v := range syncMap {
-				if v {
-					ops.Gamenames = append(ops.Gamenames, k)
-				}
-			}
-
-			fmt.Println(ops.Gamenames)
-			cliMain(ops, dm)
-		}))
-
-		scroll := container.NewVScroll(cont)
-		w.SetContent(scroll)
-
-		w.ShowAndRun()
+		GuiMain(ops, dm)
 	} else {
-		cliMain(ops, dm)
+		CliMain(ops, dm)
 	}
 }
