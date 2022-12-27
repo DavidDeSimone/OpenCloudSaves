@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"fyne.io/fyne"
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/container"
 	"fyne.io/fyne/widget"
@@ -409,6 +410,7 @@ func main() {
 	if gui {
 		a := app.New()
 		w := a.NewWindow("Steam Custom Cloud Uploads")
+		w.Resize(fyne.NewSize(500, 500))
 		cont := container.NewVBox(widget.NewLabel("Steam Custom Cloud Uploads"))
 
 		syncMap := make(map[string]bool)
@@ -431,7 +433,8 @@ func main() {
 			cliMain(ops, dm)
 		}))
 
-		w.SetContent(cont)
+		scroll := container.NewVScroll(cont)
+		w.SetContent(scroll)
 
 		w.ShowAndRun()
 	} else {
