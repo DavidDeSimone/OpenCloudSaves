@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"embed"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -23,6 +25,9 @@ type Options struct {
 	Sync     []bool   `short:"s" long:"sync" description:"Pull/Push from the server, with a prompt on conflict"`
 	DryRun   []bool   `short:"d" long:"dry-run" description:"Run through the sync process without uploading/downloading from the cloud"`
 }
+
+//go:embed credentials.json
+var creds embed.FS
 
 const SAVE_FOLDER string = "steamsave"
 
@@ -91,7 +96,7 @@ func saveToken(path string, token *oauth2.Token) {
 
 func makeService() *drive.Service {
 	ctx := context.Background()
-	b, err := os.ReadFile("credentials.json")
+	b, err := creds.ReadFile("credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
