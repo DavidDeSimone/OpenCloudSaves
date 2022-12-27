@@ -3,7 +3,7 @@
         "display_name": "Factorio",
         "win_path": "%AppData%\\Factorio\\saves",
         "linux_path": ".factorio/saves",
-        "darwin_path": "proj/SteamCustomCloudUpload/testdata2",
+        "darwin_path": "Library/Application Support/factorio/saves",
         "saves_cross_compatible": true,
         "save_ext": ".zip",
         "relative_to_homedir": ["linux", "darwin"]
