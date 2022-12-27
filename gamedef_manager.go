@@ -13,6 +13,7 @@ import (
 //go:embed gamedef_map.json
 var gamedefMap []byte
 
+// @TODO better utilize saves_cross_compatible to split saves between platforms
 type GameDef struct {
 	Display_name           string   `json:"display_name"`
 	Win_path               string   `json:"win_path"`
