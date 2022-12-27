@@ -1,10 +1,20 @@
 {
     "factorio": {
+        "display_name": "Factorio",
         "win_path": "%AppData%\\Factorio\\saves",
         "linux_path": ".factorio/saves",
         "darwin_path": "Library/Application Support/factorio/saves",
         "saves_cross_compatible": true,
         "save_ext": ".zip",
         "relative_to_homedir": ["linux", "darwin"]
+    },
+    "dwarf_fortress": {
+        "display_name": "Dwarf Fortress",
+        "win_path": "%Appdata%\\Local\\VirtualStore\\Program Files\\Dwarf Fortress\\data\\save",
+        "linux_path": "",
+        "darwin_path": "",
+        "saves_cross_compatible": true,
+        "save_ext": "",
+        "relative_to_homedir": []
     }
 }

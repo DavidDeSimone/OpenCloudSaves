@@ -14,6 +14,7 @@ import (
 var gamedefMap []byte
 
 type GameDef struct {
+	Display_name           string   `json:"display_name"`
 	Win_path               string   `json:"win_path"`
 	Linux_path             string   `json:"linux_path"`
 	Darwin_path            string   `json:"darwin_path"`
@@ -68,14 +69,25 @@ func (d *GameDef) GetSyncpath() (string, error) {
 	}
 
 	result := ""
-	switch platform {
-	case "windows":
+	if platform == "windows" {
+		if d.Win_path == "" {
+			return "", fmt.Errorf("game %v save files not supported for platform %v", d.Display_name, platform)
+		}
+
 		result = prefix + d.Win_path + separator
-	case "darwin":
+	} else if platform == "darwin" {
+		if d.Darwin_path == "" {
+			return "", fmt.Errorf("game %v save files not supported for platform %v", d.Display_name, platform)
+		}
+
 		result = prefix + d.Darwin_path + separator
-	case "linux":
+	} else if platform == "linux" {
+		if d.Linux_path == "" {
+			return "", fmt.Errorf("game %v save files not supported for platform %v", d.Display_name, platform)
+		}
+
 		result = prefix + d.Linux_path + separator
-	default:
+	} else {
 		return "", fmt.Errorf("non-supported platform %v", platform)
 	}
 
@@ -91,7 +103,11 @@ type GameDefManager struct {
 	gamedefs map[string]GameDef
 }
 
-func MakeDriverManager() *GameDefManager {
+func (d *GameDefManager) GetGameDefMap() map[string]GameDef {
+	return d.gamedefs
+}
+
+func MakeGameDefManager() *GameDefManager {
 	dm := &GameDefManager{
 		gamedefs: make(map[string]GameDef),
 	}
