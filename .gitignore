@@ -1,3 +1,5 @@
 test_payload.file
 token.json
 steamcloudupload
+testdata*
+.DS_store

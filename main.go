@@ -244,17 +244,18 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 					continue
 				}
 
-				osf, err := os.Open(fullpath)
-				if err != nil {
-					return err
-				}
 				res, err := srv.Files.Get(file.Id).Download()
 				if err != nil {
 					return err
 				}
 
 				defer res.Body.Close()
-				err = osf.Truncate(0)
+				err = os.Truncate(fullpath, 0)
+				if err != nil {
+					return err
+				}
+
+				osf, err := os.Open(fullpath)
 				if err != nil {
 					return err
 				}
@@ -265,10 +266,10 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				if err != nil {
 					return err
 				}
+
+				LogVerbose("Successfully downloaded ", file.Name, ", last modified ", remote_modtime.Format(time.RFC3339))
 			}
 		}
-
-		LogVerbose(file.Name, file.Id)
 	}
 
 	// 3. Check for local files not present on the cloud
