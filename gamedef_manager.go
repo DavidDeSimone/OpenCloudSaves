@@ -43,7 +43,7 @@ func (d *GameDef) GetFilenames() ([]string, error) {
 	for _, file := range files {
 		if d.Save_ext == "" || filepath.Ext(file.Name()) == d.Save_ext {
 			result = append(result, syncpath+file.Name())
-			LogVerbose("Found Save Files: ", file.Name(), file.IsDir())
+			LogVerbose("Found Save Files: ", file.Name())
 		}
 	}
 
@@ -103,7 +103,6 @@ func MakeDriverManager() *GameDefManager {
 
 	for k, v := range mid {
 		d := &GameDef{}
-		fmt.Println(string(v))
 		err = json.Unmarshal(v, d)
 		if err != nil {
 			log.Fatal(err)

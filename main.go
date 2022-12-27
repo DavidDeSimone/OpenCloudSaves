@@ -17,12 +17,11 @@ import (
 )
 
 type Options struct {
-	Verbose     []bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
-	Gamename    string   `short:"g" long:"gamename" description:"The name of the game you will attempt to sync"`
-	Gamepath    []string `short:"p" long:"gamepath" description:"The path to your game"`
-	Pull        []bool   `short:"u" long:"pull" description:"Pull save data from the cloud"`
-	Push        []bool   `short:"s" long:"push" description:"Push save data to the cloud"`
-	PullAndPush []bool   `short:"a" long:"all" description:"Pull/Push from the server, with a prompt on conflict"`
+	Verbose  []bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
+	Gamename string   `short:"g" long:"gamename" description:"The name of the game you will attempt to sync"`
+	Gamepath []string `short:"p" long:"gamepath" description:"The path to your game"`
+	Sync     []bool   `short:"s" long:"sync" description:"Pull/Push from the server, with a prompt on conflict"`
+	DryRun   []bool   `short:"d" long:"dry-run" description:"Run through the sync process without uploading/downloading from the cloud"`
 }
 
 const SAVE_FOLDER string = "steamsave"
@@ -141,7 +140,7 @@ func validateAndCreateParentFolder(srv *drive.Service) string {
 			MimeType: "application/vnd.google-apps.folder",
 		}
 
-		fmt.Println("Creating steamsaves folder....")
+		LogVerbose("Creating steamsaves folder....")
 		x, err := srv.Files.Create(f).Do()
 		saveFolderId = x.Id
 		if err != nil {
@@ -152,13 +151,9 @@ func validateAndCreateParentFolder(srv *drive.Service) string {
 	return saveFolderId
 }
 
-func updateFiles(parentId string, files []string) error {
+func syncFiles(parentId string, syncPath string, files []string) error {
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
-	return nil
-}
-
-func fetchFiles(parentId string, localLocation string) error {
 	return nil
 }
 
@@ -180,6 +175,23 @@ func getGameFileId(srv *drive.Service, parentId string, name string) (string, er
 		}
 	}
 
+	if resultId == "" {
+		f := &drive.File{
+			Name:     name,
+			Parents:  []string{parentId},
+			MimeType: "application/vnd.google-apps.folder",
+		}
+
+		LogVerbose("Creating Folder for Game", name)
+		result, err := srv.Files.Create(f).Do()
+		if err != nil {
+			return resultId, err
+		}
+
+		resultId = result.Id
+	}
+
+	LogVerbose("Identified game", name, "with id ", resultId)
 	return resultId, nil
 }
 
@@ -192,9 +204,7 @@ func main() {
 	}
 
 	gamename := strings.TrimSpace(ops.Gamename)
-	pullAndPush := len(ops.PullAndPush) == 1
-	push := len(ops.Push) == 1
-	pull := len(ops.Pull) == 1
+	sync := len(ops.Sync) == 1 && ops.Sync[0]
 	verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
 	LogVerbose("Verbose logging enabled...")
 
@@ -206,26 +216,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if pullAndPush || pull {
-		sync, err := dm.GetSyncpathForGame(gamename)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = fetchFiles(id, sync)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	if pullAndPush || push {
+	if sync {
 		files, err := dm.GetFilesForGame(gamename)
-		fmt.Println(files)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		err = updateFiles(id, files)
+		syncpath, err := dm.GetSyncpathForGame(gamename)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = syncFiles(id, syncpath, files)
 		if err != nil {
 			log.Fatal(err)
 		}
