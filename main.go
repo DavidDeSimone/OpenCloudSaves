@@ -21,11 +21,11 @@ import (
 )
 
 type Options struct {
-	Verbose  []bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
-	Gamename string   `short:"g" long:"gamename" description:"The name of the game you will attempt to sync"`
-	Gamepath []string `short:"p" long:"gamepath" description:"The path to your game"`
-	Sync     []bool   `short:"s" long:"sync" description:"Pull/Push from the server, with a prompt on conflict"`
-	DryRun   []bool   `short:"d" long:"dry-run" description:"Run through the sync process without uploading/downloading from the cloud"`
+	Verbose   []bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
+	Gamenames []string `short:"g" long:"gamenames" description:"The name of the game(s) you will attempt to sync"`
+	Gamepath  []string `short:"p" long:"gamepath" description:"The path to your game"`
+	Sync      []bool   `short:"s" long:"sync" description:"Pull/Push from the server, with a prompt on conflict"`
+	DryRun    []bool   `short:"d" long:"dry-run" description:"Run through the sync process without uploading/downloading from the cloud"`
 }
 
 //go:embed credentials.json
@@ -361,7 +361,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gamename := strings.TrimSpace(ops.Gamename)
 	sync := len(ops.Sync) == 1 && ops.Sync[0]
 	verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
 	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
@@ -370,25 +369,32 @@ func main() {
 	dm := MakeDriverManager()
 	srv := makeService()
 	saveFolderId := validateAndCreateParentFolder(srv)
-	id, err := getGameFileId(srv, saveFolderId, gamename)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if sync {
-		files, err := dm.GetFilesForGame(gamename)
+	for _, gamename := range ops.Gamenames {
+		gamename = strings.TrimSpace(gamename)
+		id, err := getGameFileId(srv, saveFolderId, gamename)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			continue
 		}
 
-		syncpath, err := dm.GetSyncpathForGame(gamename)
-		if err != nil {
-			log.Fatal(err)
-		}
+		if sync {
+			files, err := dm.GetFilesForGame(gamename)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
 
-		err = syncFiles(srv, id, syncpath, files, dryrun)
-		if err != nil {
-			log.Fatal(err)
+			syncpath, err := dm.GetSyncpathForGame(gamename)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+
+			err = syncFiles(srv, id, syncpath, files, dryrun)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
 		}
 	}
 }
