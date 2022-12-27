@@ -6,10 +6,12 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/jessevdk/go-flags"
 	"golang.org/x/oauth2"
@@ -156,9 +158,160 @@ func validateAndCreateParentFolder(srv *drive.Service) string {
 	return saveFolderId
 }
 
-func syncFiles(parentId string, syncPath string, files []string) error {
+func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[string]string, dryrun bool) error {
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
+
+	// 1. Query current files on cloud:
+	r, err := srv.Files.List().
+		Q(fmt.Sprintf("'%v' in parents", parentId)).
+		Fields("nextPageToken, files(id, name)").
+		Do()
+
+	if err != nil {
+		return err
+	}
+
+	for _, file := range r.Files {
+		fullpath, found := files[file.Name]
+		if !found {
+			// 2a. Not present on local file system, download...
+			if dryrun {
+				LogVerbose("Dry Run - Downloading ", file.Name)
+				continue
+			}
+
+			_, err := srv.Files.Get(file.Id).Download()
+			if err != nil {
+				return err
+			}
+		} else {
+			// 2b. Present on local file system, compare to remote if we will upload or download...
+			fileref, err := srv.Files.Get(file.Id).Fields("modifiedTime").Do()
+			if err != nil {
+				return err
+			}
+
+			localfile, err := os.Stat(fullpath)
+			if err != nil {
+				return err
+			}
+
+			local_modtime := localfile.ModTime()
+			remote_modtime, err := time.Parse(time.RFC3339, fileref.ModifiedTime)
+
+			if err != nil {
+				return err
+			}
+
+			local_unix := local_modtime.UTC().Unix()
+			remote_unix := remote_modtime.UTC().Unix()
+
+			LogVerbose("Comparing (local/remote): ", local_unix, remote_unix)
+			if local_unix == remote_unix {
+				fmt.Println("Remote and local files in sync (id/mod timestamp) ", file.Id, " ", local_unix)
+			} else if local_unix > remote_unix {
+				LogVerbose("Local file is newer... uploading...")
+				if dryrun {
+					fmt.Println("Dry-Run Uploading File (not actually uploading) to remote: ", file.Name)
+					continue
+				}
+
+				osf, err := os.Open(fullpath)
+				if err != nil {
+					return err
+				}
+				defer osf.Close()
+				stat, err := osf.Stat()
+				if err != nil {
+					return err
+				}
+
+				ff := &drive.File{
+					ModifiedTime: stat.ModTime().Format(time.RFC3339),
+				}
+
+				res, err := srv.Files.Update(file.Id, ff).Media(osf).Do()
+				if err != nil {
+					return err
+				}
+
+				LogVerbose("Successfully uploaded ", res.Name, ", last modified ", res.ModifiedTime, ", ", stat.ModTime().Format(time.RFC3339))
+			} else {
+				// TODO better error handling around removal of save data
+				if dryrun {
+					fmt.Println("Dry-Run Downloading File (not actually downloading) from remote: ", file.Name)
+					continue
+				}
+
+				osf, err := os.Open(fullpath)
+				if err != nil {
+					return err
+				}
+				res, err := srv.Files.Get(file.Id).Download()
+				if err != nil {
+					return err
+				}
+
+				defer res.Body.Close()
+				err = osf.Truncate(0)
+				if err != nil {
+					return err
+				}
+
+				io.Copy(osf, res.Body)
+				osf.Close()
+				err = os.Chtimes(fullpath, remote_modtime, remote_modtime)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		LogVerbose(file.Name, file.Id)
+	}
+
+	// 3. Check for local files not present on the cloud
+	for k, v := range files {
+		found := false
+		for _, f := range r.Files {
+			if k == f.Name {
+				found = true
+				LogVerbose("Found file ", k, " on cloud.")
+				break
+			}
+		}
+
+		if !found {
+			if dryrun {
+				fmt.Println("Dry-Run: Uploading File (not actually uploading): ", k)
+			}
+
+			osf, err := os.Open(v)
+			if err != nil {
+				return err
+			}
+			defer osf.Close()
+			stat, err := osf.Stat()
+			if err != nil {
+				return err
+			}
+
+			saveUpload := &drive.File{
+				Name:         k,
+				ModifiedTime: stat.ModTime().Format(time.RFC3339),
+				Parents:      []string{parentId},
+			}
+
+			uploadedResult, err := srv.Files.Create(saveUpload).Media(osf).Do()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			LogVerbose("Successfully uploaded save file ", uploadedResult.Name, "with id: ", uploadedResult.Id)
+		}
+	}
+
 	return nil
 }
 
@@ -211,6 +364,7 @@ func main() {
 	gamename := strings.TrimSpace(ops.Gamename)
 	sync := len(ops.Sync) == 1 && ops.Sync[0]
 	verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
+	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
 	LogVerbose("Verbose logging enabled...")
 
 	dm := MakeDriverManager()
@@ -232,53 +386,9 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = syncFiles(id, syncpath, files)
+		err = syncFiles(srv, id, syncpath, files, dryrun)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-
-	// res, err := srv.Files.List().
-	// 	Q(fmt.Sprintf("'%v' in parents", saveFolderId)).
-	// 	Fields("nextPageToken, files(id, name)").
-	// 	Do()
-
-	// if len(res.Files) == 0 {
-	// 	fmt.Println(err)
-	// 	fmt.Println("No files in steamsave....")
-	// 	// log.Fatalf("Unable to retrieve files: %v", err)
-	// 	ff := &drive.File{
-	// 		Name: "TestFile",
-	// 		// ModifiedTime: time.Now().GoString(),
-	// 		Parents: []string{saveFolderId},
-	// 	}
-
-	// 	osf, err := os.Open("test_payload.file")
-	// 	defer osf.Close()
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-
-	// 	_, err = srv.Files.Create(ff).Media(osf).Do()
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// } else {
-	// 	if len(res.Files) == 0 {
-	// 		fmt.Println("No files found.")
-	// 	} else {
-	// 		for _, i := range res.Files {
-	// 			gg, err := srv.Files.Get(i.Id).Fields("modifiedTime").Do()
-	// 			if err != nil {
-	// 				log.Fatal(err)
-	// 			}
-	// 			fmt.Println(gg.ModifiedTime)
-	// 			fmt.Printf("%s (%s)\n", i.Name, i.Id)
-	// 		}
-	// 	}
-	// }
-
-	// dm := &DriverManager{}
-	// dm.Push("game", []string{"foo"})
-
 }

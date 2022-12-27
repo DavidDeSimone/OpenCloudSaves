@@ -22,7 +22,7 @@ type GameDef struct {
 	Relative_to_homedir    []string `json:"relative_to_homedir"`
 }
 
-func (d *GameDef) GetFilenames() ([]string, error) {
+func (d *GameDef) GetFilenames() (map[string]string, error) {
 	syncpath, err := d.GetSyncpath()
 	if err != nil {
 		return nil, err
@@ -39,10 +39,11 @@ func (d *GameDef) GetFilenames() ([]string, error) {
 		return nil, err
 	}
 
-	result := make([]string, len(files))
+	result := make(map[string]string)
 	for _, file := range files {
 		if d.Save_ext == "" || filepath.Ext(file.Name()) == d.Save_ext {
-			result = append(result, syncpath+file.Name())
+			result[file.Name()] = syncpath + file.Name()
+			// result = append(result, syncpath+file.Name())
 			LogVerbose("Found Save Files: ", file.Name())
 		}
 	}
@@ -114,7 +115,7 @@ func MakeDriverManager() *GameDefManager {
 	return dm
 }
 
-func (d *GameDefManager) GetFilesForGame(id string) ([]string, error) {
+func (d *GameDefManager) GetFilesForGame(id string) (map[string]string, error) {
 	driver, ok := d.gamedefs[id]
 	if !ok {
 		return nil, fmt.Errorf("failed to find game (%v)", id)
