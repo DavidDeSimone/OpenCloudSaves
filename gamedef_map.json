@@ -16,5 +16,14 @@
         "saves_cross_compatible": true,
         "save_ext": "",
         "relative_to_homedir": []
+    },
+    "city_skylines": {
+        "display_name": "City Skylines",
+        "win_path": "%LocalAppData%\\Colossal Order\\Cities_Skylines\\Saves",
+        "linux_path": ".local/share/Colossal Order/Cities_Skylines/Saves",
+        "darwin_path": "Library/Application Support/Colossal Order/Cities_Skylines/Saves",
+        "saves_cross_compatible": true,
+        "save_ext": ".crp",
+        "relative_to_homedir": ["linux", "darwin"]
     }
 }
