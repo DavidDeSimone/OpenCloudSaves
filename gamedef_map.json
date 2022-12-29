@@ -10,7 +10,7 @@
     },
     "dwarf_fortress": {
         "display_name": "Dwarf Fortress",
-        "win_path": "%Appdata%\\Local\\VirtualStore\\Program Files\\Dwarf Fortress\\data\\save",
+        "win_path": "%AppData%\\Local\\VirtualStore\\Program Files\\Dwarf Fortress\\data\\save",
         "linux_path": "",
         "darwin_path": "",
         "saves_cross_compatible": true,

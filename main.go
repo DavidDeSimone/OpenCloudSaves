@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"embed"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -158,7 +160,7 @@ func validateAndCreateParentFolder(srv *drive.Service) string {
 	if err != nil {
 		log.Fatalf("Unable to retrieve files: %v", err)
 	}
-	fmt.Println("Files:")
+
 	createSaveFolder := true
 	var saveFolderId string
 	if len(r.Files) == 0 {
@@ -224,7 +226,13 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				return err
 			}
 
-			localfile, err := os.Stat(fullpath)
+			f, err := os.Open(fullpath)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			localfile, err := f.Stat()
 			if err != nil {
 				return err
 			}
@@ -239,10 +247,20 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			local_unix := local_modtime.UTC().Unix()
 			remote_unix := remote_modtime.UTC().Unix()
 
-			LogVerbose("Comparing (local/remote): ", local_unix, remote_unix)
-			if local_unix == remote_unix {
+			h := sha256.New()
+			if _, err := io.Copy(h, f); err != nil {
+				log.Fatal(err)
+			}
+
+			// @TODO add a meta format where we use the sha sums
+			LogVerbose(hex.EncodeToString(h.Sum(nil)))
+
+			// @TODO per machine, generate a one time ID for identification
+
+			LogVerbose("Comparing", file.Name, " (local/remote): ", local_unix, remote_unix)
+			if local_modtime.Equal(remote_modtime) {
 				fmt.Println("Remote and local files in sync (id/mod timestamp) ", file.Id, " ", local_unix)
-			} else if local_unix > remote_unix {
+			} else if local_modtime.After(remote_modtime) {
 				LogVerbose("Local file is newer... uploading...")
 				if dryrun {
 					fmt.Println("Dry-Run Uploading File (not actually uploading) to remote: ", file.Name)
