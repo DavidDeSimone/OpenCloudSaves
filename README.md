@@ -12,9 +12,12 @@ I've only tested this on MSYS2 MSYS (purple icon) - I have not gotten this worki
 Run
 ```bash
 pacman -S mingw-w64-x86_64-go
+PATH=$PATH:/mingw64/bin/
 export GOROOT=/mingw64/lib/go
 export GOPATH=/mingw64
 ```
+
+You will likely want to add these to your shell start up script.
 
 Validate that go is installed correctly with
 ```bash
