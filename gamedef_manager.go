@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 //go:embed gamedef_map.json
@@ -47,6 +48,8 @@ func (d *GameDef) GetFilenames() (map[string]string, error) {
 			result[file.Name()] = syncpath + file.Name()
 			// result = append(result, syncpath+file.Name())
 			LogVerbose("Found Save Files: ", file.Name())
+		} else {
+			LogVerbose("Found file", file.Name(), "extension does not match")
 		}
 	}
 
@@ -75,7 +78,10 @@ func (d *GameDef) GetSyncpath() (string, error) {
 			return "", fmt.Errorf("game %v save files not supported for platform %v", d.Display_name, platform)
 		}
 
-		result = prefix + d.Win_path + separator
+		fmt.Println(os.Getenv("APPDATA"))
+		winpath := strings.Replace(d.Win_path, "%AppData%", os.Getenv("APPDATA"), 1)
+		winpath = strings.Replace(d.Win_path, "%LocalAppData%", os.Getenv("LOCALAPPDATA"), 1)
+		result = prefix + winpath + separator
 	} else if platform == "darwin" {
 		if d.Darwin_path == "" {
 			return "", fmt.Errorf("game %v save files not supported for platform %v", d.Display_name, platform)
@@ -90,10 +96,6 @@ func (d *GameDef) GetSyncpath() (string, error) {
 		result = prefix + d.Linux_path + separator
 	} else {
 		return "", fmt.Errorf("non-supported platform %v", platform)
-	}
-
-	if result[len(result)-1] != os.PathSeparator {
-		result += separator
 	}
 
 	LogVerbose("Determined Savepath: ", result)
