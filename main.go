@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -32,6 +35,7 @@ type Options struct {
 var creds embed.FS
 
 const SAVE_FOLDER string = "steamsave"
+const DEFAULT_PORT string = ":54438"
 
 var verboseLogging bool = false
 
@@ -39,6 +43,25 @@ func LogVerbose(v ...any) {
 	if verboseLogging {
 		log.Println(v...)
 	}
+}
+
+func openbrowser(url string) {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -58,18 +81,25 @@ func getClient(config *oauth2.Config) *http.Client {
 // Request a token from the web, then returns the retrieved token.
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	fmt.Printf("Go to the following link in your browser then type the "+
-		"authorization code: \n%v\n", authURL)
-
-	var authCode string
-	if _, err := fmt.Scan(&authCode); err != nil {
-		log.Fatalf("Unable to read authorization code %v", err)
-	}
-
-	tok, err := config.Exchange(context.TODO(), authCode)
+	listener, err := net.Listen("tcp", DEFAULT_PORT)
 	if err != nil {
-		log.Fatalf("Unable to retrieve token from web %v", err)
+		log.Fatal(err)
 	}
+
+	openbrowser(authURL)
+
+	var tok *oauth2.Token
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Success! You can safely close this tab."))
+		tok, err = config.Exchange(context.TODO(), r.FormValue("code"), oauth2.AccessTypeOffline)
+		listener.Close()
+	})
+
+	http.Serve(listener, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	return tok
 }
 
@@ -105,6 +135,8 @@ func makeService() *drive.Service {
 
 	// If modifying these scopes, delete your previously saved token.json.
 	config, err := google.ConfigFromJSON(b, drive.DriveFileScope)
+	config.Endpoint = google.Endpoint
+	config.RedirectURL = fmt.Sprintf("http://localhost%v/", DEFAULT_PORT)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
