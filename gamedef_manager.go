@@ -46,7 +46,6 @@ func (d *GameDef) GetFilenames() (map[string]string, error) {
 	for _, file := range files {
 		if d.Save_ext == "" || filepath.Ext(file.Name()) == d.Save_ext {
 			result[file.Name()] = syncpath + file.Name()
-			// result = append(result, syncpath+file.Name())
 			LogVerbose("Found Save Files: ", file.Name())
 		} else {
 			LogVerbose("Found file", file.Name(), "extension does not match")
@@ -80,7 +79,7 @@ func (d *GameDef) GetSyncpath() (string, error) {
 
 		fmt.Println(os.Getenv("APPDATA"))
 		winpath := strings.Replace(d.Win_path, "%AppData%", os.Getenv("APPDATA"), 1)
-		winpath = strings.Replace(d.Win_path, "%LocalAppData%", os.Getenv("LOCALAPPDATA"), 1)
+		winpath = strings.Replace(winpath, "%LocalAppData%", os.Getenv("LOCALAPPDATA"), 1)
 		result = prefix + winpath + separator
 	} else if platform == "darwin" {
 		if d.Darwin_path == "" {

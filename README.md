@@ -59,3 +59,42 @@ You can also run
 ```bash
 go run *.go --gui --verbose
 ```
+
+### Linux
+
+In addition to golang, you will need the following deps depending on your distro:
+
+Debian / Ubuntu: 
+```
+sudo apt-get install golang gcc libgl1-mesa-dev xorg-dev
+```
+
+Fedora: 
+```
+sudo dnf install golang gcc libXcursor-devel libXrandr-devel mesa-libGL-devel libXi-devel libXinerama-devel libXxf86vm-devel
+```
+
+Arch Linux: 
+```
+sudo pacman -S go xorg-server-devel libxcursor libxrandr libxinerama libxi
+```
+
+Solus: 
+```
+sudo eopkg it -c system.devel golang mesalib-devel libxrandr-devel libxcursor-devel libxi-devel libxinerama-devel
+```
+
+openSUSE: 
+```
+sudo zypper install go gcc libXcursor-devel libXrandr-devel Mesa-libGL-devel libXi-devel libXinerama-devel libXxf86vm-devel
+```
+
+Void Linux: 
+```
+sudo xbps-install -S go base-devel xorg-server-devel libXrandr-devel libXcursor-devel libXinerama-devel
+```
+
+Alpine Linux 
+```
+sudo apk add go gcc libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev linux-headers mesa-dev
+```
