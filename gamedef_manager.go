@@ -79,7 +79,7 @@ func (d *GameDef) GetSyncpath() (string, error) {
 
 		fmt.Println(os.Getenv("APPDATA"))
 		winpath := strings.Replace(d.Win_path, "%AppData%", os.Getenv("APPDATA"), 1)
-		winpath = strings.Replace(d.Win_path, "%LocalAppData%", os.Getenv("LOCALAPPDATA"), 1)
+		winpath = strings.Replace(winpath, "%LocalAppData%", os.Getenv("LOCALAPPDATA"), 1)
 		result = prefix + winpath + separator
 	} else if platform == "darwin" {
 		if d.Darwin_path == "" {
