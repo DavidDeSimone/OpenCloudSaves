@@ -267,14 +267,15 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			if err != nil {
 				return err
 			}
+			defer res.Body.Close()
 
-			var p []byte
-			_, err = res.Body.Read(p)
+			bytes, err := io.ReadAll(res.Body)
 			if err != nil {
 				return err
 			}
 
-			err = json.Unmarshal(p, metadata)
+			metadata = &GameMetadata{}
+			err = json.Unmarshal(bytes, metadata)
 			if err != nil {
 				return err
 			}
@@ -293,6 +294,10 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 	}
 
 	for _, file := range r.Files {
+		if file.Name == STEAM_METAFILE {
+			continue
+		}
+
 		fullpath, found := files[file.Name]
 		newFileHash := ""
 		newModifiedTime := ""
@@ -340,9 +345,10 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			}
 		} else {
 			// 2b. Present on local file system, compare to remote if we will upload or download...
-			fileref, err := srv.Files.Get(file.Id).Fields("modifiedTime").Do()
-			if err != nil {
-				return err
+			meta, ok := metadata.Files[file.Name]
+			if !ok {
+				// @TODO handle this more gracefully?
+				return fmt.Errorf("cloud upload with corrupt metadata entry for %s", file.Name)
 			}
 
 			f, err := os.Open(fullpath)
@@ -357,7 +363,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			}
 
 			local_modtime := localfile.ModTime()
-			remote_modtime, err := time.Parse(time.RFC3339, fileref.ModifiedTime)
+			remote_modtime, err := time.Parse(time.RFC3339, meta.LastModified)
 
 			if err != nil {
 				return err
@@ -374,7 +380,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			newFileHash = hex.EncodeToString(h.Sum(nil))
 
 			LogVerbose("Comparing", file.Name, " (local/remote): ", local_unix, remote_unix)
-			if local_modtime.Equal(remote_modtime) {
+			if local_modtime.Equal(remote_modtime) || newFileHash == meta.Sha256 {
 				fmt.Println("Remote and local files in sync (id/mod timestamp) ", file.Id, " ", local_unix)
 			} else if local_modtime.After(remote_modtime) {
 				LogVerbose("Local file is newer... uploading...")
@@ -525,8 +531,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 		return nil
 	}
 	metaUpload := &drive.File{
-		Name:    STEAM_METAFILE,
-		Parents: []string{parentId},
+		Name: STEAM_METAFILE,
 	}
 
 	mf, err := os.Open(syncPath + STEAM_METAFILE)
