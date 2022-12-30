@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jessevdk/go-flags"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -36,8 +37,11 @@ type Options struct {
 //go:embed credentials.json
 var creds embed.FS
 
+const APP_NAME string = "SteamCustomCloudUpload"
 const SAVE_FOLDER string = "steamsave"
 const DEFAULT_PORT string = ":54438"
+const STEAM_METAFILE string = "steamcloudloadmeta.json"
+const CURRENT_META_VERSION int = 1
 
 var verboseLogging bool = false
 
@@ -192,6 +196,49 @@ func validateAndCreateParentFolder(srv *drive.Service) string {
 	return saveFolderId
 }
 
+func getClientUUID() (string, error) {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	separator := string(os.PathSeparator)
+
+	fileName := cacheDir + separator + APP_NAME + separator + "uuid"
+	err = os.MkdirAll(cacheDir+separator+APP_NAME, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	f, err := os.ReadFile(fileName)
+
+	result := ""
+	if err != nil {
+		LogVerbose("Generating new UUID for client...")
+		result = uuid.New().String()
+		err = os.WriteFile(fileName, []byte(result), os.ModePerm)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		result = string(f)
+	}
+
+	LogVerbose("UUID for client ", result)
+	return result, nil
+}
+
+type FileMetadata struct {
+	Sha256         string `json:"sha256"`
+	LastModified   string `json:"lastmodified"`
+	Lastclientuuid string `json:"lastclientuuid"`
+}
+
+type GameMetadata struct {
+	Version int                     `json:"version"`
+	Gameid  string                  `json:"gameid"`
+	Files   map[string]FileMetadata `json:"files"`
+}
+
 func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[string]string, dryrun bool) error {
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
@@ -206,8 +253,50 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 		return err
 	}
 
+	clientuuid, err := getClientUUID()
+	if err != nil {
+		return err
+	}
+
+	var metadata *GameMetadata = nil
+	metafileId := ""
+	for _, file := range r.Files {
+		if file.Name == STEAM_METAFILE {
+			metafileId = file.Id
+			res, err := srv.Files.Get(file.Id).Download()
+			if err != nil {
+				return err
+			}
+
+			var p []byte
+			_, err = res.Body.Read(p)
+			if err != nil {
+				return err
+			}
+
+			err = json.Unmarshal(p, metadata)
+			if err != nil {
+				return err
+			}
+			break
+		}
+	}
+
+	mustCreateMetaFile := false
+	if metadata == nil {
+		mustCreateMetaFile = true
+		metadata = &GameMetadata{
+			Version: CURRENT_META_VERSION,
+			Gameid:  parentId,
+			Files:   make(map[string]FileMetadata),
+		}
+	}
+
 	for _, file := range r.Files {
 		fullpath, found := files[file.Name]
+		newFileHash := ""
+		newModifiedTime := ""
+
 		if !found {
 			// 2a. Not present on local file system, download...
 			if dryrun {
@@ -215,7 +304,37 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				continue
 			}
 
-			_, err := srv.Files.Get(file.Id).Download()
+			fileref, err := srv.Files.Get(file.Id).Fields("modifiedTime").Do()
+			if err != nil {
+				return err
+			}
+
+			res, err := srv.Files.Get(file.Id).Download()
+			if err != nil {
+				return err
+			}
+
+			defer res.Body.Close()
+			err = os.Truncate(fullpath, 0)
+			if err != nil {
+				return err
+			}
+
+			osf, err := os.Open(fullpath)
+			if err != nil {
+				return err
+			}
+
+			io.Copy(osf, res.Body)
+			osf.Close()
+			modtime, err := time.Parse(fileref.ModifiedTime, time.RFC3339)
+			if err != nil {
+				return err
+			}
+
+			err = os.Chtimes(fullpath, modtime, modtime)
+			// Since we are downloading, we do not need to update the file hash or modified time
+			// in the meta file
 			if err != nil {
 				return err
 			}
@@ -252,10 +371,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				log.Fatal(err)
 			}
 
-			// @TODO add a meta format where we use the sha sums
-			LogVerbose(hex.EncodeToString(h.Sum(nil)))
-
-			// @TODO per machine, generate a one time ID for identification
+			newFileHash = hex.EncodeToString(h.Sum(nil))
 
 			LogVerbose("Comparing", file.Name, " (local/remote): ", local_unix, remote_unix)
 			if local_modtime.Equal(remote_modtime) {
@@ -277,8 +393,9 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 					return err
 				}
 
+				modifiedAtTime := stat.ModTime().Format(time.RFC3339)
 				ff := &drive.File{
-					ModifiedTime: stat.ModTime().Format(time.RFC3339),
+					ModifiedTime: newModifiedTime,
 				}
 
 				res, err := srv.Files.Update(file.Id, ff).Media(osf).Do()
@@ -286,6 +403,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 					return err
 				}
 
+				newModifiedTime = modifiedAtTime
 				LogVerbose("Successfully uploaded ", res.Name, ", last modified ", res.ModifiedTime, ", ", stat.ModTime().Format(time.RFC3339))
 			} else {
 				// TODO better error handling around removal of save data
@@ -320,6 +438,24 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				LogVerbose("Successfully downloaded ", file.Name, ", last modified ", remote_modtime.Format(time.RFC3339))
 			}
 		}
+
+		current, ok := metadata.Files[file.Name]
+		if !ok {
+			metadata.Files[file.Name] = FileMetadata{
+				Sha256:         newFileHash,
+				LastModified:   newModifiedTime,
+				Lastclientuuid: clientuuid,
+			}
+		} else {
+			current.Lastclientuuid = clientuuid
+			if newFileHash != "" {
+				current.Sha256 = newFileHash
+			}
+
+			if newModifiedTime != "" {
+				current.LastModified = newModifiedTime
+			}
+		}
 	}
 
 	// 3. Check for local files not present on the cloud
@@ -348,9 +484,17 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				return err
 			}
 
+			h := sha256.New()
+			if _, err := io.Copy(h, osf); err != nil {
+				log.Fatal(err)
+			}
+
+			filehash := hex.EncodeToString(h.Sum(nil))
+
+			modtime := stat.ModTime().Format(time.RFC3339)
 			saveUpload := &drive.File{
 				Name:         k,
-				ModifiedTime: stat.ModTime().Format(time.RFC3339),
+				ModifiedTime: modtime,
 				Parents:      []string{parentId},
 			}
 
@@ -359,7 +503,48 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				log.Fatal(err)
 			}
 
+			metadata.Files[k] = FileMetadata{
+				Sha256:         filehash,
+				LastModified:   modtime,
+				Lastclientuuid: clientuuid,
+			}
+
 			LogVerbose("Successfully uploaded save file ", uploadedResult.Name, "with id: ", uploadedResult.Id)
+		}
+	}
+
+	metadata.Version = CURRENT_META_VERSION
+	b, err := json.Marshal(metadata)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(syncPath+STEAM_METAFILE, b, os.ModePerm)
+
+	if err != nil {
+		return nil
+	}
+	metaUpload := &drive.File{
+		Name:    STEAM_METAFILE,
+		Parents: []string{parentId},
+	}
+
+	mf, err := os.Open(syncPath + STEAM_METAFILE)
+	if err != nil {
+		return err
+	}
+
+	defer mf.Close()
+
+	if mustCreateMetaFile {
+		_, err = srv.Files.Create(metaUpload).Media(mf).Do()
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err = srv.Files.Update(metafileId, metaUpload).Do()
+		if err != nil {
+			return err
 		}
 	}
 

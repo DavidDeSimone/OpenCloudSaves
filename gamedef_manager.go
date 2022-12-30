@@ -46,7 +46,6 @@ func (d *GameDef) GetFilenames() (map[string]string, error) {
 	for _, file := range files {
 		if d.Save_ext == "" || filepath.Ext(file.Name()) == d.Save_ext {
 			result[file.Name()] = syncpath + file.Name()
-			// result = append(result, syncpath+file.Name())
 			LogVerbose("Found Save Files: ", file.Name())
 		} else {
 			LogVerbose("Found file", file.Name(), "extension does not match")
