@@ -341,11 +341,11 @@ func createFile(srv *drive.Service, parentId string, fileName string, filePath s
 
 func getFileHash(fileName string) (string, error) {
 	f, err := os.Open(fileName)
-	defer f.Close()
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
 		log.Fatal(err)
 	}
+	defer f.Close()
 
 	if err != nil {
 		return "", err
