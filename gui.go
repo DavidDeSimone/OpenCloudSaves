@@ -18,7 +18,7 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	syncMap := make(map[string]bool)
 	for k, v := range dm.GetGameDefMap() {
 		key := k
-		cont.Add(widget.NewCheck(v.Display_name, func(b bool) {
+		cont.Add(widget.NewCheck(v.DisplayName, func(b bool) {
 			syncMap[key] = b
 		}))
 	}

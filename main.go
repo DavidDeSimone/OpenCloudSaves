@@ -261,6 +261,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 	var metadata *GameMetadata = nil
 	metafileId := ""
 	for _, file := range r.Files {
+		LogVerbose("Looking for Metafile, examining ", file.Name)
 		if file.Name == STEAM_METAFILE {
 			metafileId = file.Id
 			res, err := srv.Files.Get(file.Id).Download()
@@ -294,6 +295,8 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 	}
 
 	for _, file := range r.Files {
+		LogVerbose("Examing ", file.Name)
+		// @TODO this should be an extension valid check....
 		if file.Name == STEAM_METAFILE {
 			continue
 		}
@@ -314,30 +317,26 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				return err
 			}
 
+			LogVerbose("Downloading ", file.Name)
 			res, err := srv.Files.Get(file.Id).Download()
 			if err != nil {
 				return err
 			}
 
 			defer res.Body.Close()
-			err = os.Truncate(fullpath, 0)
-			if err != nil {
-				return err
-			}
-
-			osf, err := os.Open(fullpath)
+			osf, err := os.Create(syncPath + file.Name)
 			if err != nil {
 				return err
 			}
 
 			io.Copy(osf, res.Body)
 			osf.Close()
-			modtime, err := time.Parse(fileref.ModifiedTime, time.RFC3339)
+			modtime, err := time.Parse(time.RFC3339, fileref.ModifiedTime)
 			if err != nil {
 				return err
 			}
 
-			err = os.Chtimes(fullpath, modtime, modtime)
+			err = os.Chtimes(syncPath+file.Name, modtime, modtime)
 			// Since we are downloading, we do not need to update the file hash or modified time
 			// in the meta file
 			if err != nil {
@@ -377,9 +376,14 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				log.Fatal(err)
 			}
 
+			_, err = f.Seek(0, 0)
+			if err != nil {
+				return err
+			}
+
 			newFileHash = hex.EncodeToString(h.Sum(nil))
 
-			LogVerbose("Comparing", file.Name, " (local/remote): ", local_unix, remote_unix)
+			LogVerbose("Comparing", file.Name, " (local/remote): ", local_unix, remote_unix, " ", newFileHash, ", ", meta.Sha256)
 			if local_modtime.Equal(remote_modtime) || newFileHash == meta.Sha256 {
 				fmt.Println("Remote and local files in sync (id/mod timestamp) ", file.Id, " ", local_unix)
 			} else if local_modtime.After(remote_modtime) {
@@ -464,6 +468,9 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 		}
 	}
 
+	// TODO
+	// Handle the case for deleting save data
+
 	// 3. Check for local files not present on the cloud
 	for k, v := range files {
 		found := false
@@ -480,11 +487,12 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				fmt.Println("Dry-Run: Uploading File (not actually uploading): ", k)
 			}
 
+			LogVerbose("Uploading Initial File ", v)
 			osf, err := os.Open(v)
 			if err != nil {
 				return err
 			}
-			defer osf.Close()
+
 			stat, err := osf.Stat()
 			if err != nil {
 				return err
@@ -496,6 +504,11 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			}
 
 			filehash := hex.EncodeToString(h.Sum(nil))
+
+			_, err = osf.Seek(0, 0)
+			if err != nil {
+				return err
+			}
 
 			modtime := stat.ModTime().Format(time.RFC3339)
 			saveUpload := &drive.File{
@@ -509,6 +522,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				log.Fatal(err)
 			}
 
+			osf.Close()
 			metadata.Files[k] = FileMetadata{
 				Sha256:         filehash,
 				LastModified:   modtime,
@@ -542,6 +556,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 	defer mf.Close()
 
 	if mustCreateMetaFile {
+		metaUpload.Parents = []string{parentId}
 		_, err = srv.Files.Create(metaUpload).Media(mf).Do()
 		if err != nil {
 			return err
@@ -611,22 +626,25 @@ func CliMain(ops *Options, dm *GameDefManager) {
 		}
 
 		if sync {
-			files, err := dm.GetFilesForGame(gamename)
+			syncpaths, err := dm.GetSyncpathForGame(gamename)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
 
-			syncpath, err := dm.GetSyncpathForGame(gamename)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
+			for _, syncpath := range syncpaths {
+				files, err := dm.GetFilesForGame(gamename, syncpath.Parent)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
 
-			err = syncFiles(srv, id, syncpath, files, dryrun)
-			if err != nil {
-				fmt.Println(err)
-				continue
+				parentId, err := getGameFileId(srv, id, syncpath.Parent)
+				err = syncFiles(srv, parentId, syncpath.Path, files, dryrun)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
 			}
 		}
 	}

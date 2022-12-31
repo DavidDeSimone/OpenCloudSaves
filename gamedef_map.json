@@ -1,29 +1,23 @@
 {
     "factorio": {
         "display_name": "Factorio",
-        "win_path": "%AppData%\\Factorio\\saves",
-        "linux_path": ".factorio/saves",
-        "darwin_path": "Library/Application Support/factorio/saves",
-        "saves_cross_compatible": true,
-        "save_ext": ".zip",
-        "relative_to_homedir": ["linux", "darwin"]
+        "win_path": [{"path": "%AppData%\\Factorio\\saves", "parent": "saves", "exts": [".zip"]}],
+        "linux_path": [{"path": "~/.factorio/saves", "parent": "saves", "exts": [".zip"]}],
+        "darwin_path":  [{"path": "~/Library/Application Support/factorio/saves", "parent": "saves", "exts": [".zip"]}],
+        "saves_cross_compatible": true
     },
     "dwarf_fortress": {
         "display_name": "Dwarf Fortress",
-        "win_path": "%AppData%\\Local\\VirtualStore\\Program Files\\Dwarf Fortress\\data\\save",
-        "linux_path": "",
-        "darwin_path": "",
-        "saves_cross_compatible": true,
-        "save_ext": "",
-        "relative_to_homedir": []
+        "win_path": [{"path": "%AppData%\\Local\\VirtualStore\\Program Files\\Dwarf Fortress\\data\\save", "parent": "saves"}],
+        "linux_path": [],
+        "darwin_path": [],
+        "saves_cross_compatible": true
     },
     "city_skylines": {
         "display_name": "City Skylines",
-        "win_path": "%LocalAppData%\\Colossal Order\\Cities_Skylines\\Saves",
-        "linux_path": ".local/share/Colossal Order/Cities_Skylines/Saves",
-        "darwin_path": "Library/Application Support/Colossal Order/Cities_Skylines/Saves",
-        "saves_cross_compatible": true,
-        "save_ext": ".crp",
-        "relative_to_homedir": ["linux", "darwin"]
+        "win_path": [{"path": "%LocalAppData%\\Colossal Order\\Cities_Skylines\\Saves", "parent": "saves", "exts": [".crp"]}],
+        "linux_path": [{"path": "~/.local/share/Colossal Order/Cities_Skylines/Saves", "parent": "saves", "exts": [".crp"]}],
+        "darwin_path": [{"path": "~/Library/Application Support/Colossal Order/Cities_Skylines/Saves", "parent": "saves", "exts": [".crp"]}],
+        "saves_cross_compatible": true
     }
 }
