@@ -59,7 +59,17 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 		result[syncpath.Parent] = make(map[string]SyncFile)
 		f, err := os.Open(syncpath.Path)
 		if err != nil {
-			return nil, err
+			// @TODO This is kind of a hack, but I need to think of a better way to handle this.
+			// The goal is to capture games installed on the SD card as well.
+			if runtime.GOOS == "linux" && strings.Index(syncpath.Parent, "~/.local/share/Steam") == 0 {
+				syncpath.Path = strings.Replace(syncpath.Path, "~/.local/share/Steam", "/run/media/mmcblk0p1", 1)
+				f, err = os.Open(syncpath.Path)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, err
+			}
 		}
 
 		defer f.Close()
