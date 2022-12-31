@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"image/color"
 	"os"
 	"time"
 
@@ -103,6 +104,17 @@ func makeScrollBothTab() fyne.CanvasObject {
 	return scroll
 }
 
+func makeSplitTab(_ fyne.Window) fyne.CanvasObject {
+	left := widget.NewMultiLineEntry()
+	left.Wrapping = fyne.TextWrapWord
+	left.SetText("Long text is looooooooooooooong")
+	right := container.NewVSplit(
+		widget.NewLabel("Label"),
+		widget.NewButton("Button", func() { fmt.Println("button tapped!") }),
+	)
+	return container.NewHSplit(container.NewVScroll(left), right)
+}
+
 func openOptionsWindow() {
 	w := fyne.CurrentApp().NewWindow("Options")
 	w.SetContent(makeScrollTab(w))
@@ -116,12 +128,21 @@ func manageGames() {
 
 }
 
+func getDefaultGreen() color.Color {
+	return color.RGBA{
+		R: 65,
+		G: 255,
+		B: 65,
+		A: 255,
+	}
+}
+
 func GuiMain(ops *Options, dm *GameDefManager) {
 	a := app.New()
 	a.SetIcon(fyne.NewStaticResource("Icon", icon))
 
 	w := a.NewWindow("Steam Custom Cloud Uploads")
-	w.Resize(fyne.NewSize(500, 500))
+	w.Resize(fyne.NewSize(800, 500))
 	w.CenterOnScreen()
 
 	innerContainer := container.NewVBox()
@@ -142,6 +163,14 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 			syncpaths, _ := dm.GetSyncpathForGame(key)
 
 			innerContainer = container.NewVBox()
+
+			overallStatus := canvas.NewText("Status: Cloud in Sync", getDefaultGreen())
+			overallStatus.TextStyle = fyne.TextStyle{
+				Bold: true,
+			}
+			overallStatus.Alignment = fyne.TextAlignCenter
+			innerContainer.Add(overallStatus)
+
 			saveList := make([]*widget.AccordionItem, 0)
 
 			for _, syncpath := range syncpaths {
@@ -152,14 +181,26 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 						fmt.Println(err)
 					}
 
+					del := widget.NewButton("Delete", func() {
+
+					})
+
+					sync := widget.NewButton("Sync", func() {
+
+					})
+					sync.Importance = widget.HighImportance
+
+					cloudStatus := canvas.NewText("File in Sync", getDefaultGreen())
+					cloudStatus.TextStyle = fyne.TextStyle{
+						Bold: true,
+					}
+					cloudStatus.Alignment = fyne.TextAlignCenter
+
 					itemContainer := container.NewVBox(widget.NewLabel("Save File: "+v.Name),
 						widget.NewLabel("Date Modified: "+f.ModTime().String()),
-						widget.NewButton("Sync", func() {
-
-						}),
-						widget.NewButton("Delete", func() {
-
-						}))
+						cloudStatus,
+						sync,
+						del)
 					newItem := widget.NewAccordionItem(k, itemContainer)
 					saveList = append(saveList, newItem)
 
@@ -168,7 +209,6 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 
 			innerContainer.Add(widget.NewAccordion(saveList...))
 			plainContainer.Add(innerContainer)
-			plainContainer.Resize(fyne.NewSize(400, 400))
 		}))
 	}
 
@@ -201,10 +241,16 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	horiz := container.NewHScroll(container.NewHBox(hlist...))
 	vert := container.NewVScroll(container.NewVBox(vlist...))
 
-	cont := container.NewAdaptiveGrid(2,
-		container.NewBorder(horiz, nil, nil, nil, vert),
-		plainContainer)
+	// cont := container.NewAdaptiveGrid(2,
+	// 	container.NewBorder(horiz, nil, nil, nil, vert),
+	// 	plainContainer)
+	hsplit := container.NewHSplit(vert, plainContainer)
+	hsplit.Offset = 0.2
+
+	cont := container.NewVSplit(horiz, hsplit)
+	cont.Offset = 0.1
 
 	w.SetContent(cont)
+	// w.SetContent(makeSplitTab(w))
 	w.ShowAndRun()
 }
