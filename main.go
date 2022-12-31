@@ -239,10 +239,23 @@ type GameMetadata struct {
 	Files   map[string]FileMetadata `json:"files"`
 }
 
-func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[string]string, dryrun bool) error {
+func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[string]SyncFile, dryrun bool) error {
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
 
+	// for k, v := range files {
+	// 	// This only works one deep
+	// 	if v.IsDir {
+	// 		pid, err := getGameFileId(srv, parentId, k)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		LogVerbose("Syncing Files (parent) ", parentId)
+	// 		err = syncFiles(srv, pid, syncPath+k, files, dryrun)
+	// 	}
+	// }
+
+	LogVerbose("Querying from parent ", parentId)
 	// 1. Query current files on cloud:
 	r, err := srv.Files.List().
 		Q(fmt.Sprintf("'%v' in parents", parentId)).
@@ -301,7 +314,8 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			continue
 		}
 
-		fullpath, found := files[file.Name]
+		syncfile, found := files[file.Name]
+		fullpath := syncfile.Name
 		newFileHash := ""
 		newModifiedTime := ""
 
@@ -488,7 +502,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			}
 
 			LogVerbose("Uploading Initial File ", v)
-			osf, err := os.Open(v)
+			osf, err := os.Open(v.Name)
 			if err != nil {
 				return err
 			}
@@ -572,18 +586,20 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 }
 
 func getGameFileId(srv *drive.Service, parentId string, name string) (string, error) {
-	var resultId string
+	resultId := ""
 	res, err := srv.Files.List().
 		Q(fmt.Sprintf("'%v' in parents", parentId)).
 		Fields("nextPageToken, files(id, name)").
 		Do()
 
-	if err != nil || len(res.Files) == 0 {
+	if err != nil {
+		fmt.Println("Failed to find file for (parent/name) ", parentId, name)
 		return resultId, err
 	}
 
 	for _, i := range res.Files {
 		if i.Name == name {
+			LogVerbose("Found id for (parent/id)", parentId, i.Id)
 			resultId = i.Id
 			break
 		}
@@ -640,6 +656,11 @@ func CliMain(ops *Options, dm *GameDefManager) {
 				}
 
 				parentId, err := getGameFileId(srv, id, syncpath.Parent)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				LogVerbose("Syncing Files (parent) ", parentId)
 				err = syncFiles(srv, parentId, syncpath.Path, files, dryrun)
 				if err != nil {
 					fmt.Println(err)

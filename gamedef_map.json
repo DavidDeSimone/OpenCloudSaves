@@ -8,8 +8,8 @@
     },
     "dwarf_fortress": {
         "display_name": "Dwarf Fortress",
-        "win_path": [{"path": "%AppData%\\Local\\VirtualStore\\Program Files\\Dwarf Fortress\\data\\save", "parent": "saves"}],
-        "linux_path": [],
+        "win_path": [{"path": "%STEAM%\\steamapps\\common\\Dwarf Fortress\\save", "parent": "save"}],
+        "linux_path": [{"path": "%STEAM%/steamapps/common/Dwarf Fortress/save", "parent": "save"}],
         "darwin_path": [],
         "saves_cross_compatible": true
     },

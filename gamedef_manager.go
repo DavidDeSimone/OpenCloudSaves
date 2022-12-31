@@ -29,15 +29,33 @@ type GameDef struct {
 	SavesCrossCompatible bool       `json:"saves_cross_compatible"`
 }
 
-func (d *GameDef) GetFilenames() (map[string]map[string]string, error) {
+type SyncFile struct {
+	Name  string
+	IsDir bool
+}
+
+func (d *GameDef) GetSteamLocation() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "C:\\Program Files (x86)\\Steam"
+	case "darwin":
+		return "/Applications/Steam"
+	case "linux":
+		return "~/.local/share/Steam"
+	default:
+		return ""
+	}
+}
+
+func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 	syncpaths, err := d.GetSyncpaths()
 	if err != nil {
 		return nil, err
 	}
 
-	result := make(map[string]map[string]string)
+	result := make(map[string]map[string]SyncFile)
 	for _, syncpath := range syncpaths {
-		result[syncpath.Parent] = make(map[string]string)
+		result[syncpath.Parent] = make(map[string]SyncFile)
 		f, err := os.Open(syncpath.Path)
 		if err != nil {
 			return nil, err
@@ -50,9 +68,29 @@ func (d *GameDef) GetFilenames() (map[string]map[string]string, error) {
 		}
 
 		for _, file := range files {
+			if file.IsDir() {
+				fmt.Printf("Logging Directory %v\n", file.Name())
+				result[syncpath.Parent][file.Name()] = SyncFile{
+					Name:  syncpath.Path + file.Name(),
+					IsDir: true,
+				}
+				continue
+			}
+
+			if len(syncpath.Exts) == 0 {
+				result[syncpath.Parent][file.Name()] = SyncFile{
+					Name:  syncpath.Path + file.Name(),
+					IsDir: false,
+				}
+				continue
+			}
+
 			for _, ext := range syncpath.Exts {
 				if filepath.Ext(file.Name()) == ext {
-					result[syncpath.Parent][file.Name()] = syncpath.Path + file.Name()
+					result[syncpath.Parent][file.Name()] = SyncFile{
+						Name:  syncpath.Path + file.Name(),
+						IsDir: false,
+					}
 					LogVerbose("Found Save Files: ", file.Name())
 					break
 				}
@@ -68,6 +106,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 	platform := runtime.GOOS
 	prefix := ""
 	separator := string(os.PathSeparator)
+	steamLocation := d.GetSteamLocation()
 
 	result := []Datapath{}
 	if platform == "windows" {
@@ -80,6 +119,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			fmt.Println(os.Getenv("APPDATA"))
 			winpath := strings.Replace(path, "%AppData%", os.Getenv("APPDATA"), 1)
 			winpath = strings.Replace(winpath, "%LocalAppData%", os.Getenv("LOCALAPPDATA"), 1)
+			winpath = strings.Replace(winpath, "%STEAM%", steamLocation, 1)
 			result = append(result, Datapath{
 				Path:   prefix + winpath + separator,
 				Exts:   datapath.Exts,
@@ -99,6 +139,8 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			path := datapath.Path
 			darwinPath := strings.Replace(path, "~", homedir, 1)
 			darwinPath = strings.Replace(darwinPath, "$HOME", os.Getenv("HOME"), 1)
+			darwinPath = strings.Replace(darwinPath, "%STEAM%", steamLocation, 1)
+
 			result = append(result, Datapath{
 				Path:   prefix + darwinPath + separator,
 				Exts:   datapath.Exts,
@@ -118,6 +160,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			path := datapath.Path
 			linuxPath := strings.Replace(path, "~", homedir, 1)
 			linuxPath = strings.Replace(linuxPath, "$HOME", os.Getenv("HOME"), 1)
+			linuxPath = strings.Replace(linuxPath, "%STEAM%", steamLocation, 1)
 			result = append(result, Datapath{
 				Path:   prefix + linuxPath + separator,
 				Exts:   datapath.Exts,
@@ -164,7 +207,7 @@ func MakeGameDefManager() *GameDefManager {
 	return dm
 }
 
-func (d *GameDefManager) GetFilesForGame(id string, parent string) (map[string]string, error) {
+func (d *GameDefManager) GetFilesForGame(id string, parent string) (map[string]SyncFile, error) {
 	driver, ok := d.gamedefs[id]
 	if !ok {
 		return nil, fmt.Errorf("failed to find game (%v)", id)
