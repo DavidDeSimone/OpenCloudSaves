@@ -137,9 +137,9 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				return nil, err
 			}
 			path := datapath.Path
-			darwinPath := strings.Replace(path, "~", homedir, 1)
+			darwinPath := strings.Replace(path, "%STEAM%", steamLocation, 1)
+			darwinPath = strings.Replace(darwinPath, "~", homedir, 1)
 			darwinPath = strings.Replace(darwinPath, "$HOME", os.Getenv("HOME"), 1)
-			darwinPath = strings.Replace(darwinPath, "%STEAM%", steamLocation, 1)
 
 			result = append(result, Datapath{
 				Path:   prefix + darwinPath + separator,
@@ -158,9 +158,10 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				return nil, err
 			}
 			path := datapath.Path
-			linuxPath := strings.Replace(path, "~", homedir, 1)
+			linuxPath := strings.Replace(path, "%STEAM%", steamLocation, 1)
+			linuxPath = strings.Replace(path, "~", homedir, 1)
 			linuxPath = strings.Replace(linuxPath, "$HOME", os.Getenv("HOME"), 1)
-			linuxPath = strings.Replace(linuxPath, "%STEAM%", steamLocation, 1)
+
 			result = append(result, Datapath{
 				Path:   prefix + linuxPath + separator,
 				Exts:   datapath.Exts,

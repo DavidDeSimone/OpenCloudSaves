@@ -243,17 +243,45 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
 
-	// for k, v := range files {
-	// 	// This only works one deep
-	// 	if v.IsDir {
-	// 		pid, err := getGameFileId(srv, parentId, k)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		LogVerbose("Syncing Files (parent) ", parentId)
-	// 		err = syncFiles(srv, pid, syncPath+k, files, dryrun)
-	// 	}
-	// }
+	for k, v := range files {
+		if v.IsDir {
+			pid, err := getGameFileId(srv, parentId, k)
+			if err != nil {
+				return err
+			}
+			separator := string(os.PathSeparator)
+			parentPath := syncPath + separator + k + separator
+			LogVerbose("Syncing Files (parent) ", parentId)
+			var fileMap map[string]SyncFile = make(map[string]SyncFile)
+			f, err := os.Open(syncPath + separator + k + separator)
+			if err != nil {
+				return err
+			}
+
+			defer f.Close()
+			files, err := f.Readdir(0)
+			if err != nil {
+				return err
+			}
+
+			for _, file := range files {
+				isDir := false
+				if file.IsDir() {
+					isDir = true
+				}
+
+				fileMap[file.Name()] = SyncFile{
+					Name:  parentPath + file.Name(),
+					IsDir: isDir,
+				}
+			}
+
+			err = syncFiles(srv, pid, parentPath, fileMap, dryrun)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	LogVerbose("Querying from parent ", parentId)
 	// 1. Query current files on cloud:

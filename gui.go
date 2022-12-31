@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 
 	"fyne.io/fyne"
@@ -9,8 +10,12 @@ import (
 	"fyne.io/fyne/widget"
 )
 
+//go:embed icon.jpg
+var icon []byte
+
 func GuiMain(ops *Options, dm *GameDefManager) {
 	a := app.New()
+	a.SetIcon(fyne.NewStaticResource("Icon", icon))
 	w := a.NewWindow("Steam Custom Cloud Uploads")
 	w.Resize(fyne.NewSize(500, 500))
 	cont := container.NewVBox(widget.NewLabel("Steam Custom Cloud Uploads"))
