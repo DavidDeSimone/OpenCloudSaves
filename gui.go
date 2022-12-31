@@ -29,7 +29,6 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	}
 
 	cont.Add(widget.NewButton("Sync", func() {
-		ops.Sync = []bool{true}
 		ops.Gamenames = []string{}
 		for k, v := range syncMap {
 			if v {
