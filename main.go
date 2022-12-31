@@ -329,6 +329,8 @@ func createFile(srv *drive.Service, parentId string, fileName string, filePath s
 		Parents:      []string{parentId},
 	}
 
+	// @TODO making this use gothreads makes upload REALLY fast, but to the point where we might hit rate limit
+	// instead we should try if we get rate limited for a little bit
 	_, err = srv.Files.Create(saveUpload).Media(file).Do()
 	if err != nil {
 		return "", err
