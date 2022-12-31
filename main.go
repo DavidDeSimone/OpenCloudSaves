@@ -42,6 +42,7 @@ const SAVE_FOLDER string = "steamsave"
 const DEFAULT_PORT string = ":54438"
 const STEAM_METAFILE string = "steamcloudloadmeta.json"
 const CURRENT_META_VERSION int = 1
+const WORKER_POOL_SIZE = 4
 
 var verboseLogging bool = false
 
@@ -239,6 +240,68 @@ type GameMetadata struct {
 	Files   map[string]FileMetadata `json:"files"`
 }
 
+const (
+	Create = iota
+	Download
+	Upload
+)
+
+type SyncRequest struct {
+	Operation int
+	Name      string
+	Path      string
+	ParentId  string
+	FileId    string
+	Dryrun    bool
+}
+
+type SyncResponse struct {
+	Operation int
+	Result    string
+	Name      string
+	Path      string
+	Err       error
+}
+
+func sync(srv *drive.Service, input chan SyncRequest, output chan SyncResponse) {
+	for {
+		request := <-input
+		switch request.Operation {
+		case Create:
+			createOperation(srv, request, output)
+		case Download:
+			downloadOperation(srv, request, output)
+		case Upload:
+			uploadOperation(srv, request, output)
+		}
+	}
+}
+
+func createOperation(srv *drive.Service, request SyncRequest, output chan SyncResponse) {
+	createFile(srv, request.ParentId, request.Name, request.Path, output)
+}
+
+func downloadOperation(srv *drive.Service, request SyncRequest, output chan SyncResponse) {
+	err := downloadFile(srv, request.FileId, request.Name, request.Dryrun)
+	output <- SyncResponse{
+		Operation: Download,
+		Name:      request.Name,
+		Path:      request.Path,
+		Err:       err,
+	}
+}
+
+func uploadOperation(srv *drive.Service, request SyncRequest, output chan SyncResponse) {
+	result, err := uploadFile(srv, request.FileId, request.Name, request.Dryrun)
+	output <- SyncResponse{
+		Operation: Download,
+		Result:    result,
+		Name:      request.Name,
+		Path:      request.Path,
+		Err:       err,
+	}
+}
+
 func downloadFile(srv *drive.Service, fileId string, fileName string, dryrun bool) error {
 	if dryrun {
 		LogVerbose("Dry Run - Downloading ", fileName)
@@ -310,16 +373,24 @@ func uploadFile(srv *drive.Service, fileId string, fileName string, dryrun bool)
 	return modifiedAtTime, nil
 }
 
-func createFile(srv *drive.Service, parentId string, fileName string, filePath string) (string, error) {
+func createFile(srv *drive.Service, parentId string, fileName string, filePath string, syncChan chan SyncResponse) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", err
+		syncChan <- SyncResponse{
+			Operation: Create,
+			Err:       err,
+		}
+		return
 	}
 	defer file.Close()
 
 	stat, err := file.Stat()
 	if err != nil {
-		return "", err
+		syncChan <- SyncResponse{
+			Operation: Create,
+			Err:       err,
+		}
+		return
 	}
 
 	modtime := stat.ModTime().Format(time.RFC3339)
@@ -329,14 +400,21 @@ func createFile(srv *drive.Service, parentId string, fileName string, filePath s
 		Parents:      []string{parentId},
 	}
 
-	// @TODO making this use gothreads makes upload REALLY fast, but to the point where we might hit rate limit
-	// instead we should try if we get rate limited for a little bit
 	_, err = srv.Files.Create(saveUpload).Media(file).Do()
 	if err != nil {
-		return "", err
+		syncChan <- SyncResponse{
+			Operation: Create,
+			Err:       err,
+		}
+		return
 	}
 
-	return modtime, nil
+	syncChan <- SyncResponse{
+		Operation: Create,
+		Name:      fileName,
+		Path:      filePath,
+		Result:    modtime,
+	}
 }
 
 func getFileHash(fileName string) (string, error) {
@@ -357,6 +435,11 @@ func getFileHash(fileName string) (string, error) {
 func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[string]SyncFile, dryrun bool) error {
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
+	inputChannel := make(chan SyncRequest, 100)
+	outputChannel := make(chan SyncResponse, 100)
+	for i := 0; i < WORKER_POOL_SIZE; i++ {
+		go sync(srv, inputChannel, outputChannel)
+	}
 
 	for k, v := range files {
 		if v.IsDir {
@@ -495,6 +578,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 		}
 	}
 
+	pendingUploadDownload := 0
 	for _, file := range r.Files {
 		LogVerbose("Examing ", file.Name)
 		// @TODO this should be an extension valid check....
@@ -510,22 +594,23 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 		syncfile, found := files[file.Name]
 		fullpath := syncfile.Name
 		newFileHash := ""
-		newModifiedTime := ""
-
 		if !found {
 			// 2a. Not present on local file system, download...
-			downloadFile(srv, file.Id, syncPath+file.Name, dryrun)
+			// downloadFile(srv, file.Id, syncPath+file.Name, dryrun)
+			inputChannel <- SyncRequest{
+				Operation: Download,
+				FileId:    file.Id,
+				Path:      syncPath + file.Name,
+				Name:      file.Name,
+				Dryrun:    dryrun,
+			}
+			pendingUploadDownload += 1
 		} else {
 			// 2b. Present on local file system, compare to remote if we will upload or download...
 			meta, ok := metadata.Files[file.Name]
 			if !ok {
 				// @TODO handle this more gracefully?
 				return fmt.Errorf("cloud upload with corrupt metadata entry for %s", file.Name)
-			}
-
-			newFileHash, err = getFileHash(fullpath)
-			if err != nil {
-				return err
 			}
 
 			f, err := os.Open(fullpath)
@@ -549,21 +634,46 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			if local_modtime.Equal(remote_modtime) || newFileHash == meta.Sha256 {
 				fmt.Println("Remote and local files in sync (id/mod timestamp) ", file.Id)
 			} else if local_modtime.After(remote_modtime) {
-				newModifiedTime, err = uploadFile(srv, file.Id, fullpath, dryrun)
-				if err != nil {
-					return err
+				inputChannel <- SyncRequest{
+					Operation: Upload,
+					FileId:    file.Id,
+					Path:      fullpath,
+					Name:      file.Name,
+					Dryrun:    dryrun,
 				}
+
+				pendingUploadDownload += 1
 			} else {
-				err = downloadFile(srv, file.Id, fullpath, dryrun)
-				if err != nil {
-					return err
+				inputChannel <- SyncRequest{
+					Operation: Download,
+					FileId:    file.Id,
+					Path:      fullpath,
+					Name:      file.Name,
+					Dryrun:    dryrun,
 				}
+				pendingUploadDownload += 1
 			}
 		}
+	}
 
-		current, ok := metadata.Files[file.Name]
+	for pendingUploadDownload > 0 {
+		response := <-outputChannel
+		newModifiedTime := ""
+		if response.Operation == Upload {
+			newModifiedTime = response.Result
+		}
+		fullpath := response.Path
+		fileName := response.Name
+
+		newFileHash, err := getFileHash(fullpath)
+		if err != nil {
+			return err
+		}
+
+		current, ok := metadata.Files[fileName]
+
 		if !ok {
-			metadata.Files[file.Name] = FileMetadata{
+			metadata.Files[fileName] = FileMetadata{
 				Sha256:         newFileHash,
 				LastModified:   newModifiedTime,
 				Lastclientuuid: clientuuid,
@@ -578,9 +688,12 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				current.LastModified = newModifiedTime
 			}
 		}
+
+		pendingUploadDownload -= 1
 	}
 
 	// 4. Check for local files not present on the cloud
+	numCreations := 0
 	for k, v := range files {
 		found := false
 		for _, f := range r.Files {
@@ -597,24 +710,38 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			}
 			LogVerbose("Uploading Initial File ", v)
 
-			filehash, err := getFileHash(v.Name)
-			if err != nil {
-				return err
+			inputChannel <- SyncRequest{
+				Operation: Create,
+				ParentId:  parentId,
+				Name:      k,
+				Path:      v.Name,
 			}
+			numCreations += 1
 
-			modtime, err := createFile(srv, parentId, k, v.Name)
-			if err != nil {
-				return err
-			}
-
-			metadata.Files[k] = FileMetadata{
-				Sha256:         filehash,
-				LastModified:   modtime,
-				Lastclientuuid: clientuuid,
-			}
-
-			LogVerbose("Successfully uploaded save file ", k)
 		}
+	}
+
+	for numCreations > 0 {
+		results := <-outputChannel
+
+		if results.Err != nil {
+			return results.Err
+		}
+
+		filehash, err := getFileHash(results.Path)
+		if err != nil {
+			return err
+		}
+
+		metadata.Files[results.Name] = FileMetadata{
+			Sha256:         filehash,
+			LastModified:   results.Result,
+			Lastclientuuid: clientuuid,
+		}
+
+		LogVerbose("Successfully uploaded save file ", results.Name)
+
+		numCreations -= 1
 	}
 
 	metadata.Version = CURRENT_META_VERSION
@@ -748,6 +875,7 @@ func main() {
 
 	noGui := len(ops.NoGUI) == 1 && ops.NoGUI[0]
 	dm := MakeGameDefManager()
+	dm.ApplyUserOverrides()
 
 	if noGui {
 		CliMain(ops, dm)
