@@ -875,6 +875,7 @@ func main() {
 
 	noGui := len(ops.NoGUI) == 1 && ops.NoGUI[0]
 	dm := MakeGameDefManager()
+	dm.ApplyUserOverrides()
 
 	if noGui {
 		CliMain(ops, dm)

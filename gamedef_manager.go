@@ -34,6 +34,7 @@ type SyncFile struct {
 	IsDir bool
 }
 
+// @TODO on the steam deck, we may have saves on the SD card - this needs to be accounted for
 func (d *GameDef) GetSteamLocation() string {
 	switch runtime.GOOS {
 	case "windows":
@@ -178,6 +179,37 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 
 type GameDefManager struct {
 	gamedefs map[string]GameDef
+}
+
+func (d *GameDefManager) ApplyUserOverrides() error {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return err
+	}
+	separator := string(os.PathSeparator)
+
+	fileName := cacheDir + separator + APP_NAME + separator + "user_overrides.json"
+	content, err := os.ReadFile(fileName)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	mid := make(map[string]json.RawMessage)
+	err = json.Unmarshal(content, &mid)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for k, v := range mid {
+		def := &GameDef{}
+		err = json.Unmarshal(v, def)
+		if err != nil {
+			log.Fatal(err)
+		}
+		d.gamedefs[k] = *def
+	}
+	return nil
 }
 
 func (d *GameDefManager) GetGameDefMap() map[string]GameDef {
