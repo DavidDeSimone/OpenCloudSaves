@@ -159,7 +159,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			}
 			path := datapath.Path
 			linuxPath := strings.Replace(path, "%STEAM%", steamLocation, 1)
-			linuxPath = strings.Replace(path, "~", homedir, 1)
+			linuxPath = strings.Replace(linuxPath, "~", homedir, 1)
 			linuxPath = strings.Replace(linuxPath, "$HOME", os.Getenv("HOME"), 1)
 
 			result = append(result, Datapath{
@@ -219,7 +219,7 @@ func (d *GameDefManager) GetFilesForGame(id string, parent string) (map[string]S
 	}
 	files, ok := result[parent]
 	if !ok {
-		return nil, fmt.Errorf("Failed to find parent (%v) for game (%v)", parent, id)
+		return nil, fmt.Errorf("failed to find parent (%v) for game (%v)", parent, id)
 	}
 	return files, nil
 }
