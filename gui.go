@@ -4,7 +4,9 @@ import (
 	_ "embed"
 	"fmt"
 	"image/color"
+	"log"
 	"os"
+	"runtime"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
@@ -89,7 +91,7 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	a.SetIcon(fyne.NewStaticResource("Icon", icon))
 
 	w := a.NewWindow("Steam Custom Cloud Uploads")
-	w.Resize(fyne.NewSize(800, 500))
+	w.Resize(fyne.NewSize(800, 600))
 	w.CenterOnScreen()
 
 	innerContainer := container.NewVBox()
@@ -129,11 +131,11 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 					}
 
 					del := widget.NewButton("Delete", func() {
-
+						log.Fatal("Not Implemented")
 					})
 
 					sync := widget.NewButton("Sync", func() {
-
+						log.Fatal("Not Implemented")
 					})
 					sync.Importance = widget.HighImportance
 
@@ -142,7 +144,6 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 						Bold: true,
 					}
 					cloudStatus.Alignment = fyne.TextAlignCenter
-
 					itemContainer := container.NewVBox(widget.NewLabel("Save File: "+v.Name),
 						widget.NewLabel("Date Modified: "+f.ModTime().String()),
 						cloudStatus,
@@ -154,7 +155,10 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 				}
 			}
 
-			innerContainer.Add(widget.NewAccordion(saveList...))
+			inn := widget.NewVBox(widget.NewAccordion(saveList...))
+			scroll := container.NewVScroll(inn)
+			scroll.SetMinSize(fyne.NewSize(500, 500))
+			innerContainer.Add(scroll)
 			plainContainer.Add(innerContainer)
 		}))
 	}
@@ -172,10 +176,8 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	})
 	syncAllButton := widget.NewButton("Sync All", func() {
 		ops.Gamenames = []string{}
-		for k, v := range syncMap {
-			if v {
-				ops.Gamenames = append(ops.Gamenames, k)
-			}
+		for k := range dm.GetGameDefMap() {
+			ops.Gamenames = append(ops.Gamenames, k)
 		}
 
 		fmt.Println(ops.Gamenames)
@@ -189,10 +191,16 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	vert := container.NewVScroll(container.NewVBox(vlist...))
 
 	hsplit := container.NewHSplit(vert, plainContainer)
-	hsplit.Offset = 0.2
+	hsplit.Offset = 0.10
 
 	cont := container.NewVSplit(horiz, hsplit)
-	cont.Offset = 0.1
+	cont.Offset = 0.05
+
+	// Work around for issue https://github.com/DavidDeSimone/CustomSteamCloudUploads/issues/16
+	if runtime.GOOS == "darwin" {
+		w.SetFixedSize(true)
+	}
+	w.SetMaster()
 
 	w.SetContent(cont)
 	w.ShowAndRun()
