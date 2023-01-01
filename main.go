@@ -292,7 +292,7 @@ func downloadOperation(srv *drive.Service, request SyncRequest, output chan Sync
 }
 
 func uploadOperation(srv *drive.Service, request SyncRequest, output chan SyncResponse) {
-	result, err := uploadFile(srv, request.FileId, request.Name, request.Dryrun)
+	result, err := uploadFile(srv, request.FileId, request.Path, request.Dryrun)
 	output <- SyncResponse{
 		Operation: Download,
 		Result:    result,
@@ -342,14 +342,14 @@ func downloadFile(srv *drive.Service, fileId string, fileName string, dryrun boo
 	return nil
 }
 
-func uploadFile(srv *drive.Service, fileId string, fileName string, dryrun bool) (string, error) {
-	LogVerbose("Local file is newer... uploading... ", fileName)
+func uploadFile(srv *drive.Service, fileId string, filePath string, dryrun bool) (string, error) {
+	LogVerbose("Local file is newer... uploading... ", filePath)
 	if dryrun {
-		fmt.Println("Dry-Run Uploading File (not actually uploading) to remote: ", fileName)
+		fmt.Println("Dry-Run Uploading File (not actually uploading) to remote: ", filePath)
 		return "", nil
 	}
 
-	osf, err := os.Open(fileName)
+	osf, err := os.Open(filePath)
 	if err != nil {
 		return "", err
 	}
@@ -435,8 +435,8 @@ func getFileHash(fileName string) (string, error) {
 func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[string]SyncFile, dryrun bool) error {
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
-	inputChannel := make(chan SyncRequest, 100)
-	outputChannel := make(chan SyncResponse, 100)
+	inputChannel := make(chan SyncRequest, 1000)
+	outputChannel := make(chan SyncResponse, 1000)
 	for i := 0; i < WORKER_POOL_SIZE; i++ {
 		go sync(srv, inputChannel, outputChannel)
 	}
@@ -610,7 +610,8 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			meta, ok := metadata.Files[file.Name]
 			if !ok {
 				// @TODO handle this more gracefully?
-				return fmt.Errorf("cloud upload with corrupt metadata entry for %s", file.Name)
+				LogVerbose(fmt.Errorf("cloud upload with corrupt metadata entry for %s", file.Name))
+				continue
 			}
 
 			f, err := os.Open(fullpath)
@@ -630,7 +631,12 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 				return err
 			}
 
-			LogVerbose("Comparing", file.Name, " (local/remote): ", newFileHash, ", ", meta.Sha256)
+			newFileHash, err = getFileHash(fullpath)
+			if err != nil {
+				return err
+			}
+
+			LogVerbose("Comparing", file.Name, " (remote): ", meta.Sha256)
 			if local_modtime.Equal(remote_modtime) || newFileHash == meta.Sha256 {
 				fmt.Println("Remote and local files in sync (id/mod timestamp) ", file.Id)
 			} else if local_modtime.After(remote_modtime) {
@@ -658,6 +664,9 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 
 	for pendingUploadDownload > 0 {
 		response := <-outputChannel
+		if response.Err != nil {
+			return response.Err
+		}
 		newModifiedTime := ""
 		if response.Operation == Upload {
 			newModifiedTime = response.Result

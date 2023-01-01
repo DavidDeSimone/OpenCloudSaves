@@ -87,11 +87,23 @@ func getDefaultGreen() color.Color {
 }
 
 func GuiMain(ops *Options, dm *GameDefManager) {
+	// The steam deck (likely due to it's DPI) has scaling issues with our current version of FYNE
+	// To make this smooth, we will scale the UI to make it look nice in gaming mode.
+	// Normal linux users can overwrite this.
+
+	// @TODO this makes the window look bad in game mode, needs more investigation
+	// Not using this in game mode makes the UI look great, but our mouse X/Y is limited to the upper right
+	// quadrant of the UI
+	// if runtime.GOOS == "linux" && os.Getenv("FYNE_SCALE") == "" {
+	// 	os.Setenv("FYNE_SCALE", "0.25")
+	// }
+
 	a := app.New()
 	a.SetIcon(fyne.NewStaticResource("Icon", icon))
 
 	w := a.NewWindow("Steam Custom Cloud Uploads")
-	w.Resize(fyne.NewSize(800, 600))
+	w.FullScreen()
+	// w.Resize(fyne.NewSize(800, 600))
 	w.CenterOnScreen()
 
 	innerContainer := container.NewVBox()
