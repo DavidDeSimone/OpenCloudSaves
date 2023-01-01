@@ -1,6 +1,7 @@
 {
     "factorio": {
         "display_name": "Factorio",
+        "steam_id": "427520",
         "win_path": [{"path": "%AppData%\\Factorio\\saves", "parent": "saves", "exts": [".zip"]}],
         "linux_path": [{"path": "~/.factorio/saves", "parent": "saves", "exts": [".zip"]}],
         "darwin_path":  [{"path": "~/Library/Application Support/factorio/saves", "parent": "saves", "exts": [".zip"]}],
@@ -8,6 +9,7 @@
     },
     "dwarf_fortress": {
         "display_name": "Dwarf Fortress",
+        "steam_id": "975370",
         "win_path": [{"path": "%STEAM%\\steamapps\\common\\Dwarf Fortress\\save", "parent": "save"}],
         "linux_path": [{"path": "%STEAM%/steamapps/common/Dwarf Fortress/save", "parent": "save"}],
         "darwin_path": [],
@@ -15,6 +17,7 @@
     },
     "city_skylines": {
         "display_name": "City Skylines",
+        "steam_id": "255710",
         "win_path": [{"path": "%LocalAppData%\\Colossal Order\\Cities_Skylines\\Saves", "parent": "saves", "exts": [".crp"]}],
         "linux_path": [{"path": "~/.local/share/Colossal Order/Cities_Skylines/Saves", "parent": "saves", "exts": [".crp"]}],
         "darwin_path": [{"path": "~/Library/Application Support/Colossal Order/Cities_Skylines/Saves", "parent": "saves", "exts": [".crp"]}],
