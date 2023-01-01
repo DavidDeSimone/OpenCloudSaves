@@ -191,7 +191,8 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 }
 
 type GameDefManager struct {
-	gamedefs map[string]GameDef
+	gamedefs      map[string]GameDef
+	userOverrides map[string]GameDef
 }
 
 func (d *GameDefManager) ApplyUserOverrides() error {
@@ -221,7 +222,38 @@ func (d *GameDefManager) ApplyUserOverrides() error {
 			log.Fatal(err)
 		}
 		d.gamedefs[k] = *def
+		d.userOverrides[k] = *def
 	}
+	return nil
+}
+
+func (d *GameDefManager) AddUserOverride(key string, jsonOverride string) error {
+	def := &GameDef{}
+	err := json.Unmarshal([]byte(jsonOverride), def)
+	if err != nil {
+		return err
+	}
+
+	d.gamedefs[key] = *def
+	d.userOverrides[key] = *def
+
+	newResult, err := json.Marshal(d.userOverrides)
+	if err != nil {
+		return err
+	}
+
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return err
+	}
+	separator := string(os.PathSeparator)
+
+	fileName := cacheDir + separator + APP_NAME + separator + "user_overrides.json"
+	err = os.WriteFile(fileName, newResult, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -231,7 +263,8 @@ func (d *GameDefManager) GetGameDefMap() map[string]GameDef {
 
 func MakeGameDefManager() *GameDefManager {
 	dm := &GameDefManager{
-		gamedefs: make(map[string]GameDef),
+		gamedefs:      make(map[string]GameDef),
+		userOverrides: make(map[string]GameDef),
 	}
 
 	mid := make(map[string]json.RawMessage)

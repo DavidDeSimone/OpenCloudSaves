@@ -103,7 +103,7 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 
 	w := a.NewWindow("Steam Custom Cloud Uploads")
 	w.FullScreen()
-	// w.Resize(fyne.NewSize(800, 600))
+	w.Resize(fyne.NewSize(800, 600))
 	w.CenterOnScreen()
 
 	innerContainer := container.NewVBox()

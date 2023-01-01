@@ -27,11 +27,12 @@ import (
 )
 
 type Options struct {
-	Verbose   []bool   `short:"v" long:"verbose" description:"Show verbose debug information"`
-	Gamenames []string `short:"g" long:"gamenames" description:"The name of the game(s) you will attempt to sync"`
-	Gamepath  []string `short:"p" long:"gamepath" description:"The path to your game"`
-	DryRun    []bool   `short:"d" long:"dry-run" description:"Run through the sync process without uploading/downloading from the cloud"`
-	NoGUI     []bool   `short:"u" long:"no-gui" description:"Shows a GUI to manage cloud uploads (if available)"`
+	Verbose        []bool            `short:"v" long:"verbose" description:"Show verbose debug information"`
+	Gamenames      []string          `short:"g" long:"gamenames" description:"The name of the game(s) you will attempt to sync"`
+	Gamepath       []string          `short:"p" long:"gamepath" description:"The path to your game"`
+	DryRun         []bool            `short:"d" long:"dry-run" description:"Run through the sync process without uploading/downloading from the cloud"`
+	NoGUI          []bool            `short:"u" long:"no-gui" description:"Run in CLI mode with no GUI"`
+	AddCustomGames map[string]string `short:"a" long:"add-custom-games" description:"<KEY>:<JSON_VALUE> Adds a custom game description to user_overrides.json. This accepts a JSON blobs in the format defined in gamedef_map.json"`
 }
 
 //go:embed credentials.json
@@ -835,6 +836,16 @@ func CliMain(ops *Options, dm *GameDefManager) {
 	verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
 	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
 	LogVerbose("Verbose logging enabled...")
+
+	addCustomGamesArgsLen := len(ops.AddCustomGames)
+	if addCustomGamesArgsLen > 0 {
+		for key, value := range ops.AddCustomGames {
+			dm.AddUserOverride(key, value)
+			LogVerbose("Added custom game... ", key)
+		}
+
+		return
+	}
 
 	srv := makeService()
 	saveFolderId := validateAndCreateParentFolder(srv)
