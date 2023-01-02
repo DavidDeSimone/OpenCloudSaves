@@ -66,92 +66,6 @@ func openbrowser(url string) {
 
 }
 
-// // Retrieve a token, saves the token, then returns the generated client.
-// func getClient(config *oauth2.Config) *http.Client {
-// 	// The file token.json stores the user's access and refresh tokens, and is
-// 	// created automatically when the authorization flow completes for the first
-// 	// time.
-// 	tokFile := "token.json"
-// 	tok, err := tokenFromFile(tokFile)
-// 	if err != nil {
-// 		tok = getTokenFromWeb(config)
-// 		saveToken(tokFile, tok)
-// 	}
-// 	return config.Client(context.Background(), tok)
-// }
-
-// // Request a token from the web, then returns the retrieved token.
-// func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
-// 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-// 	listener, err := net.Listen("tcp", DEFAULT_PORT)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	openbrowser(authURL)
-
-// 	var tok *oauth2.Token
-// 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-// 		w.Write([]byte("Success! You can safely close this tab."))
-// 		tok, err = config.Exchange(context.TODO(), r.FormValue("code"), oauth2.AccessTypeOffline)
-// 		listener.Close()
-// 	})
-
-// 	http.Serve(listener, nil)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-
-// 	return tok
-// }
-
-// // Retrieves a token from a local file.
-// func tokenFromFile(file string) (*oauth2.Token, error) {
-// 	f, err := os.Open(file)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer f.Close()
-// 	tok := &oauth2.Token{}
-// 	err = json.NewDecoder(f).Decode(tok)
-// 	return tok, err
-// }
-
-// // Saves a token to a file path.
-// func saveToken(path string, token *oauth2.Token) {
-// 	fmt.Printf("Saving credential file to: %s\n", path)
-// 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-// 	if err != nil {
-// 		log.Fatalf("Unable to cache oauth token: %v", err)
-// 	}
-// 	defer f.Close()
-// 	json.NewEncoder(f).Encode(token)
-// }
-
-// func makeService() *drive.Service {
-// 	ctx := context.Background()
-// 	b, err := creds.ReadFile("credentials.json")
-// 	if err != nil {
-// 		log.Fatalf("Unable to read client secret file: %v", err)
-// 	}
-
-// 	// If modifying these scopes, delete your previously saved token.json.
-// 	config, err := google.ConfigFromJSON(b, drive.DriveFileScope)
-// 	config.Endpoint = google.Endpoint
-// 	config.RedirectURL = fmt.Sprintf("http://localhost%v/", DEFAULT_PORT)
-// 	if err != nil {
-// 		log.Fatalf("Unable to parse client secret file to config: %v", err)
-// 	}
-// 	client := getClient(config)
-
-// 	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
-// 	if err != nil {
-// 		log.Fatalf("Unable to retrieve Drive client: %v", err)
-// 	}
-
-// 	return srv
-// }
-
 func validateAndCreateParentFolder(srv *drive.Service) string {
 	r, err := srv.Files.List().
 		Q("'root' in parents").
@@ -273,7 +187,14 @@ func sync(srv *drive.Service, input chan SyncRequest, output chan SyncResponse) 
 }
 
 func createOperation(srv *drive.Service, request SyncRequest, output chan SyncResponse) {
-	createFile(srv, request.ParentId, request.Name, request.Path, output)
+	result, err := createFile(srv, request.ParentId, request.Name, request.Path)
+	output <- SyncResponse{
+		Operation: Create,
+		Name:      request.Name,
+		Path:      request.Path,
+		Result:    result,
+		Err:       err,
+	}
 }
 
 func downloadOperation(srv *drive.Service, request SyncRequest, output chan SyncResponse) {
@@ -368,24 +289,16 @@ func uploadFile(srv *drive.Service, fileId string, filePath string, dryrun bool)
 	return modifiedAtTime, nil
 }
 
-func createFile(srv *drive.Service, parentId string, fileName string, filePath string, syncChan chan SyncResponse) {
+func createFile(srv *drive.Service, parentId string, fileName string, filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		syncChan <- SyncResponse{
-			Operation: Create,
-			Err:       err,
-		}
-		return
+		return "", err
 	}
 	defer file.Close()
 
 	stat, err := file.Stat()
 	if err != nil {
-		syncChan <- SyncResponse{
-			Operation: Create,
-			Err:       err,
-		}
-		return
+		return "", err
 	}
 
 	modtime := stat.ModTime().Format(time.RFC3339)
@@ -397,19 +310,10 @@ func createFile(srv *drive.Service, parentId string, fileName string, filePath s
 
 	_, err = srv.Files.Create(saveUpload).Media(file).Do()
 	if err != nil {
-		syncChan <- SyncResponse{
-			Operation: Create,
-			Err:       err,
-		}
-		return
+		return "", err
 	}
 
-	syncChan <- SyncResponse{
-		Operation: Create,
-		Name:      fileName,
-		Path:      filePath,
-		Result:    modtime,
-	}
+	return modtime, nil
 }
 
 func getFileHash(fileName string) (string, error) {

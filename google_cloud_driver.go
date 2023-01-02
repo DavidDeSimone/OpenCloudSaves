@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -36,7 +38,8 @@ func (f *GoogleCloudFile) GetModTime() string {
 }
 
 type GoogleCloudDriver struct {
-	srv *drive.Service
+	srv      *drive.Service
+	metaData *GameMetadata
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -125,8 +128,9 @@ func makeService() *drive.Service {
 	return srv
 }
 
-func (d *GoogleCloudDriver) InitDriver() error {
+func (d *GoogleCloudDriver) InitDriver(metaData *GameMetadata) error {
 	d.srv = makeService()
+	d.metaData = metaData
 	return nil
 }
 func (d *GoogleCloudDriver) ListFiles(parentId string) ([]CloudFile, error) {
@@ -264,4 +268,67 @@ func (d *GoogleCloudDriver) CreateFile(parentId string, fileName string, filePat
 		Id:      result.Id,
 		ModTime: modtime,
 	}, nil
+}
+
+func (d *GoogleCloudDriver) IsFileInSync(fileName string, filePath string, fileId string) (int, error) {
+	meta, ok := d.metaData.Files[fileName]
+	modifiedTime := ""
+	remoteFileHash := ""
+	if !ok {
+		result, err := d.srv.Files.Get(fileId).Fields("modifiedTime").Do()
+		if err != nil {
+			return NotFound, nil
+		}
+
+		res, err := d.srv.Files.Get(fileId).Download()
+		if err != nil {
+			return 0, err
+		}
+
+		defer res.Body.Close()
+
+		h := sha256.New()
+		if _, err := io.Copy(h, res.Body); err != nil {
+			log.Fatal(err)
+		}
+
+		if err != nil {
+			return 0, err
+		}
+
+		remoteFileHash = hex.EncodeToString(h.Sum(nil))
+		modifiedTime = result.ModifiedTime
+	} else {
+		modifiedTime = meta.LastModified
+		remoteFileHash = meta.Sha256
+	}
+	f, err := os.Open(filePath)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+
+	localfile, err := f.Stat()
+	if err != nil {
+		return 0, err
+	}
+
+	localModtime := localfile.ModTime()
+	remoteModtime, err := time.Parse(time.RFC3339, modifiedTime)
+	if err != nil {
+		return 0, err
+	}
+
+	localFileHash, err := getFileHash(filePath)
+	if err != nil {
+		return 0, err
+	}
+
+	if localModtime.Equal(remoteModtime) || remoteFileHash == localFileHash {
+		return InSync, nil
+	} else if remoteModtime.After(localModtime) {
+		return LocalNewer, nil
+	} else {
+		return RemoteNewer, nil
+	}
 }
