@@ -24,6 +24,8 @@ func makeButtonList(count int) []fyne.CanvasObject {
 	for i := 1; i <= count; i++ {
 		index := i // capture
 		items = append(items, widget.NewButton(fmt.Sprintf("Button %d", index), func() {
+			v := GetViewStack()
+			v.PopContent()
 			fmt.Println("Tapped", index)
 		}))
 	}
@@ -65,16 +67,11 @@ func makeSplitTab(_ fyne.Window) fyne.CanvasObject {
 }
 
 func openOptionsWindow() {
-	w := fyne.CurrentApp().NewWindow("Options")
-	w.SetContent(makeScrollTab(w))
-	w.Resize(fyne.NewSize(240, 180))
-
-	w.CenterOnScreen()
-	w.Show()
+	GetViewStack().PushContent(MakeOptionsScreen())
 }
 
-func manageGames() {
-
+func manageGames(dm *GameDefManager) {
+	GetViewStack().PushContent(MakeAddGamesScreen(dm))
 }
 
 func getDefaultGreen() color.Color {
@@ -195,7 +192,7 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 		fmt.Println(ops.Gamenames)
 		CliMain(ops, dm)
 	})
-	manageGamesButton := widget.NewButton("Manage Games", manageGames)
+	manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })
 	optionsButton := widget.NewButton("Options", openOptionsWindow)
 	hlist := []fyne.CanvasObject{syncAllButton, syncButton, manageGamesButton, optionsButton}
 	vlist := list
@@ -212,8 +209,11 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	if runtime.GOOS == "darwin" {
 		w.SetFixedSize(true)
 	}
-	w.SetMaster()
 
-	w.SetContent(cont)
+	v := GetViewStack()
+	v.SetMainWindow(w)
+	v.PushContent(cont)
+
+	// w.SetContent(cont)
 	w.ShowAndRun()
 }
