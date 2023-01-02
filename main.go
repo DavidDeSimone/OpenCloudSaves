@@ -27,6 +27,44 @@ type Options struct {
 	AddCustomGames map[string]string `short:"a" long:"add-custom-games" description:"<KEY>:<JSON_VALUE> Adds a custom game description to user_overrides.json. This accepts a JSON blobs in the format defined in gamedef_map.json"`
 }
 
+type FileMetadata struct {
+	Sha256         string `json:"sha256"`
+	LastModified   string `json:"lastmodified"`
+	Lastclientuuid string `json:"lastclientuuid"`
+	FileId         string `json:"fileid"`
+}
+
+type GameMetadata struct {
+	Version int                     `json:"version"`
+	Gameid  string                  `json:"gameid"`
+	Files   map[string]FileMetadata `json:"files"`
+	fileId  string
+}
+
+const (
+	Create = iota
+	Download
+	Upload
+)
+
+type SyncRequest struct {
+	Operation int
+	Name      string
+	Path      string
+	ParentId  string
+	FileId    string
+	Dryrun    bool
+}
+
+type SyncResponse struct {
+	Operation int
+	Result    string
+	Name      string
+	Path      string
+	FileId    string
+	Err       error
+}
+
 //go:embed credentials.json
 var creds embed.FS
 
@@ -122,42 +160,6 @@ func getClientUUID() (string, error) {
 	return result, nil
 }
 
-type FileMetadata struct {
-	Sha256         string `json:"sha256"`
-	LastModified   string `json:"lastmodified"`
-	Lastclientuuid string `json:"lastclientuuid"`
-}
-
-type GameMetadata struct {
-	Version int                     `json:"version"`
-	Gameid  string                  `json:"gameid"`
-	Files   map[string]FileMetadata `json:"files"`
-	fileId  string
-}
-
-const (
-	Create = iota
-	Download
-	Upload
-)
-
-type SyncRequest struct {
-	Operation int
-	Name      string
-	Path      string
-	ParentId  string
-	FileId    string
-	Dryrun    bool
-}
-
-type SyncResponse struct {
-	Operation int
-	Result    string
-	Name      string
-	Path      string
-	Err       error
-}
-
 func sync(srv CloudDriver, input chan SyncRequest, output chan SyncResponse) {
 	for {
 		request := <-input
@@ -175,8 +177,10 @@ func sync(srv CloudDriver, input chan SyncRequest, output chan SyncResponse) {
 func createOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse) {
 	result, err := srv.CreateFile(request.ParentId, request.Name, request.Path)
 	resultModtime := ""
+	resultFileId := ""
 	if result != nil {
 		resultModtime = result.GetModTime()
+		resultFileId = result.GetId()
 	}
 
 	output <- SyncResponse{
@@ -184,6 +188,7 @@ func createOperation(srv CloudDriver, request SyncRequest, output chan SyncRespo
 		Name:      request.Name,
 		Path:      request.Path,
 		Result:    resultModtime,
+		FileId:    resultFileId,
 		Err:       err,
 	}
 }
@@ -194,6 +199,7 @@ func downloadOperation(srv CloudDriver, request SyncRequest, output chan SyncRes
 		Operation: Download,
 		Name:      request.Name,
 		Path:      request.Path,
+		FileId:    request.FileId,
 		Err:       err,
 	}
 }
@@ -201,8 +207,10 @@ func downloadOperation(srv CloudDriver, request SyncRequest, output chan SyncRes
 func uploadOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse) {
 	result, err := srv.UploadFile(request.FileId, request.Path, request.Name) //uploadFile(srv, request.FileId, request.Path, request.Dryrun)
 	resultModtime := ""
+	resultFileId := ""
 	if result != nil {
 		resultModtime = result.GetModTime()
+		resultFileId = result.GetId()
 	}
 
 	output <- SyncResponse{
@@ -210,6 +218,7 @@ func uploadOperation(srv CloudDriver, request SyncRequest, output chan SyncRespo
 		Result:    resultModtime,
 		Name:      request.Name,
 		Path:      request.Path,
+		FileId:    resultFileId,
 		Err:       err,
 	}
 }
@@ -426,6 +435,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 				Sha256:         newFileHash,
 				LastModified:   newModifiedTime,
 				Lastclientuuid: clientuuid,
+				FileId:         response.FileId,
 			}
 		} else {
 			current.Lastclientuuid = clientuuid
@@ -486,6 +496,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 			Sha256:         filehash,
 			LastModified:   results.Result,
 			Lastclientuuid: clientuuid,
+			FileId:         results.FileId,
 		}
 
 		LogVerbose("Successfully uploaded save file ", results.Name)
