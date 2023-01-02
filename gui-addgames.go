@@ -65,7 +65,6 @@ func (g *GameCardContainer) makeCard(path []*Datapath, onRemove func(int, []*Dat
 			removeIdx := i
 			buttonSplit := widget.NewButton("Remove", func() {
 				onRemove(removeIdx, path)
-				// path = append(path[:removeIdx], path[removeIdx+1:]...)
 				entryPtr.Remove(innerPtr)
 			})
 			line := widget.NewHSplitContainer(textbox, buttonSplit)
@@ -152,9 +151,45 @@ func (g *GameCardContainer) makeDarwinCard() {
 	g.contentContainer.Add(g.darwinEntryContainer)
 }
 
+func (g *AddGamesContainer) makeGameCardEntry(k string, v *GameDef) *GameCardContainer {
+	entry := &GameCardContainer{
+		dm:  g.dm,
+		key: k,
+		def: v,
+	}
+
+	entry.displayNameEntry = makeTextEntry(v.DisplayName, func(s string) {
+		v.DisplayName = s
+	})
+	entry.displayNameBox = cont.NewHBox(widget.NewLabel("Display Name: "), entry.displayNameEntry)
+
+	entry.contentContainer = cont.NewVBox(entry.displayNameBox)
+	entry.makeWinCard()
+	entry.makeDarwinCard()
+	entry.makeLinuxCard()
+	entry.deleteEntryButton = widget.NewButton("Stop Tracking "+v.DisplayName, func() {
+		// @TODO show confirmation
+		g.contentAccordion.Remove(entry.accordionItem)
+		delete(g.dm.gamedefs, k)
+	})
+	entry.deleteEntryButton.Importance = widget.HighImportance
+	entry.contentContainer.Add(entry.deleteEntryButton)
+
+	entry.accordionItem = widget.NewAccordionItem(v.DisplayName, entry.contentContainer)
+	return entry
+}
+
 func (g *AddGamesContainer) makeAddGameButton() *widget.Button {
 	addGameButton := widget.NewButton("Add Game", func() {
+		key := "New Game"
+		value := &GameDef{
+			DisplayName: "New Game",
+		}
+		g.dm.gamedefs[key] = value
+		entry := g.makeGameCardEntry(key, value)
+		g.contentAccordion.Append(entry.accordionItem)
 	})
+
 	addGameButton.Importance = widget.HighImportance
 	return addGameButton
 }
@@ -165,6 +200,8 @@ func (g *AddGamesContainer) makeCloseButton() *widget.Button {
 		if err != nil {
 			fmt.Println(err)
 		}
+
+		GetMainMenu().Refresh()
 		GetViewStack().PopContent()
 	})
 	return closeButton
@@ -177,33 +214,8 @@ func MakeAddGamesScreen(dm *GameDefManager) fyne.CanvasObject {
 	}
 
 	gameList := make([]*widget.AccordionItem, 0)
-	for kiter, viter := range dm.GetGameDefMap() {
-		k, v := kiter, viter
-
-		entry := &GameCardContainer{
-			dm:  dm,
-			key: k,
-			def: v,
-		}
-
-		entry.displayNameEntry = makeTextEntry(v.DisplayName, func(s string) {
-			v.DisplayName = s
-		})
-		entry.displayNameBox = cont.NewHBox(widget.NewLabel("Display Name: "), entry.displayNameEntry)
-
-		entry.contentContainer = cont.NewVBox(entry.displayNameBox)
-		entry.makeWinCard()
-		entry.makeDarwinCard()
-		entry.makeLinuxCard()
-		entry.deleteEntryButton = widget.NewButton("Stop Tracking "+v.DisplayName, func() {
-			// @TODO show confirmation
-			// @TODO remove this entry from visual list
-			delete(dm.gamedefs, k)
-		})
-		entry.deleteEntryButton.Importance = widget.HighImportance
-		entry.contentContainer.Add(entry.deleteEntryButton)
-
-		entry.accordionItem = widget.NewAccordionItem(v.DisplayName, entry.contentContainer)
+	for k, v := range dm.GetGameDefMap() {
+		entry := gameScreen.makeGameCardEntry(k, v)
 		gameList = append(gameList, entry.accordionItem)
 	}
 

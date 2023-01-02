@@ -83,56 +83,65 @@ func getDefaultGreen() color.Color {
 	}
 }
 
-func GuiMain(ops *Options, dm *GameDefManager) {
-	// The steam deck (likely due to it's DPI) has scaling issues with our current version of FYNE
-	// To make this smooth, we will scale the UI to make it look nice in gaming mode.
-	// Normal linux users can overwrite this.
+var mainMenu *MainMenuContainer = nil
+var syncMap map[string]bool = make(map[string]bool)
 
-	// @TODO this makes the window look bad in game mode, needs more investigation
-	// Not using this in game mode makes the UI look great, but our mouse X/Y is limited to the upper right
-	// quadrant of the UI
-	// if runtime.GOOS == "linux" && os.Getenv("FYNE_SCALE") == "" {
-	// 	os.Setenv("FYNE_SCALE", "0.25")
-	// }
+func GetMainMenu() *MainMenuContainer {
+	if mainMenu == nil {
+		mainMenu = &MainMenuContainer{}
+	}
 
-	a := app.New()
-	a.SetIcon(fyne.NewStaticResource("Icon", icon))
+	return mainMenu
+}
 
-	w := a.NewWindow("Steam Custom Cloud Uploads")
-	w.FullScreen()
-	w.Resize(fyne.NewSize(800, 600))
-	w.CenterOnScreen()
+type MainMenuContainer struct {
+	dm *GameDefManager
 
-	innerContainer := container.NewVBox()
-	plainContainer := container.NewVBox(innerContainer)
+	rootContainer     *fyne.Container
+	rootVerticalSplit *widget.SplitContainer
+	menuBar           *widget.ScrollContainer
+
+	parentContainer *fyne.Container
+	innerContainer  *fyne.Container
+
+	verticalGameScroll *widget.ScrollContainer
+	horizSplit         *widget.SplitContainer
+}
+
+func (main *MainMenuContainer) RefreshGames() {
+	if main.parentContainer != nil {
+		main.parentContainer.Remove(main.innerContainer)
+	}
+
+	main.innerContainer = container.NewVBox()
+	main.parentContainer = container.NewVBox(main.innerContainer)
 
 	list := make([]fyne.CanvasObject, 0)
-	syncMap := make(map[string]bool)
-	for k, v := range dm.GetGameDefMap() {
+	for k, v := range main.dm.GetGameDefMap() {
 		key := k
 		list = append(list, widget.NewCheck(v.DisplayName, func(selected bool) {
 			syncMap[key] = selected
-			plainContainer.Remove(innerContainer)
+			main.parentContainer.Remove(main.innerContainer)
 
 			if !selected {
 				return
 			}
 
-			syncpaths, _ := dm.GetSyncpathForGame(key)
+			syncpaths, _ := main.dm.GetSyncpathForGame(key)
 
-			innerContainer = container.NewVBox()
+			main.innerContainer = container.NewVBox()
 
 			overallStatus := canvas.NewText("Status: Cloud in Sync", getDefaultGreen())
 			overallStatus.TextStyle = fyne.TextStyle{
 				Bold: true,
 			}
 			overallStatus.Alignment = fyne.TextAlignCenter
-			innerContainer.Add(overallStatus)
+			main.innerContainer.Add(overallStatus)
 
 			saveList := make([]*widget.AccordionItem, 0)
 
 			for _, syncpath := range syncpaths {
-				files, _ := dm.GetFilesForGame(key, syncpath.Parent)
+				files, _ := main.dm.GetFilesForGame(key, syncpath.Parent)
 				for k, v := range files {
 					f, err := os.Stat(v.Name)
 					if err != nil {
@@ -167,10 +176,57 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 			inn := widget.NewVBox(widget.NewAccordion(saveList...))
 			scroll := container.NewVScroll(inn)
 			scroll.SetMinSize(fyne.NewSize(500, 500))
-			innerContainer.Add(scroll)
-			plainContainer.Add(innerContainer)
+			main.innerContainer.Add(scroll)
+			main.parentContainer.Add(main.innerContainer)
 		}))
 	}
+
+	main.verticalGameScroll = container.NewVScroll(container.NewVBox(list...))
+}
+
+func (main *MainMenuContainer) RefreshRootView() {
+	if main.rootContainer != nil {
+		main.rootContainer.Remove(main.rootVerticalSplit)
+	}
+
+	main.horizSplit = container.NewHSplit(main.verticalGameScroll, main.parentContainer)
+	main.horizSplit.Offset = 0.10
+
+	main.rootVerticalSplit = container.NewVSplit(main.menuBar, main.horizSplit)
+	main.rootVerticalSplit.Offset = 0.05
+
+	GetViewStack().SwapRoot(main.rootVerticalSplit)
+}
+
+func (main *MainMenuContainer) Refresh() {
+	main.RefreshGames()
+	main.RefreshRootView()
+}
+
+func GuiMain(ops *Options, dm *GameDefManager) {
+	// The steam deck (likely due to it's DPI) has scaling issues with our current version of FYNE
+	// To make this smooth, we will scale the UI to make it look nice in gaming mode.
+	// Normal linux users can overwrite this.
+
+	// @TODO this makes the window look bad in game mode, needs more investigation
+	// Not using this in game mode makes the UI look great, but our mouse X/Y is limited to the upper right
+	// quadrant of the UI
+	// if runtime.GOOS == "linux" && os.Getenv("FYNE_SCALE") == "" {
+	// 	os.Setenv("FYNE_SCALE", "0.25")
+	// }
+
+	a := app.New()
+	a.SetIcon(fyne.NewStaticResource("Icon", icon))
+
+	w := a.NewWindow("Steam Custom Cloud Uploads")
+	w.FullScreen()
+	w.Resize(fyne.NewSize(800, 600))
+	w.CenterOnScreen()
+
+	main := GetMainMenu()
+	main.dm = dm
+
+	main.RefreshGames()
 
 	syncButton := widget.NewButton("Sync Selected", func() {
 		ops.Gamenames = []string{}
@@ -195,15 +251,9 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })
 	optionsButton := widget.NewButton("Options", openOptionsWindow)
 	hlist := []fyne.CanvasObject{syncAllButton, syncButton, manageGamesButton, optionsButton}
-	vlist := list
-	horiz := container.NewHScroll(container.NewHBox(hlist...))
-	vert := container.NewVScroll(container.NewVBox(vlist...))
+	main.menuBar = container.NewHScroll(container.NewHBox(hlist...))
 
-	hsplit := container.NewHSplit(vert, plainContainer)
-	hsplit.Offset = 0.10
-
-	cont := container.NewVSplit(horiz, hsplit)
-	cont.Offset = 0.05
+	main.RefreshRootView()
 
 	// Work around for issue https://github.com/DavidDeSimone/CustomSteamCloudUploads/issues/16
 	if runtime.GOOS == "darwin" {
@@ -212,7 +262,7 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 
 	v := GetViewStack()
 	v.SetMainWindow(w)
-	v.PushContent(cont)
+	v.PushContent(main.rootVerticalSplit)
 
 	w.SetCloseIntercept(func() {
 		dm.CommitUserOverrides()

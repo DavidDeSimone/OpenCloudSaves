@@ -55,6 +55,12 @@ func (v *ViewStack) PushContent(content fyne.CanvasObject) {
 	v.rootWindow.SetContent(content)
 }
 
+func (v *ViewStack) SwapRoot(content fyne.CanvasObject) {
+	if len(v.viewStack) > 0 {
+		v.viewStack[0] = content
+	}
+}
+
 func (v *ViewStack) PopContent() {
 	if len(v.viewStack) == 1 {
 		fmt.Println("Attempting to pop from root view.")
