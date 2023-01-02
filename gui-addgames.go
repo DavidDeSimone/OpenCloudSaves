@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+
 	"fyne.io/fyne"
+	cont "fyne.io/fyne/container"
 	"fyne.io/fyne/widget"
 )
 
@@ -25,21 +28,20 @@ func MakeAddGamesScreen(dm *GameDefManager) fyne.CanvasObject {
 		)
 
 		if len(v.WinPath) > 0 {
-			pathLabel := widget.NewLabel("Windows")
-			pathLabel.Alignment = fyne.TextAlignCenter
-			pathLabel.TextStyle = fyne.TextStyle{
-				Bold: true,
-			}
-			innerContainer.Append(pathLabel)
+			entryContainer := cont.NewVBox()
+			cardContainer := cont.NewVBox(entryContainer)
 
 			for _, n := range v.WinPath {
 				textbox := makeTextEntry(n.Path, func(s string) {})
 
-				buttonSplit := widget.NewHSplitContainer(widget.NewButton("Copy", func() {}), widget.NewButton("Open", func() {}))
+				c, e := cardContainer, entryContainer
+				buttonSplit := widget.NewHSplitContainer(widget.NewButton("Remove", func() {
+					c.Remove(e)
+				}), widget.NewButton("Open", func() {}))
 				line := widget.NewHSplitContainer(textbox, buttonSplit)
 				line.Offset = 0.8
 
-				innerContainer.Append(line)
+				entryContainer.Add(line)
 				exts := ""
 				for i, e := range n.Exts {
 					exts += e
@@ -48,11 +50,17 @@ func MakeAddGamesScreen(dm *GameDefManager) fyne.CanvasObject {
 					}
 				}
 
-				extsEntry := makeTextEntry(exts, func(s string) {})
-				innerContainer.Append(widget.NewHBox(widget.NewLabel("Exts: "), extsEntry))
-				innerContainer.Append(widget.NewButton("Add Windows Path", func() {}))
+				extsEntry := makeTextEntry(exts, func(s string) { fmt.Println(s) })
+				entryContainer.Add(widget.NewHBox(widget.NewLabel("Exts: "), extsEntry))
 			}
+
+			cardContainer.Add(widget.NewButton("Add Windows Path", func() {}))
+			innerContainer.Append(widget.NewCard("Windows", "", cardContainer))
 		}
+
+		deleteEntryButton := widget.NewButton("Stop Tracking "+v.DisplayName, func() {})
+		deleteEntryButton.Importance = widget.HighImportance
+		innerContainer.Append(deleteEntryButton)
 
 		newItem := widget.NewAccordionItem(k, innerContainer)
 		gameList = append(gameList, newItem)
@@ -64,8 +72,10 @@ func MakeAddGamesScreen(dm *GameDefManager) fyne.CanvasObject {
 	scroll := widget.NewVScrollContainer(container)
 
 	buttonContainer := widget.NewVBox()
-	buttonContainer.Append(widget.NewButton("Add Game", func() {
-	}))
+	addGameButton := widget.NewButton("Add Game", func() {
+	})
+	addGameButton.Importance = widget.HighImportance
+	buttonContainer.Append(addGameButton)
 	buttonContainer.Append(widget.NewVBox(widget.NewButton("Close", func() {
 		GetViewStack().PopContent()
 	})))
