@@ -38,8 +38,7 @@ func (f *GoogleCloudFile) GetModTime() string {
 }
 
 type GoogleCloudDriver struct {
-	srv      *drive.Service
-	metaData *GameMetadata
+	srv *drive.Service
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -128,9 +127,8 @@ func makeService() *drive.Service {
 	return srv
 }
 
-func (d *GoogleCloudDriver) InitDriver(metaData *GameMetadata) error {
+func (d *GoogleCloudDriver) InitDriver() error {
 	d.srv = makeService()
-	d.metaData = metaData
 	return nil
 }
 func (d *GoogleCloudDriver) ListFiles(parentId string) ([]CloudFile, error) {
@@ -270,8 +268,73 @@ func (d *GoogleCloudDriver) CreateFile(parentId string, fileName string, filePat
 	}, nil
 }
 
-func (d *GoogleCloudDriver) IsFileInSync(fileName string, filePath string, fileId string) (int, error) {
-	meta, ok := d.metaData.Files[fileName]
+func (d *GoogleCloudDriver) GetMetaData(parentId string, fileName string) (*GameMetadata, error) {
+	r, err := d.srv.Files.List().
+		Q(fmt.Sprintf("'%v' in parents", parentId)).
+		Fields("nextPageToken, files(id, name)").
+		Do()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var metadata *GameMetadata = nil
+	for _, file := range r.Files {
+		if file.Name == fileName {
+			res, err := d.srv.Files.Get(file.Id).Download()
+			if err != nil {
+				return nil, err
+			}
+			defer res.Body.Close()
+
+			bytes, err := io.ReadAll(res.Body)
+			if err != nil {
+				return nil, err
+			}
+
+			metadata = &GameMetadata{}
+			err = json.Unmarshal(bytes, metadata)
+			if err != nil {
+				return nil, err
+			}
+			metadata.fileId = file.Id
+			break
+		}
+	}
+
+	return metadata, nil
+}
+
+func (d *GoogleCloudDriver) UpdateMetaData(parentId string, fileName string, filePath string, metaData *GameMetadata) error {
+	mf, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+
+	defer mf.Close()
+
+	metaUpload := &drive.File{
+		Name: fileName,
+	}
+
+	if metaData.fileId == "" {
+		metaUpload.Parents = []string{parentId}
+		_, err = d.srv.Files.Create(metaUpload).Media(mf).Do()
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err = d.srv.Files.Update(metaData.fileId, metaUpload).Do()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (d *GoogleCloudDriver) IsFileInSync(fileName string, filePath string, fileId string, parentId string, metaData *GameMetadata) (int, error) {
+	meta, ok := metaData.Files[fileName]
 	modifiedTime := ""
 	remoteFileHash := ""
 	if !ok {

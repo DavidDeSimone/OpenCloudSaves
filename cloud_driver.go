@@ -14,11 +14,13 @@ const (
 )
 
 type CloudDriver interface {
-	InitDriver(metaData *GameMetadata) error
+	InitDriver() error
 	ListFiles(parentId string) ([]CloudFile, error)
 	CreateDir(name string, parentId string) (CloudFile, error)
 	DownloadFile(fileId string, fileName string) error
 	UploadFile(fileId string, filePath string, fileName string) (CloudFile, error)
 	CreateFile(fileName string, filePath string, parentId string) (CloudFile, error)
-	IsFileInSync(fileName string, filePath string, fileId string) (int, error)
+	IsFileInSync(fileName string, filePath string, fileId string, metaData *GameMetadata) (int, error)
+	GetMetaData(parentId string, fileName string) (*GameMetadata, error)
+	UpdateMetaData(parentId string, fileName string, filePath string, metaData *GameMetadata) error
 }

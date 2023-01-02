@@ -147,6 +147,7 @@ type GameMetadata struct {
 	Version int                     `json:"version"`
 	Gameid  string                  `json:"gameid"`
 	Files   map[string]FileMetadata `json:"files"`
+	fileId  string
 }
 
 const (
@@ -380,6 +381,10 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 		}
 	}
 
+	clientuuid, err := getClientUUID()
+	if err != nil {
+		return err
+	}
 	LogVerbose("Querying from parent ", parentId)
 	// 1. Query current files on cloud:
 	r, err := srv.Files.List().
@@ -387,11 +392,6 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 		Fields("nextPageToken, files(id, name)").
 		Do()
 
-	if err != nil {
-		return err
-	}
-
-	clientuuid, err := getClientUUID()
 	if err != nil {
 		return err
 	}
@@ -744,6 +744,9 @@ func CliMain(ops *Options, dm *GameDefManager) {
 
 		return
 	}
+
+	gsrv := &GoogleCloudDriver{}
+	gsrv.InitDriver()
 
 	srv := makeService()
 	saveFolderId := validateAndCreateParentFolder(srv)
