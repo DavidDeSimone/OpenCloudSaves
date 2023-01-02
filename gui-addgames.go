@@ -10,7 +10,33 @@ import (
 	"fyne.io/fyne/widget"
 )
 
-// @TODO encapsulate this into a class now that the format is more solidified
+type AddGamesContainer struct {
+	dm               *GameDefManager
+	verticalSplit    *widget.SplitContainer
+	scroll           *widget.ScrollContainer
+	scrollContent    *fyne.Container
+	buttonContainer  *fyne.Container
+	contentAccordion *widget.Accordion
+}
+
+type GameCardContainer struct {
+	dm            *GameDefManager
+	root          *fyne.Container
+	accordionItem *widget.AccordionItem
+
+	displayNameBox   *fyne.Container
+	displayNameEntry *widget.Entry
+
+	contentContainer     *fyne.Container
+	winEntryContainer    *fyne.Container
+	darwinEntryContainer *fyne.Container
+	linuxEntryContainer  *fyne.Container
+
+	deleteEntryButton *widget.Button
+
+	key string
+	def *GameDef
+}
 
 func makeTextEntry(text string, callback func(s string)) *widget.Entry {
 	entry := widget.NewEntry()
@@ -19,12 +45,13 @@ func makeTextEntry(text string, callback func(s string)) *widget.Entry {
 	return entry
 }
 
-func drawWindowsCard(winEntryContainer *fyne.Container, winCardContainer *fyne.Container, v *GameDef) *fyne.Container {
+func (g *GameCardContainer) makeCard(path []*Datapath, onRemove func(int, []*Datapath)) *fyne.Container {
+	parent := cont.NewVBox()
 	innerEntry := cont.NewVBox()
-	winEntryContainer.Add(innerEntry)
-	if len(v.WinPath) > 0 {
+	parent.Add(innerEntry)
+	if len(path) > 0 {
 
-		for i, n := range v.WinPath {
+		for i, n := range path {
 			textbox := makeTextEntry(n.Path, func(s string) {
 				separator := os.PathSeparator
 				n.Path = s
@@ -34,10 +61,11 @@ func drawWindowsCard(winEntryContainer *fyne.Container, winCardContainer *fyne.C
 				fmt.Printf("Updated %v with values %v\n", n.Path, n.Parent)
 			})
 
-			entryPtr, innerPtr := winEntryContainer, innerEntry
+			entryPtr, innerPtr := parent, innerEntry
 			removeIdx := i
 			buttonSplit := widget.NewButton("Remove", func() {
-				v.WinPath = append(v.WinPath[:removeIdx], v.WinPath[removeIdx+1:]...)
+				onRemove(removeIdx, path)
+				// path = append(path[:removeIdx], path[removeIdx+1:]...)
 				entryPtr.Remove(innerPtr)
 			})
 			line := widget.NewHSplitContainer(textbox, buttonSplit)
@@ -63,68 +91,133 @@ func drawWindowsCard(winEntryContainer *fyne.Container, winCardContainer *fyne.C
 		}
 	}
 
-	return winEntryContainer
+	return parent
 }
 
-func MakeAddGamesScreen(dm *GameDefManager) fyne.CanvasObject {
-	container := widget.NewVBox()
+func removeInx(i int, path []*Datapath) []*Datapath {
+	return append(path[:i], path[i+1:]...)
+}
 
-	gameList := make([]*widget.AccordionItem, 0)
-	for kiter, viter := range dm.GetGameDefMap() {
-		k, v := kiter, viter
-		displayNameEntry := makeTextEntry(v.DisplayName, func(s string) {
-			v.DisplayName = s
-		})
-		displayNameBox := widget.NewHBox(widget.NewLabel("Display Name: "), displayNameEntry)
+func (g *GameCardContainer) makeWinCard() {
+	g.winEntryContainer = cont.NewVBox()
 
-		innerContainer := widget.NewVBox(
-			displayNameBox,
-		)
-
-		winEntryContainer := cont.NewVBox()
-		winCardContainer := cont.NewVBox(winEntryContainer)
-		winUpperContainer := cont.NewVBox(winCardContainer)
-		drawWindowsCard(winEntryContainer, winCardContainer, v)
-		winUpperContainer.Add(widget.NewButton("Add Windows Path", func() {
-			winCardContainer.Remove(winEntryContainer)
-			winEntryContainer = cont.NewVBox()
-			winCardContainer.Add(winEntryContainer)
-			v.WinPath = append(v.WinPath, &Datapath{})
-			drawWindowsCard(winEntryContainer, winCardContainer, v)
-		}))
-
-		innerContainer.Append(widget.NewCard("Windows", "", winUpperContainer))
-		deleteEntryButton := widget.NewButton("Stop Tracking "+v.DisplayName, func() {
-			// @TODO show confirmation
-			// @TODO remove this entry from visual list
-			delete(dm.gamedefs, k)
-		})
-		deleteEntryButton.Importance = widget.HighImportance
-		innerContainer.Append(deleteEntryButton)
-
-		newItem := widget.NewAccordionItem(v.DisplayName, innerContainer)
-		gameList = append(gameList, newItem)
+	winRemoveFunc := func(i int, d []*Datapath) {
+		g.def.WinPath = removeInx(i, d)
 	}
 
-	accordion := widget.NewAccordionContainer(gameList...)
-	accordion.MultiOpen = true
-	container.Append(accordion)
-	scroll := widget.NewVScrollContainer(container)
+	winParent := g.makeCard(g.def.WinPath, winRemoveFunc)
+	winParent.Add(widget.NewButton("Add Windows Path", func() {
+		g.winEntryContainer.Remove(winParent)
+		g.def.WinPath = append(g.def.WinPath, &Datapath{})
+		g.winEntryContainer.Add(g.makeCard(g.def.WinPath, winRemoveFunc))
+	}))
 
-	buttonContainer := widget.NewVBox()
+	g.winEntryContainer.Add(widget.NewCard("Windows", "", winParent))
+	g.contentContainer.Add(g.winEntryContainer)
+}
+
+func (g *GameCardContainer) makeLinuxCard() {
+	g.linuxEntryContainer = cont.NewVBox()
+
+	linuxRemoveFunc := func(i int, d []*Datapath) {
+		g.def.LinuxPath = removeInx(i, d)
+	}
+
+	linuxParent := g.makeCard(g.def.LinuxPath, linuxRemoveFunc)
+	linuxParent.Add(widget.NewButton("Add Linux Path", func() {
+		g.linuxEntryContainer.Remove(linuxParent)
+		g.def.LinuxPath = append(g.def.LinuxPath, &Datapath{})
+		g.linuxEntryContainer.Add(g.makeCard(g.def.LinuxPath, linuxRemoveFunc))
+	}))
+
+	g.linuxEntryContainer.Add(widget.NewCard("Linux", "", linuxParent))
+	g.contentContainer.Add(g.linuxEntryContainer)
+}
+
+func (g *GameCardContainer) makeDarwinCard() {
+	g.darwinEntryContainer = cont.NewVBox()
+
+	darwinRemoveFunc := func(i int, d []*Datapath) {
+		g.def.DarwinPath = removeInx(i, d)
+	}
+
+	darwinParent := g.makeCard(g.def.DarwinPath, darwinRemoveFunc)
+	darwinParent.Add(widget.NewButton("Add MacOS Path", func() {
+		g.darwinEntryContainer.Remove(darwinParent)
+		g.def.DarwinPath = append(g.def.DarwinPath, &Datapath{})
+		g.darwinEntryContainer.Add(g.makeCard(g.def.DarwinPath, darwinRemoveFunc))
+	}))
+
+	g.darwinEntryContainer.Add(widget.NewCard("MacOS", "", darwinParent))
+	g.contentContainer.Add(g.darwinEntryContainer)
+}
+
+func (g *AddGamesContainer) makeAddGameButton() *widget.Button {
 	addGameButton := widget.NewButton("Add Game", func() {
 	})
 	addGameButton.Importance = widget.HighImportance
-	buttonContainer.Append(addGameButton)
-	buttonContainer.Append(widget.NewVBox(widget.NewButton("Close", func() {
-		err := dm.CommitUserOverrides()
+	return addGameButton
+}
+
+func (g *AddGamesContainer) makeCloseButton() *widget.Button {
+	closeButton := widget.NewButton("Close", func() {
+		err := g.dm.CommitUserOverrides()
 		if err != nil {
 			fmt.Println(err)
 		}
 		GetViewStack().PopContent()
-	})))
+	})
+	return closeButton
+}
 
-	vsplit := widget.NewVSplitContainer(scroll, buttonContainer)
-	vsplit.Offset = 0.85
-	return vsplit
+func MakeAddGamesScreen(dm *GameDefManager) fyne.CanvasObject {
+	gameScreen := &AddGamesContainer{
+		dm:            dm,
+		scrollContent: cont.NewVBox(),
+	}
+
+	gameList := make([]*widget.AccordionItem, 0)
+	for kiter, viter := range dm.GetGameDefMap() {
+		k, v := kiter, viter
+
+		entry := &GameCardContainer{
+			dm:  dm,
+			key: k,
+			def: v,
+		}
+
+		entry.displayNameEntry = makeTextEntry(v.DisplayName, func(s string) {
+			v.DisplayName = s
+		})
+		entry.displayNameBox = cont.NewHBox(widget.NewLabel("Display Name: "), entry.displayNameEntry)
+
+		entry.contentContainer = cont.NewVBox(entry.displayNameBox)
+		entry.makeWinCard()
+		entry.makeDarwinCard()
+		entry.makeLinuxCard()
+		entry.deleteEntryButton = widget.NewButton("Stop Tracking "+v.DisplayName, func() {
+			// @TODO show confirmation
+			// @TODO remove this entry from visual list
+			delete(dm.gamedefs, k)
+		})
+		entry.deleteEntryButton.Importance = widget.HighImportance
+		entry.contentContainer.Add(entry.deleteEntryButton)
+
+		entry.accordionItem = widget.NewAccordionItem(v.DisplayName, entry.contentContainer)
+		gameList = append(gameList, entry.accordionItem)
+	}
+
+	gameScreen.contentAccordion = widget.NewAccordion(gameList...)
+	gameScreen.contentAccordion.MultiOpen = true
+	gameScreen.scrollContent.Add(gameScreen.contentAccordion)
+	gameScreen.scroll = cont.NewVScroll(gameScreen.scrollContent)
+
+	gameScreen.buttonContainer = cont.NewVBox()
+
+	gameScreen.buttonContainer.Add(gameScreen.makeAddGameButton())
+	gameScreen.buttonContainer.Add(gameScreen.makeCloseButton())
+
+	gameScreen.verticalSplit = cont.NewVSplit(gameScreen.scroll, gameScreen.buttonContainer)
+	gameScreen.verticalSplit.Offset = 0.85
+	return gameScreen.verticalSplit
 }
