@@ -12,59 +12,11 @@ import (
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/canvas"
 	"fyne.io/fyne/container"
-	"fyne.io/fyne/theme"
 	"fyne.io/fyne/widget"
 )
 
 //go:embed icon.jpg
 var icon []byte
-
-func makeButtonList(count int) []fyne.CanvasObject {
-	var items []fyne.CanvasObject
-	for i := 1; i <= count; i++ {
-		index := i // capture
-		items = append(items, widget.NewButton(fmt.Sprintf("Button %d", index), func() {
-			v := GetViewStack()
-			v.PopContent()
-			fmt.Println("Tapped", index)
-		}))
-	}
-
-	return items
-}
-
-func makeScrollTab(_ fyne.Window) fyne.CanvasObject {
-	hlist := makeButtonList(20)
-	vlist := makeButtonList(50)
-
-	horiz := container.NewHScroll(container.NewHBox(hlist...))
-	vert := container.NewVScroll(container.NewVBox(vlist...))
-
-	return container.NewAdaptiveGrid(2,
-		container.NewBorder(horiz, nil, nil, nil, vert),
-		makeScrollBothTab())
-}
-
-func makeScrollBothTab() fyne.CanvasObject {
-	logo := canvas.NewImageFromResource(theme.FyneLogo())
-	logo.SetMinSize(fyne.NewSize(800, 800))
-
-	scroll := container.NewScroll(logo)
-	scroll.Resize(fyne.NewSize(400, 400))
-
-	return scroll
-}
-
-func makeSplitTab(_ fyne.Window) fyne.CanvasObject {
-	left := widget.NewMultiLineEntry()
-	left.Wrapping = fyne.TextWrapWord
-	left.SetText("Long text is looooooooooooooong")
-	right := container.NewVSplit(
-		widget.NewLabel("Label"),
-		widget.NewButton("Button", func() { fmt.Println("button tapped!") }),
-	)
-	return container.NewHSplit(container.NewVScroll(left), right)
-}
 
 func openOptionsWindow() {
 	GetViewStack().PushContent(MakeOptionsScreen())
