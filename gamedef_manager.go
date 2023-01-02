@@ -22,12 +22,12 @@ type Datapath struct {
 
 // @TODO better utilize saves_cross_compatible to split saves between platforms
 type GameDef struct {
-	DisplayName          string     `json:"display_name"`
-	SteamId              string     `json:"steam_id"`
-	WinPath              []Datapath `json:"win_path"`
-	LinuxPath            []Datapath `json:"linux_path"`
-	DarwinPath           []Datapath `json:"darwin_path"`
-	SavesCrossCompatible bool       `json:"saves_cross_compatible"`
+	DisplayName          string      `json:"display_name"`
+	SteamId              string      `json:"steam_id"`
+	WinPath              []*Datapath `json:"win_path"`
+	LinuxPath            []*Datapath `json:"linux_path"`
+	DarwinPath           []*Datapath `json:"darwin_path"`
+	SavesCrossCompatible bool        `json:"saves_cross_compatible"`
 }
 
 type SyncFile struct {
@@ -191,8 +191,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 }
 
 type GameDefManager struct {
-	gamedefs      map[string]GameDef
-	userOverrides map[string]GameDef
+	gamedefs map[string]*GameDef
 }
 
 func (d *GameDefManager) ApplyUserOverrides() error {
@@ -221,23 +220,13 @@ func (d *GameDefManager) ApplyUserOverrides() error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		d.gamedefs[k] = *def
-		d.userOverrides[k] = *def
+		d.gamedefs[k] = def
 	}
 	return nil
 }
 
-func (d *GameDefManager) AddUserOverride(key string, jsonOverride string) error {
-	def := &GameDef{}
-	err := json.Unmarshal([]byte(jsonOverride), def)
-	if err != nil {
-		return err
-	}
-
-	d.gamedefs[key] = *def
-	d.userOverrides[key] = *def
-
-	newResult, err := json.Marshal(d.userOverrides)
+func (d *GameDefManager) CommitUserOverrides() error {
+	newResult, err := json.Marshal(d.gamedefs)
 	if err != nil {
 		return err
 	}
@@ -257,14 +246,30 @@ func (d *GameDefManager) AddUserOverride(key string, jsonOverride string) error 
 	return nil
 }
 
-func (d *GameDefManager) GetGameDefMap() map[string]GameDef {
+func (d *GameDefManager) AddUserOverride(key string, jsonOverride string) error {
+	def := &GameDef{}
+	err := json.Unmarshal([]byte(jsonOverride), def)
+	if err != nil {
+		return err
+	}
+
+	d.gamedefs[key] = def
+
+	return d.CommitUserOverrides()
+}
+
+func (d *GameDefManager) AddUserOverrideWithGameDef(key string, jsonOverride GameDef) error {
+
+	return nil
+}
+
+func (d *GameDefManager) GetGameDefMap() map[string]*GameDef {
 	return d.gamedefs
 }
 
 func MakeGameDefManager() *GameDefManager {
 	dm := &GameDefManager{
-		gamedefs:      make(map[string]GameDef),
-		userOverrides: make(map[string]GameDef),
+		gamedefs: make(map[string]*GameDef),
 	}
 
 	mid := make(map[string]json.RawMessage)
@@ -279,7 +284,7 @@ func MakeGameDefManager() *GameDefManager {
 		if err != nil {
 			log.Fatal(err)
 		}
-		dm.gamedefs[k] = *d
+		dm.gamedefs[k] = d
 	}
 
 	LogVerbose(dm.gamedefs)

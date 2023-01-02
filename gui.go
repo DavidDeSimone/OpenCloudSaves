@@ -214,6 +214,10 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	v.SetMainWindow(w)
 	v.PushContent(cont)
 
+	w.SetCloseIntercept(func() {
+		dm.CommitUserOverrides()
+		os.Exit(0)
+	})
 	// w.SetContent(cont)
 	w.ShowAndRun()
 }
