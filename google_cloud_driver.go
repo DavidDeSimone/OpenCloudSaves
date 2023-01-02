@@ -333,7 +333,11 @@ func (d *GoogleCloudDriver) UpdateMetaData(parentId string, fileName string, fil
 	return nil
 }
 
-func (d *GoogleCloudDriver) IsFileInSync(fileName string, filePath string, fileId string, parentId string, metaData *GameMetadata) (int, error) {
+func (d *GoogleCloudDriver) DeleteFile(fileId string) error {
+	return d.srv.Files.Delete(fileId).Do()
+}
+
+func (d *GoogleCloudDriver) IsFileInSync(fileName string, filePath string, fileId string, metaData *GameMetadata) (int, error) {
 	meta, ok := metaData.Files[fileName]
 	modifiedTime := ""
 	remoteFileHash := ""

@@ -13,11 +13,9 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jessevdk/go-flags"
-	"google.golang.org/api/drive/v3"
 )
 
 type Options struct {
@@ -66,44 +64,31 @@ func openbrowser(url string) {
 
 }
 
-func validateAndCreateParentFolder(srv *drive.Service) string {
-	r, err := srv.Files.List().
-		Q("'root' in parents").
-		Fields("nextPageToken, files(id, name)").
-		Do()
+func validateAndCreateParentFolder(srv CloudDriver) (string, error) {
+	files, err := srv.ListFiles("root")
 	if err != nil {
-		log.Fatalf("Unable to retrieve files: %v", err)
+		return "", err
 	}
 
 	createSaveFolder := true
-	var saveFolderId string
-	if len(r.Files) == 0 {
-		fmt.Println("No files found.")
-	} else {
-		for _, i := range r.Files {
-			if i.Name == SAVE_FOLDER {
-				createSaveFolder = false
-				saveFolderId = i.Id
-			}
-			fmt.Printf("%s (%s) (%s)\n", i.Name, i.Id, i.ModifiedByMeTime)
+	saveFolderFileId := ""
+	for _, f := range files {
+		if f.GetName() == SAVE_FOLDER {
+			createSaveFolder = false
+			saveFolderFileId = f.GetId()
+			break
 		}
 	}
 
 	if createSaveFolder {
-		f := &drive.File{
-			Name:     SAVE_FOLDER,
-			MimeType: "application/vnd.google-apps.folder",
-		}
-
-		LogVerbose("Creating steamsaves folder....")
-		x, err := srv.Files.Create(f).Do()
-		saveFolderId = x.Id
+		result, err := srv.CreateDir(SAVE_FOLDER, "root")
 		if err != nil {
-			log.Fatal(err)
+			return "", err
 		}
+		saveFolderFileId = result.GetId()
 	}
 
-	return saveFolderId
+	return saveFolderFileId, nil
 }
 
 func getClientUUID() (string, error) {
@@ -173,7 +158,7 @@ type SyncResponse struct {
 	Err       error
 }
 
-func sync(srv *drive.Service, input chan SyncRequest, output chan SyncResponse) {
+func sync(srv CloudDriver, input chan SyncRequest, output chan SyncResponse) {
 	for {
 		request := <-input
 		switch request.Operation {
@@ -187,19 +172,24 @@ func sync(srv *drive.Service, input chan SyncRequest, output chan SyncResponse) 
 	}
 }
 
-func createOperation(srv *drive.Service, request SyncRequest, output chan SyncResponse) {
-	result, err := createFile(srv, request.ParentId, request.Name, request.Path)
+func createOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse) {
+	result, err := srv.CreateFile(request.ParentId, request.Name, request.Path)
+	resultModtime := ""
+	if result != nil {
+		resultModtime = result.GetModTime()
+	}
+
 	output <- SyncResponse{
 		Operation: Create,
 		Name:      request.Name,
 		Path:      request.Path,
-		Result:    result,
+		Result:    resultModtime,
 		Err:       err,
 	}
 }
 
-func downloadOperation(srv *drive.Service, request SyncRequest, output chan SyncResponse) {
-	err := downloadFile(srv, request.FileId, request.Name, request.Dryrun)
+func downloadOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse) {
+	err := srv.DownloadFile(request.FileId, request.Name) //downloadFile(srv, request.FileId, request.Name, request.Dryrun)
 	output <- SyncResponse{
 		Operation: Download,
 		Name:      request.Name,
@@ -208,113 +198,20 @@ func downloadOperation(srv *drive.Service, request SyncRequest, output chan Sync
 	}
 }
 
-func uploadOperation(srv *drive.Service, request SyncRequest, output chan SyncResponse) {
-	result, err := uploadFile(srv, request.FileId, request.Path, request.Dryrun)
+func uploadOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse) {
+	result, err := srv.UploadFile(request.FileId, request.Path, request.Name) //uploadFile(srv, request.FileId, request.Path, request.Dryrun)
+	resultModtime := ""
+	if result != nil {
+		resultModtime = result.GetModTime()
+	}
+
 	output <- SyncResponse{
 		Operation: Download,
-		Result:    result,
+		Result:    resultModtime,
 		Name:      request.Name,
 		Path:      request.Path,
 		Err:       err,
 	}
-}
-
-func downloadFile(srv *drive.Service, fileId string, fileName string, dryrun bool) error {
-	if dryrun {
-		LogVerbose("Dry Run - Downloading ", fileName)
-		return nil
-	}
-
-	fileref, err := srv.Files.Get(fileId).Fields("modifiedTime").Do()
-	if err != nil {
-		return err
-	}
-
-	LogVerbose("Downloading ", fileName)
-	res, err := srv.Files.Get(fileId).Download()
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-	osf, err := os.Create(fileName)
-	if err != nil {
-		return err
-	}
-
-	io.Copy(osf, res.Body)
-	osf.Close()
-	modtime, err := time.Parse(time.RFC3339, fileref.ModifiedTime)
-	if err != nil {
-		return err
-	}
-
-	err = os.Chtimes(fileName, modtime, modtime)
-	// Since we are downloading, we do not need to update the file hash or modified time
-	// in the meta file
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func uploadFile(srv *drive.Service, fileId string, filePath string, dryrun bool) (string, error) {
-	LogVerbose("Local file is newer... uploading... ", filePath)
-	if dryrun {
-		fmt.Println("Dry-Run Uploading File (not actually uploading) to remote: ", filePath)
-		return "", nil
-	}
-
-	osf, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer osf.Close()
-	stat, err := osf.Stat()
-	if err != nil {
-		return "", err
-	}
-
-	modifiedAtTime := stat.ModTime().Format(time.RFC3339)
-	ff := &drive.File{
-		ModifiedTime: modifiedAtTime,
-	}
-
-	res, err := srv.Files.Update(fileId, ff).Media(osf).Do()
-	if err != nil {
-		return "", err
-	}
-
-	LogVerbose("Successfully uploaded ", res.Name, ", last modified ", res.ModifiedTime, ", ", stat.ModTime().Format(time.RFC3339))
-	return modifiedAtTime, nil
-}
-
-func createFile(srv *drive.Service, parentId string, fileName string, filePath string) (string, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	stat, err := file.Stat()
-	if err != nil {
-		return "", err
-	}
-
-	modtime := stat.ModTime().Format(time.RFC3339)
-	saveUpload := &drive.File{
-		Name:         fileName,
-		ModifiedTime: modtime,
-		Parents:      []string{parentId},
-	}
-
-	_, err = srv.Files.Create(saveUpload).Media(file).Do()
-	if err != nil {
-		return "", err
-	}
-
-	return modtime, nil
 }
 
 func getFileHash(fileName string) (string, error) {
@@ -332,7 +229,7 @@ func getFileHash(fileName string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[string]SyncFile, dryrun bool) error {
+func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[string]SyncFile, dryrun bool) error {
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
 	inputChannel := make(chan SyncRequest, 1000)
@@ -343,7 +240,7 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 
 	for k, v := range files {
 		if v.IsDir {
-			pid, err := getGameFileId(srv, parentId, k)
+			pid, err := createDirIfNotExists(srv, parentId, k)
 			if err != nil {
 				return err
 			}
@@ -387,44 +284,13 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 	}
 	LogVerbose("Querying from parent ", parentId)
 	// 1. Query current files on cloud:
-	r, err := srv.Files.List().
-		Q(fmt.Sprintf("'%v' in parents", parentId)).
-		Fields("nextPageToken, files(id, name)").
-		Do()
-
+	r, err := srv.ListFiles(parentId)
 	if err != nil {
 		return err
 	}
 
-	var metadata *GameMetadata = nil
-	metafileId := ""
-	for _, file := range r.Files {
-		LogVerbose("Looking for Metafile, examining ", file.Name)
-		if file.Name == STEAM_METAFILE {
-			metafileId = file.Id
-			res, err := srv.Files.Get(file.Id).Download()
-			if err != nil {
-				return err
-			}
-			defer res.Body.Close()
-
-			bytes, err := io.ReadAll(res.Body)
-			if err != nil {
-				return err
-			}
-
-			metadata = &GameMetadata{}
-			err = json.Unmarshal(bytes, metadata)
-			if err != nil {
-				return err
-			}
-			break
-		}
-	}
-
-	mustCreateMetaFile := false
+	metadata, err := srv.GetMetaData(parentId, STEAM_METAFILE)
 	if metadata == nil {
-		mustCreateMetaFile = true
 		metadata = &GameMetadata{
 			Version: CURRENT_META_VERSION,
 			Gameid:  parentId,
@@ -450,18 +316,19 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 		for k := range localMetadata.Files {
 			if _, err := os.Stat(syncPath + k); errors.Is(err, os.ErrNotExist) {
 				fmt.Println("Path does not exist " + (syncPath + k))
-				for _, f := range r.Files {
-					if f.Name == k {
+				for _, f := range r {
+					if f.GetName() == k {
 						if dryrun {
-							fmt.Printf("Dry Run - Would Delete %v on cloud (not really deleting\n", f.Name)
+							fmt.Printf("Dry Run - Would Delete %v on cloud (not really deleting\n", f.GetName())
 						} else {
 							if localMetadata.Files[k].Sha256 != metadata.Files[k].Sha256 {
 								// CONFLICT - the file that we plan on deleting is NOT the same as on the server
 								// We should surface to the user if we want to delete this.
 								fmt.Println("CONFLICT!!!! ")
 							} else {
-								LogVerbose("Deleting file ", f.Name)
-								err = srv.Files.Delete(f.Id).Do()
+								LogVerbose("Deleting file ", f.GetName())
+
+								err = srv.DeleteFile(f.GetId())
 								if err != nil {
 									return err
 								}
@@ -478,72 +345,46 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 	}
 
 	pendingUploadDownload := 0
-	for _, file := range r.Files {
-		LogVerbose("Examing ", file.Name)
+	for _, file := range r {
+		LogVerbose("Examing ", file.GetName())
 		// @TODO this should be an extension valid check....
-		if file.Name == STEAM_METAFILE {
+		if file.GetName() == STEAM_METAFILE {
 			continue
 		}
 
-		_, deleted := deletedFiles[file.Name]
+		_, deleted := deletedFiles[file.GetName()]
 		if deleted {
 			continue
 		}
 
-		syncfile, found := files[file.Name]
+		syncfile, found := files[file.GetName()]
 		fullpath := syncfile.Name
-		newFileHash := ""
 		if !found {
 			// 2a. Not present on local file system, download...
-			// downloadFile(srv, file.Id, syncPath+file.Name, dryrun)
+			// downloadFile(srv, file.Id, syncPath+file.GetName(), dryrun)
 			inputChannel <- SyncRequest{
 				Operation: Download,
-				FileId:    file.Id,
-				Path:      syncPath + file.Name,
-				Name:      file.Name,
+				FileId:    file.GetId(),
+				Path:      syncPath + file.GetName(),
+				Name:      file.GetName(),
 				Dryrun:    dryrun,
 			}
 			pendingUploadDownload += 1
 		} else {
 			// 2b. Present on local file system, compare to remote if we will upload or download...
-			meta, ok := metadata.Files[file.Name]
-			if !ok {
-				// @TODO handle this more gracefully?
-				LogVerbose(fmt.Errorf("cloud upload with corrupt metadata entry for %s", file.Name))
-				continue
-			}
-
-			f, err := os.Open(fullpath)
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-
-			localfile, err := f.Stat()
+			fileSyncStatus, err := srv.IsFileInSync(file.GetName(), fullpath, file.GetId(), metadata)
 			if err != nil {
 				return err
 			}
 
-			local_modtime := localfile.ModTime()
-			remote_modtime, err := time.Parse(time.RFC3339, meta.LastModified)
-			if err != nil {
-				return err
-			}
-
-			newFileHash, err = getFileHash(fullpath)
-			if err != nil {
-				return err
-			}
-
-			LogVerbose("Comparing", file.Name, " (remote): ", meta.Sha256)
-			if local_modtime.Equal(remote_modtime) || newFileHash == meta.Sha256 {
-				fmt.Println("Remote and local files in sync (id/mod timestamp) ", file.Id)
-			} else if local_modtime.After(remote_modtime) {
+			if fileSyncStatus == InSync {
+				fmt.Println("Remote and local files in sync (id/mod timestamp) ", file.GetId())
+			} else if fileSyncStatus == RemoteNewer {
 				inputChannel <- SyncRequest{
 					Operation: Upload,
-					FileId:    file.Id,
+					FileId:    file.GetId(),
 					Path:      fullpath,
-					Name:      file.Name,
+					Name:      file.GetName(),
 					Dryrun:    dryrun,
 				}
 
@@ -551,9 +392,9 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 			} else {
 				inputChannel <- SyncRequest{
 					Operation: Download,
-					FileId:    file.Id,
+					FileId:    file.GetId(),
 					Path:      fullpath,
-					Name:      file.Name,
+					Name:      file.GetName(),
 					Dryrun:    dryrun,
 				}
 				pendingUploadDownload += 1
@@ -604,8 +445,8 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 	numCreations := 0
 	for k, v := range files {
 		found := false
-		for _, f := range r.Files {
-			if k == f.Name {
+		for _, f := range r {
+			if k == f.GetName() {
 				found = true
 				LogVerbose("Found file ", k, " on cloud.")
 				break
@@ -663,70 +504,37 @@ func syncFiles(srv *drive.Service, parentId string, syncPath string, files map[s
 	if err != nil {
 		return nil
 	}
-	metaUpload := &drive.File{
-		Name: STEAM_METAFILE,
-	}
 
-	mf, err := os.Open(syncPath + STEAM_METAFILE)
-	if err != nil {
-		return err
-	}
-
-	defer mf.Close()
-
-	if mustCreateMetaFile {
-		metaUpload.Parents = []string{parentId}
-		_, err = srv.Files.Create(metaUpload).Media(mf).Do()
-		if err != nil {
-			return err
-		}
-	} else {
-		_, err = srv.Files.Update(metafileId, metaUpload).Do()
-		if err != nil {
-			return err
-		}
-	}
-
+	srv.UpdateMetaData(parentId, STEAM_METAFILE, syncPath+STEAM_METAFILE, metadata)
 	return nil
 }
 
-func getGameFileId(srv *drive.Service, parentId string, name string) (string, error) {
+func createDirIfNotExists(srv CloudDriver, parentId string, name string) (string, error) {
 	resultId := ""
-	res, err := srv.Files.List().
-		Q(fmt.Sprintf("'%v' in parents", parentId)).
-		Fields("nextPageToken, files(id, name)").
-		Do()
+	res, err := srv.ListFiles(parentId)
 
 	if err != nil {
 		fmt.Println("Failed to find file for (parent/name) ", parentId, name)
 		return resultId, err
 	}
 
-	for _, i := range res.Files {
-		if i.Name == name {
-			LogVerbose("Found id for (parent/id)", parentId, i.Id)
-			resultId = i.Id
+	for _, i := range res {
+		if i.GetName() == name {
+			LogVerbose("Found id for (parent/id)", parentId, i.GetId())
+			resultId = i.GetId()
 			break
 		}
 	}
 
 	if resultId == "" {
-		f := &drive.File{
-			Name:     name,
-			Parents:  []string{parentId},
-			MimeType: "application/vnd.google-apps.folder",
-		}
-
-		LogVerbose("Creating Folder for Game", name)
-		result, err := srv.Files.Create(f).Do()
+		result, err := srv.CreateDir(name, parentId)
 		if err != nil {
 			return resultId, err
 		}
 
-		resultId = result.Id
+		resultId = result.GetId()
 	}
 
-	LogVerbose("Identified game", name, "with id ", resultId)
 	return resultId, nil
 }
 
@@ -745,14 +553,18 @@ func CliMain(ops *Options, dm *GameDefManager) {
 		return
 	}
 
-	gsrv := &GoogleCloudDriver{}
-	gsrv.InitDriver()
+	srv := &GoogleCloudDriver{}
+	srv.InitDriver()
 
-	srv := makeService()
-	saveFolderId := validateAndCreateParentFolder(srv)
+	saveFolderId, err := validateAndCreateParentFolder(srv)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	for _, gamename := range ops.Gamenames {
 		gamename = strings.TrimSpace(gamename)
-		id, err := getGameFileId(srv, saveFolderId, gamename)
+		id, err := createDirIfNotExists(srv, saveFolderId, gamename)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -771,7 +583,7 @@ func CliMain(ops *Options, dm *GameDefManager) {
 				continue
 			}
 
-			parentId, err := getGameFileId(srv, id, syncpath.Parent)
+			parentId, err := createDirIfNotExists(srv, id, syncpath.Parent)
 			if err != nil {
 				fmt.Println(err)
 				continue
