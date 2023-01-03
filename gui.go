@@ -35,6 +35,15 @@ func getDefaultGreen() color.Color {
 	}
 }
 
+func getDefaultRed() color.Color {
+	return color.RGBA{
+		R: 255,
+		G: 65,
+		B: 65,
+		A: 255,
+	}
+}
+
 var mainMenu *MainMenuContainer = nil
 var syncMap map[string]bool = make(map[string]bool)
 
@@ -69,6 +78,7 @@ func (main *MainMenuContainer) RefreshGames() {
 	main.parentContainer = container.NewVBox(main.innerContainer)
 
 	list := make([]fyne.CanvasObject, 0)
+	srv := GetDefaultService()
 	for k, v := range main.dm.GetGameDefMap() {
 		key := k
 		list = append(list, widget.NewCheck(v.DisplayName, func(selected bool) {
@@ -93,6 +103,16 @@ func (main *MainMenuContainer) RefreshGames() {
 			saveList := make([]*widget.AccordionItem, 0)
 
 			for _, syncpath := range syncpaths {
+				localMetaData, err := GetLocalMetadata(syncpath.Path + STEAM_METAFILE)
+				if err != nil {
+					fmt.Println(err)
+					localMetaData = &GameMetadata{
+						Version: CURRENT_META_VERSION,
+						Gameid:  syncpath.Parent,
+						Files:   make(map[string]FileMetadata),
+					}
+				}
+
 				files, _ := main.dm.GetFilesForGame(key, syncpath.Parent)
 				for k, v := range files {
 					f, err := os.Stat(v.Name)
@@ -109,11 +129,26 @@ func (main *MainMenuContainer) RefreshGames() {
 					})
 					sync.Importance = widget.HighImportance
 
-					cloudStatus := canvas.NewText("File in Sync", getDefaultGreen())
-					cloudStatus.TextStyle = fyne.TextStyle{
-						Bold: true,
-					}
+					cloudStatus := canvas.NewText("", getDefaultGreen())
+					cloudStatus.Text = "File in Sync"
+					cloudStatus.TextStyle = fyne.TextStyle{Bold: true}
 					cloudStatus.Alignment = fyne.TextAlignCenter
+					metaFile, ok := localMetaData.Files[k]
+					if !ok {
+						cloudStatus.Text = "File Not in Sync"
+						cloudStatus.Color = getDefaultRed()
+						overallStatus.Text = "Not all files in Sync"
+						overallStatus.Color = getDefaultRed()
+					} else {
+						syncStatus, err := srv.IsFileInSync(k, v.Name, metaFile.FileId, localMetaData)
+						if err != nil || syncStatus != InSync {
+							cloudStatus.Text = "File Not in Sync"
+							cloudStatus.Color = getDefaultRed()
+							overallStatus.Text = "Not all files in Sync"
+							overallStatus.Color = getDefaultRed()
+						}
+					}
+
 					itemContainer := container.NewVBox(widget.NewLabel("Save File: "+v.Name),
 						widget.NewLabel("Date Modified: "+f.ModTime().String()),
 						cloudStatus,
@@ -188,8 +223,10 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 			}
 		}
 
+		logs := make(chan Message, 100)
+		go consoleLogger(logs)
 		fmt.Println(ops.Gamenames)
-		CliMain(ops, dm)
+		go CliMain(ops, dm, logs)
 	})
 	syncAllButton := widget.NewButton("Sync All", func() {
 		ops.Gamenames = []string{}
@@ -197,8 +234,10 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 			ops.Gamenames = append(ops.Gamenames, k)
 		}
 
+		logs := make(chan Message, 100)
+		go consoleLogger(logs)
 		fmt.Println(ops.Gamenames)
-		CliMain(ops, dm)
+		go CliMain(ops, dm, logs)
 	})
 	manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })
 	optionsButton := widget.NewButton("Options", openOptionsWindow)

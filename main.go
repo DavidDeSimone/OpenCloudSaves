@@ -65,6 +65,12 @@ type SyncResponse struct {
 	Err       error
 }
 
+type Message struct {
+	Finished bool
+	Message  string
+	Err      error
+}
+
 //go:embed credentials.json
 var creds embed.FS
 
@@ -77,9 +83,27 @@ const WORKER_POOL_SIZE = 4
 
 var verboseLogging bool = false
 
-func LogVerbose(v ...any) {
-	if verboseLogging {
-		log.Println(v...)
+var service CloudDriver = nil
+
+func GetDefaultService() CloudDriver {
+	if service == nil {
+		service = &GoogleCloudDriver{}
+		service.InitDriver()
+
+	}
+
+	return service
+}
+
+// func LogVerbose(v ...any) {
+// 	if verboseLogging {
+// 		log.Println(v...)
+// 	}
+// }
+
+func LogMessage(logs chan Message, format string, msg ...any) {
+	logs <- Message{
+		Message: fmt.Sprintf(format, msg...),
 	}
 }
 
@@ -129,7 +153,13 @@ func validateAndCreateParentFolder(srv CloudDriver) (string, error) {
 	return saveFolderFileId, nil
 }
 
+var clientUUID string
+
 func getClientUUID() (string, error) {
+	if clientUUID != "" {
+		return clientUUID, nil
+	}
+
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return "", err
@@ -146,7 +176,6 @@ func getClientUUID() (string, error) {
 
 	result := ""
 	if err != nil {
-		LogVerbose("Generating new UUID for client...")
 		result = uuid.New().String()
 		err = os.WriteFile(fileName, []byte(result), os.ModePerm)
 		if err != nil {
@@ -156,7 +185,7 @@ func getClientUUID() (string, error) {
 		result = string(f)
 	}
 
-	LogVerbose("UUID for client ", result)
+	clientUUID = result
 	return result, nil
 }
 
@@ -238,7 +267,24 @@ func getFileHash(fileName string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[string]SyncFile, dryrun bool) error {
+func GetLocalMetadata(filePath string) (*GameMetadata, error) {
+	localMetafile, err := os.ReadFile(filePath)
+	var localMetadata *GameMetadata = nil
+	if err == nil {
+		// If we don't have a local metafile, that is fine.
+		localMetadata = &GameMetadata{}
+		err = json.Unmarshal(localMetafile, localMetadata)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return localMetadata, nil
+}
+
+func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[string]SyncFile, dryrun bool, logs chan Message) error {
+	LogMessage(logs, "Syncing Files for %v", syncPath)
+
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
 	inputChannel := make(chan SyncRequest, 1000)
@@ -255,7 +301,6 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 			}
 			separator := string(os.PathSeparator)
 			parentPath := syncPath + separator + k + separator
-			LogVerbose("Syncing Files (parent) ", parentId)
 			var fileMap map[string]SyncFile = make(map[string]SyncFile)
 			f, err := os.Open(syncPath + separator + k + separator)
 			if err != nil {
@@ -280,7 +325,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 				}
 			}
 
-			err = syncFiles(srv, pid, parentPath, fileMap, dryrun)
+			err = syncFiles(srv, pid, parentPath, fileMap, dryrun, logs)
 			if err != nil {
 				return err
 			}
@@ -288,10 +333,10 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 	}
 
 	clientuuid, err := getClientUUID()
+	LogMessage(logs, "Identified Client UUID (%v)", clientuuid)
 	if err != nil {
 		return err
 	}
-	LogVerbose("Querying from parent ", parentId)
 	// 1. Query current files on cloud:
 	r, err := srv.ListFiles(parentId)
 	if err != nil {
@@ -300,6 +345,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 
 	metadata, err := srv.GetMetaData(parentId, STEAM_METAFILE)
 	if metadata == nil {
+		LogMessage(logs, "Did not find remote metafile, initalizing...", parentId)
 		metadata = &GameMetadata{
 			Version: CURRENT_META_VERSION,
 			Gameid:  parentId,
@@ -307,24 +353,19 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 		}
 	}
 
-	localMetafile, err := os.ReadFile(syncPath + STEAM_METAFILE)
-	var localMetadata *GameMetadata = nil
-	if err == nil {
-		// If we don't have a local metafile, that is fine.
-		localMetadata = &GameMetadata{}
-		err = json.Unmarshal(localMetafile, localMetadata)
-		if err != nil {
-			return err
-		}
+	localMetadata, err := GetLocalMetadata(syncPath + STEAM_METAFILE)
+	if err != nil {
+		return err
 	}
 
+	LogMessage(logs, "-------- STAGE 1 -----------")
+	LogMessage(logs, "Examining files present on cloud but deleted locally")
 	var deletedFiles map[string]bool = make(map[string]bool)
-	// 3. Handle the case for deleting save data
+	// 1. Handle the case for deleting save data
 	if localMetadata != nil {
 		// If a file is in our local metafile, but not present locally, delete on cloud.
 		for k := range localMetadata.Files {
 			if _, err := os.Stat(syncPath + k); errors.Is(err, os.ErrNotExist) {
-				fmt.Println("Path does not exist " + (syncPath + k))
 				for _, f := range r {
 					if f.GetName() == k {
 						if dryrun {
@@ -335,8 +376,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 								// We should surface to the user if we want to delete this.
 								fmt.Println("CONFLICT!!!! ")
 							} else {
-								LogVerbose("Deleting file ", f.GetName())
-
+								LogMessage(logs, "Deleting File (id) %v (%v)", f.GetName(), f.GetId())
 								err = srv.DeleteFile(f.GetId())
 								if err != nil {
 									return err
@@ -353,9 +393,10 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 		}
 	}
 
+	LogMessage(logs, "-------- STAGE 2 -----------")
+	LogMessage(logs, "Downloading updates to exisiting files; Uploading exisiting files")
 	pendingUploadDownload := 0
 	for _, file := range r {
-		LogVerbose("Examing ", file.GetName())
 		// @TODO this should be an extension valid check....
 		if file.GetName() == STEAM_METAFILE {
 			continue
@@ -371,6 +412,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 		if !found {
 			// 2a. Not present on local file system, download...
 			// downloadFile(srv, file.Id, syncPath+file.GetName(), dryrun)
+			LogMessage(logs, "Queued Download for %v", file.GetName())
 			inputChannel <- SyncRequest{
 				Operation: Download,
 				FileId:    file.GetId(),
@@ -387,7 +429,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 			}
 
 			if fileSyncStatus == InSync {
-				fmt.Println("Remote and local files in sync (id/mod timestamp) ", file.GetId())
+				LogMessage(logs, "Remote and local files in sync (id/mod timestamp) %v", file.GetId())
 			} else if fileSyncStatus == RemoteNewer {
 				inputChannel <- SyncRequest{
 					Operation: Upload,
@@ -396,6 +438,8 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 					Name:      file.GetName(),
 					Dryrun:    dryrun,
 				}
+
+				LogMessage(logs, "Queued Download for %v", file.GetName())
 
 				pendingUploadDownload += 1
 			} else {
@@ -406,6 +450,9 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 					Name:      file.GetName(),
 					Dryrun:    dryrun,
 				}
+
+				LogMessage(logs, "Queued Upload for %v", file.GetName())
+
 				pendingUploadDownload += 1
 			}
 		}
@@ -416,6 +463,8 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 		if response.Err != nil {
 			return response.Err
 		}
+
+		LogMessage(logs, "Operation complete for %v", response.Name)
 		newModifiedTime := ""
 		if response.Operation == Upload {
 			newModifiedTime = response.Result
@@ -451,14 +500,15 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 		pendingUploadDownload -= 1
 	}
 
-	// 4. Check for local files not present on the cloud
+	LogMessage(logs, "-------- STAGE 3 -----------")
+	LogMessage(logs, "Download new files from remote")
+	// 3. Check for local files not present on the cloud
 	numCreations := 0
 	for k, v := range files {
 		found := false
 		for _, f := range r {
 			if k == f.GetName() {
 				found = true
-				LogVerbose("Found file ", k, " on cloud.")
 				break
 			}
 		}
@@ -467,7 +517,6 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 			if dryrun {
 				fmt.Println("Dry-Run: Uploading File (not actually uploading): ", k)
 			}
-			LogVerbose("Uploading Initial File ", v)
 
 			inputChannel <- SyncRequest{
 				Operation: Create,
@@ -476,13 +525,13 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 				Path:      v.Name,
 			}
 			numCreations += 1
-
+			LogMessage(logs, "Queue download for file %v", v.Name)
 		}
 	}
 
 	for numCreations > 0 {
 		results := <-outputChannel
-
+		LogMessage(logs, "Operation Successful for %v", results.Name)
 		if results.Err != nil {
 			return results.Err
 		}
@@ -499,11 +548,10 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 			FileId:         results.FileId,
 		}
 
-		LogVerbose("Successfully uploaded save file ", results.Name)
-
 		numCreations -= 1
 	}
 
+	LogMessage(logs, "Data Upload/Download success - updating metadata...")
 	metadata.Version = CURRENT_META_VERSION
 	b, err := json.Marshal(metadata)
 	if err != nil {
@@ -516,7 +564,16 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 		return nil
 	}
 
-	srv.UpdateMetaData(parentId, STEAM_METAFILE, syncPath+STEAM_METAFILE, metadata)
+	err = srv.UpdateMetaData(parentId, STEAM_METAFILE, syncPath+STEAM_METAFILE, metadata)
+	if err != nil {
+		return err
+	}
+
+	LogMessage(logs, "All Operations Complete, files in sync")
+	logs <- Message{
+		Finished: true,
+	}
+
 	return nil
 }
 
@@ -531,7 +588,6 @@ func createDirIfNotExists(srv CloudDriver, parentId string, name string) (string
 
 	for _, i := range res {
 		if i.GetName() == name {
-			LogVerbose("Found id for (parent/id)", parentId, i.GetId())
 			resultId = i.GetId()
 			break
 		}
@@ -549,32 +605,35 @@ func createDirIfNotExists(srv CloudDriver, parentId string, name string) (string
 	return resultId, nil
 }
 
-func CliMain(ops *Options, dm *GameDefManager) {
+func CliMain(ops *Options, dm *GameDefManager, logs chan Message) {
 	verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
 	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
-	LogVerbose("Verbose logging enabled...")
+
+	LogMessage(logs, "Main Initalized")
 
 	addCustomGamesArgsLen := len(ops.AddCustomGames)
 	if addCustomGamesArgsLen > 0 {
 		for key, value := range ops.AddCustomGames {
 			dm.AddUserOverride(key, value)
-			LogVerbose("Added custom game... ", key)
 		}
 
 		return
 	}
 
-	srv := &GoogleCloudDriver{}
-	srv.InitDriver()
+	LogMessage(logs, "Starting Upload Process...")
 
+	srv := GetDefaultService()
 	saveFolderId, err := validateAndCreateParentFolder(srv)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
+	LogMessage(logs, "Cloud Service Initialized...")
+
 	for _, gamename := range ops.Gamenames {
 		gamename = strings.TrimSpace(gamename)
+		LogMessage(logs, "Performing Check on %v", gamename)
 		id, err := createDirIfNotExists(srv, saveFolderId, gamename)
 		if err != nil {
 			fmt.Println(err)
@@ -582,12 +641,14 @@ func CliMain(ops *Options, dm *GameDefManager) {
 		}
 
 		syncpaths, err := dm.GetSyncpathForGame(gamename)
+		LogMessage(logs, "Identified Paths for %v: %v", gamename, syncpaths)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 
 		for _, syncpath := range syncpaths {
+			LogMessage(logs, "Examining Path %v", syncpath.Path)
 			files, err := dm.GetFilesForGame(gamename, syncpath.Parent)
 			if err != nil {
 				fmt.Println(err)
@@ -599,12 +660,27 @@ func CliMain(ops *Options, dm *GameDefManager) {
 				fmt.Println(err)
 				continue
 			}
-			LogVerbose("Syncing Files (parent) ", parentId)
-			err = syncFiles(srv, parentId, syncpath.Path, files, dryrun)
+			err = syncFiles(srv, parentId, syncpath.Path, files, dryrun, logs)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
+		}
+	}
+}
+
+func consoleLogger(input chan Message) {
+	for {
+		result := <-input
+		if result.Finished {
+			fmt.Println("Console Logger Complete...")
+			break
+		}
+
+		if result.Err != nil {
+			fmt.Println(result.Err)
+		} else {
+			fmt.Println(result.Message)
 		}
 	}
 }
@@ -622,7 +698,9 @@ func main() {
 	dm.ApplyUserOverrides()
 
 	if noGui {
-		CliMain(ops, dm)
+		logs := make(chan Message, 100)
+		go consoleLogger(logs)
+		CliMain(ops, dm, logs)
 	} else {
 		GuiMain(ops, dm)
 	}

@@ -324,7 +324,7 @@ func (d *GoogleCloudDriver) UpdateMetaData(parentId string, fileName string, fil
 			return err
 		}
 	} else {
-		_, err = d.srv.Files.Update(metaData.fileId, metaUpload).Do()
+		_, err = d.srv.Files.Update(metaData.fileId, metaUpload).Media(mf).Do()
 		if err != nil {
 			return err
 		}

@@ -103,7 +103,6 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 						Name:  syncpath.Path + file.Name(),
 						IsDir: false,
 					}
-					LogVerbose("Found Save Files: ", file.Name())
 					break
 				}
 			}
@@ -186,7 +185,6 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 		return nil, fmt.Errorf("non-supported platform %v", platform)
 	}
 
-	LogVerbose("Determined Savepath: ", result)
 	return result, nil
 }
 
@@ -287,7 +285,6 @@ func MakeGameDefManager() *GameDefManager {
 		dm.gamedefs[k] = d
 	}
 
-	LogVerbose(dm.gamedefs)
 	return dm
 }
 
