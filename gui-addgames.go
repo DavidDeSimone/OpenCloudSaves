@@ -104,7 +104,7 @@ func (g *GameCardContainer) makeCard(path []*Datapath, onRemove func(int, []*Dat
 				}
 			})
 
-			innerEntry.Add(cont.NewHBox(widget.NewLabel("Ignored Files"), ignoreEntry))
+			innerEntry.Add(cont.NewHBox(widget.NewLabel("Ignored Files (Comma separated)"), ignoreEntry))
 		}
 	}
 
