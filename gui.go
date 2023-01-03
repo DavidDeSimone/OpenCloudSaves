@@ -166,6 +166,9 @@ func (main *MainMenuContainer) RefreshGames() {
 			scroll.SetMinSize(fyne.NewSize(500, 500))
 			main.innerContainer.Add(scroll)
 			main.parentContainer.Add(main.innerContainer)
+
+			// @TODO this isn't working right. selecting a game, going into the add game menu and returning breaks the app
+			main.RefreshRootView()
 		}))
 	}
 
@@ -173,13 +176,22 @@ func (main *MainMenuContainer) RefreshGames() {
 }
 
 func (main *MainMenuContainer) RefreshRootView() {
-	main.horizSplit = container.NewHSplit(main.verticalGameScroll, main.parentContainer)
-	main.horizSplit.Offset = 0.10
+	if main.horizSplit == nil {
+		main.horizSplit = container.NewHSplit(main.verticalGameScroll, main.parentContainer)
+		main.horizSplit.Offset = 0.10
+	} else {
+		main.horizSplit.Leading = main.verticalGameScroll
+		main.horizSplit.Trailing = main.parentContainer
+	}
 
-	main.rootVerticalSplit = container.NewVSplit(main.menuBar, main.horizSplit)
-	main.rootVerticalSplit.Offset = 0.05
-
-	GetViewStack().SwapRoot(main.rootVerticalSplit)
+	if main.rootVerticalSplit == nil {
+		main.rootVerticalSplit = container.NewVSplit(main.menuBar, main.horizSplit)
+		main.rootVerticalSplit.Offset = 0.05
+	} else {
+		main.rootVerticalSplit.Leading = main.menuBar
+		main.rootVerticalSplit.Trailing = main.horizSplit
+		main.rootVerticalSplit.Refresh()
+	}
 }
 
 func (main *MainMenuContainer) Refresh() {
@@ -189,14 +201,15 @@ func (main *MainMenuContainer) Refresh() {
 
 func (main *MainMenuContainer) visualLogging(input chan Message) {
 	minSize := main.parentContainer.MinSize()
-	main.parentContainer = container.NewVBox()
+	parent := container.NewVBox()
 	innerBox := container.NewVBox()
 	tempScroll := container.NewScroll(innerBox)
 	tempScroll.SetMinSize(minSize)
-	main.parentContainer.Add(tempScroll)
+	parent.Add(tempScroll)
 
-	main.RefreshRootView()
 	defaultColor := fyne.CurrentApp().Settings().Theme().TextColor()
+	root := container.NewVBox(parent)
+	GetViewStack().PushContent(root)
 
 	for {
 		result := <-input
@@ -214,10 +227,11 @@ func (main *MainMenuContainer) visualLogging(input chan Message) {
 			msg.TextSize = 10
 			innerBox.Add(msg)
 		}
-
-		main.rootVerticalSplit.Refresh()
-		tempScroll.ScrollToBottom()
 	}
+
+	parent.Add(widget.NewButton("Close Logs", func() {
+		GetViewStack().PopContent()
+	}))
 }
 
 func GuiMain(ops *Options, dm *GameDefManager) {

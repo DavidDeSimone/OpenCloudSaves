@@ -53,14 +53,7 @@ func (v *ViewStack) SetMainWindow(w fyne.Window) {
 func (v *ViewStack) PushContent(content fyne.CanvasObject) {
 	v.viewStack.Push(content)
 	v.rootWindow.SetContent(content)
-}
-
-func (v *ViewStack) SwapRoot(content fyne.CanvasObject) {
-	if len(v.viewStack) > 0 {
-		v.viewStack[0] = content
-		v.rootWindow.SetContent(content)
-		content.Show()
-	}
+	content.Show()
 }
 
 func (v *ViewStack) PopContent() {
