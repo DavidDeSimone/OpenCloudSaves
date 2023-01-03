@@ -220,8 +220,6 @@ func (main *MainMenuContainer) visualLogging(input chan Message) {
 	}
 }
 
-var isDarkMode bool
-
 func GuiMain(ops *Options, dm *GameDefManager) {
 	// The steam deck (likely due to it's DPI) has scaling issues with our current version of FYNE
 	// To make this smooth, we will scale the UI to make it look nice in gaming mode.

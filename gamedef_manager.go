@@ -17,6 +17,7 @@ var gamedefMap []byte
 type Datapath struct {
 	Path   string   `json:"path"`
 	Exts   []string `json:"exts"`
+	Ignore []string `json:"ignore"`
 	Parent string   `json:"parent"`
 }
 
@@ -50,6 +51,10 @@ func (d *GameDef) GetSteamLocation() string {
 }
 
 func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
+	fmt.Println("For Gamedef " + d.DisplayName)
+	if len(d.DarwinPath) > 0 {
+		fmt.Println(d.DarwinPath[0].Ignore)
+	}
 	syncpaths, err := d.GetSyncpaths()
 	if err != nil {
 		return nil, err
@@ -57,6 +62,14 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 
 	result := make(map[string]map[string]SyncFile)
 	for _, syncpath := range syncpaths {
+		fmt.Println(syncpath)
+		ignoreMap := make(map[string]bool)
+		fmt.Println(syncpath.Ignore)
+		for _, ignore := range syncpath.Ignore {
+			fmt.Println("Will ignore -> " + ignore)
+			ignoreMap[ignore] = true
+		}
+
 		result[syncpath.Parent] = make(map[string]SyncFile)
 		f, err := os.Open(syncpath.Path)
 		if err != nil {
@@ -80,6 +93,13 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 		}
 
 		for _, file := range files {
+			_, ok := ignoreMap[file.Name()]
+			fmt.Println("Examining " + file.Name())
+			if ok {
+				fmt.Println("Ignoring " + file.Name())
+				continue
+			}
+
 			if file.IsDir() {
 				fmt.Printf("Logging Directory %v\n", file.Name())
 				result[syncpath.Parent][file.Name()] = SyncFile{
@@ -137,6 +157,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				Path:   prefix + winpath + separator,
 				Exts:   datapath.Exts,
 				Parent: datapath.Parent,
+				Ignore: datapath.Ignore,
 			})
 		}
 	} else if platform == "darwin" {
@@ -158,6 +179,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				Path:   prefix + darwinPath + separator,
 				Exts:   datapath.Exts,
 				Parent: datapath.Parent,
+				Ignore: datapath.Ignore,
 			})
 		}
 	} else if platform == "linux" {
@@ -179,6 +201,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				Path:   prefix + linuxPath + separator,
 				Exts:   datapath.Exts,
 				Parent: datapath.Parent,
+				Ignore: datapath.Ignore,
 			})
 		}
 	} else {
@@ -206,6 +229,8 @@ func (d *GameDefManager) ApplyUserOverrides() error {
 		return err
 	}
 
+	fmt.Println(string(content))
+
 	mid := make(map[string]json.RawMessage)
 	err = json.Unmarshal(content, &mid)
 	if err != nil {
@@ -213,12 +238,16 @@ func (d *GameDefManager) ApplyUserOverrides() error {
 	}
 
 	for k, v := range mid {
+		// fmt.Println(string(v))
 		def := &GameDef{}
 		err = json.Unmarshal(v, def)
 		if err != nil {
 			log.Fatal(err)
 		}
 		d.gamedefs[k] = def
+		if def.DarwinPath != nil && len(def.DarwinPath) > 0 {
+			fmt.Println(def.DarwinPath[0].Ignore)
+		}
 	}
 	return nil
 }
@@ -256,11 +285,6 @@ func (d *GameDefManager) AddUserOverride(key string, jsonOverride string) error 
 	return d.CommitUserOverrides()
 }
 
-func (d *GameDefManager) AddUserOverrideWithGameDef(key string, jsonOverride GameDef) error {
-
-	return nil
-}
-
 func (d *GameDefManager) GetGameDefMap() map[string]*GameDef {
 	return d.gamedefs
 }
@@ -284,6 +308,8 @@ func MakeGameDefManager() *GameDefManager {
 		}
 		dm.gamedefs[k] = d
 	}
+
+	dm.ApplyUserOverrides()
 
 	return dm
 }

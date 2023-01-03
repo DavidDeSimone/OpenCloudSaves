@@ -87,6 +87,24 @@ func (g *GameCardContainer) makeCard(path []*Datapath, onRemove func(int, []*Dat
 				}
 			})
 			innerEntry.Add(widget.NewHBox(widget.NewLabel("Exts: "), extsEntry))
+
+			ignoreListString := ""
+			for i, itemToIgnore := range n.Ignore {
+				ignoreListString += itemToIgnore
+				if i != len(n.Ignore)-1 {
+					ignoreListString += ", "
+				}
+			}
+
+			ignoreEntry := makeTextEntry(ignoreListString, func(s string) {
+				entries := strings.Split(s, ",")
+				n.Ignore = []string{}
+				for _, entry := range entries {
+					n.Ignore = append(n.Ignore, strings.TrimSpace(entry))
+				}
+			})
+
+			innerEntry.Add(cont.NewHBox(widget.NewLabel("Ignored Files"), ignoreEntry))
 		}
 	}
 

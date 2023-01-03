@@ -386,7 +386,6 @@ func (d *GoogleCloudDriver) IsFileInSync(fileName string, filePath string, fileI
 	}
 
 	localModtime := localfile.ModTime()
-	fmt.Printf("Attempting to parse %v", modifiedTime)
 	remoteModtime, err := time.Parse(time.RFC3339, modifiedTime)
 	if err != nil {
 		return 0, err
@@ -397,17 +396,11 @@ func (d *GoogleCloudDriver) IsFileInSync(fileName string, filePath string, fileI
 		return 0, err
 	}
 
-	fmt.Println("For file " + fileName)
-	fmt.Printf("Logging times local %v, remote %v\n", localModtime, remoteModtime)
-	fmt.Printf("Logging hashes local %v, remote %v\n", localFileHash, remoteFileHash)
 	if localModtime.Equal(remoteModtime) || remoteFileHash == localFileHash {
-		fmt.Println("In Sync")
 		return InSync, nil
 	} else if remoteModtime.After(localModtime) {
-		fmt.Println("Remote Newer..")
 		return RemoteNewer, nil
 	} else {
-		fmt.Println("Local Newer..")
 		return LocalNewer, nil
 	}
 }

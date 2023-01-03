@@ -81,7 +81,7 @@ const STEAM_METAFILE string = "steamcloudloadmeta.json"
 const CURRENT_META_VERSION int = 1
 const WORKER_POOL_SIZE = 4
 
-var verboseLogging bool = false
+// var verboseLogging bool = false
 
 var service CloudDriver = nil
 
@@ -352,6 +352,9 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 	}
 
 	metadata, err := srv.GetMetaData(parentId, STEAM_METAFILE)
+	if err != nil {
+		return err
+	}
 	if metadata == nil {
 		LogMessage(logs, "Did not find remote metafile, initalizing... %v", parentId)
 		metadata = &GameMetadata{
@@ -599,7 +602,7 @@ func createDirIfNotExists(srv CloudDriver, parentId string, name string) (string
 }
 
 func CliMain(ops *Options, dm *GameDefManager, logs chan Message) {
-	verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
+	// verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
 	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
 
 	LogMessage(logs, "Main Initalized")
@@ -688,7 +691,6 @@ func main() {
 
 	noGui := len(ops.NoGUI) == 1 && ops.NoGUI[0]
 	dm := MakeGameDefManager()
-	dm.ApplyUserOverrides()
 
 	if noGui {
 		logs := make(chan Message, 100)
