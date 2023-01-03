@@ -223,12 +223,20 @@ func createOperation(srv CloudDriver, request SyncRequest, output chan SyncRespo
 }
 
 func downloadOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse) {
-	err := srv.DownloadFile(request.FileId, request.Name) //downloadFile(srv, request.FileId, request.Name, request.Dryrun)
+	result, err := srv.DownloadFile(request.FileId, request.Path, request.Name) //downloadFile(srv, request.FileId, request.Name, request.Dryrun)
+	resultModtime := ""
+	resultFileId := ""
+	if result != nil {
+		resultModtime = result.GetModTime()
+		resultFileId = result.GetId()
+	}
+
 	output <- SyncResponse{
 		Operation: Download,
 		Name:      request.Name,
 		Path:      request.Path,
-		FileId:    request.FileId,
+		FileId:    resultFileId,
+		Result:    resultModtime,
 		Err:       err,
 	}
 }
@@ -345,7 +353,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 
 	metadata, err := srv.GetMetaData(parentId, STEAM_METAFILE)
 	if metadata == nil {
-		LogMessage(logs, "Did not find remote metafile, initalizing...", parentId)
+		LogMessage(logs, "Did not find remote metafile, initalizing... %v", parentId)
 		metadata = &GameMetadata{
 			Version: CURRENT_META_VERSION,
 			Gameid:  parentId,
@@ -432,7 +440,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 				LogMessage(logs, "Remote and local files in sync (id/mod timestamp) %v", file.GetId())
 			} else if fileSyncStatus == RemoteNewer {
 				inputChannel <- SyncRequest{
-					Operation: Upload,
+					Operation: Download,
 					FileId:    file.GetId(),
 					Path:      fullpath,
 					Name:      file.GetName(),
@@ -444,7 +452,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 				pendingUploadDownload += 1
 			} else {
 				inputChannel <- SyncRequest{
-					Operation: Download,
+					Operation: Upload,
 					FileId:    file.GetId(),
 					Path:      fullpath,
 					Name:      file.GetName(),
@@ -465,10 +473,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 		}
 
 		LogMessage(logs, "Operation complete for %v", response.Name)
-		newModifiedTime := ""
-		if response.Operation == Upload {
-			newModifiedTime = response.Result
-		}
+		newModifiedTime := response.Result
 		fullpath := response.Path
 		fileName := response.Name
 
@@ -477,24 +482,11 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 			return err
 		}
 
-		current, ok := metadata.Files[fileName]
-
-		if !ok {
-			metadata.Files[fileName] = FileMetadata{
-				Sha256:         newFileHash,
-				LastModified:   newModifiedTime,
-				Lastclientuuid: clientuuid,
-				FileId:         response.FileId,
-			}
-		} else {
-			current.Lastclientuuid = clientuuid
-			if newFileHash != "" {
-				current.Sha256 = newFileHash
-			}
-
-			if newModifiedTime != "" {
-				current.LastModified = newModifiedTime
-			}
+		metadata.Files[fileName] = FileMetadata{
+			Sha256:         newFileHash,
+			LastModified:   newModifiedTime,
+			Lastclientuuid: clientuuid,
+			FileId:         response.FileId,
 		}
 
 		pendingUploadDownload -= 1
@@ -516,6 +508,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 		if !found {
 			if dryrun {
 				fmt.Println("Dry-Run: Uploading File (not actually uploading): ", k)
+				continue
 			}
 
 			inputChannel <- SyncRequest{
@@ -525,7 +518,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 				Path:      v.Name,
 			}
 			numCreations += 1
-			LogMessage(logs, "Queue download for file %v", v.Name)
+			LogMessage(logs, "Queue upload for file %v", v.Name)
 		}
 	}
 

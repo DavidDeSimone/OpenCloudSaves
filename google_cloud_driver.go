@@ -180,36 +180,40 @@ func (d *GoogleCloudDriver) CreateDir(name string, parentId string) (CloudFile, 
 		ModTime: result.ModifiedTime,
 	}, nil
 }
-func (d *GoogleCloudDriver) DownloadFile(fileId string, fileName string) error {
+func (d *GoogleCloudDriver) DownloadFile(fileId string, filePath string, fileName string) (CloudFile, error) {
 	fileref, err := d.srv.Files.Get(fileId).Fields("modifiedTime").Do()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	res, err := d.srv.Files.Get(fileId).Download()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer res.Body.Close()
-	osf, err := os.Create(fileName)
+	osf, err := os.Create(filePath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	io.Copy(osf, res.Body)
 	osf.Close()
 	modtime, err := time.Parse(time.RFC3339, fileref.ModifiedTime)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = os.Chtimes(fileName, modtime, modtime)
+	err = os.Chtimes(filePath, modtime, modtime)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &GoogleCloudFile{
+		Name:    fileName,
+		Id:      fileId,
+		ModTime: fileref.ModifiedTime,
+	}, nil
 }
 func (d *GoogleCloudDriver) UploadFile(fileId string, filePath string, fileName string) (CloudFile, error) {
 	osf, err := os.Open(filePath)
@@ -234,7 +238,7 @@ func (d *GoogleCloudDriver) UploadFile(fileId string, filePath string, fileName 
 	return &GoogleCloudFile{
 		Name:    fileName,
 		Id:      res.Id,
-		ModTime: res.ModifiedTime,
+		ModTime: modifiedAtTime,
 	}, nil
 }
 func (d *GoogleCloudDriver) CreateFile(parentId string, fileName string, filePath string) (CloudFile, error) {
@@ -342,6 +346,7 @@ func (d *GoogleCloudDriver) IsFileInSync(fileName string, filePath string, fileI
 	modifiedTime := ""
 	remoteFileHash := ""
 	if !ok {
+		fmt.Println("Remote file not found: " + fileName)
 		result, err := d.srv.Files.Get(fileId).Fields("modifiedTime").Do()
 		if err != nil {
 			return NotFound, nil
@@ -381,6 +386,7 @@ func (d *GoogleCloudDriver) IsFileInSync(fileName string, filePath string, fileI
 	}
 
 	localModtime := localfile.ModTime()
+	fmt.Printf("Attempting to parse %v", modifiedTime)
 	remoteModtime, err := time.Parse(time.RFC3339, modifiedTime)
 	if err != nil {
 		return 0, err
@@ -391,11 +397,17 @@ func (d *GoogleCloudDriver) IsFileInSync(fileName string, filePath string, fileI
 		return 0, err
 	}
 
+	fmt.Println("For file " + fileName)
+	fmt.Printf("Logging times local %v, remote %v\n", localModtime, remoteModtime)
+	fmt.Printf("Logging hashes local %v, remote %v\n", localFileHash, remoteFileHash)
 	if localModtime.Equal(remoteModtime) || remoteFileHash == localFileHash {
+		fmt.Println("In Sync")
 		return InSync, nil
 	} else if remoteModtime.After(localModtime) {
-		return LocalNewer, nil
-	} else {
+		fmt.Println("Remote Newer..")
 		return RemoteNewer, nil
+	} else {
+		fmt.Println("Local Newer..")
+		return LocalNewer, nil
 	}
 }

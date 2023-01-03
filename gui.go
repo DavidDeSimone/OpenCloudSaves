@@ -58,7 +58,6 @@ func GetMainMenu() *MainMenuContainer {
 type MainMenuContainer struct {
 	dm *GameDefManager
 
-	rootContainer     *fyne.Container
 	rootVerticalSplit *widget.SplitContainer
 	menuBar           *widget.ScrollContainer
 
@@ -104,7 +103,7 @@ func (main *MainMenuContainer) RefreshGames() {
 
 			for _, syncpath := range syncpaths {
 				localMetaData, err := GetLocalMetadata(syncpath.Path + STEAM_METAFILE)
-				if err != nil {
+				if err != nil || localMetaData == nil {
 					fmt.Println(err)
 					localMetaData = &GameMetadata{
 						Version: CURRENT_META_VERSION,
@@ -130,6 +129,8 @@ func (main *MainMenuContainer) RefreshGames() {
 					sync.Importance = widget.HighImportance
 
 					cloudStatus := canvas.NewText("", getDefaultGreen())
+					// @TODO this is lying if the entries in local meta data are matching and in sync
+					// but the remote metadata has new entries
 					cloudStatus.Text = "File in Sync"
 					cloudStatus.TextStyle = fyne.TextStyle{Bold: true}
 					cloudStatus.Alignment = fyne.TextAlignCenter
@@ -172,10 +173,6 @@ func (main *MainMenuContainer) RefreshGames() {
 }
 
 func (main *MainMenuContainer) RefreshRootView() {
-	if main.rootContainer != nil {
-		main.rootContainer.Remove(main.rootVerticalSplit)
-	}
-
 	main.horizSplit = container.NewHSplit(main.verticalGameScroll, main.parentContainer)
 	main.horizSplit.Offset = 0.10
 
@@ -189,6 +186,41 @@ func (main *MainMenuContainer) Refresh() {
 	main.RefreshGames()
 	main.RefreshRootView()
 }
+
+func (main *MainMenuContainer) visualLogging(input chan Message) {
+	minSize := main.parentContainer.MinSize()
+	main.parentContainer = container.NewVBox()
+	innerBox := container.NewVBox()
+	tempScroll := container.NewScroll(innerBox)
+	tempScroll.SetMinSize(minSize)
+	main.parentContainer.Add(tempScroll)
+
+	main.RefreshRootView()
+	defaultColor := fyne.CurrentApp().Settings().Theme().TextColor()
+
+	for {
+		result := <-input
+		if result.Finished {
+			fmt.Println("Console Logger Complete...")
+			break
+		}
+
+		if result.Err != nil {
+			msg := canvas.NewText(result.Err.Error(), getDefaultRed())
+			msg.TextSize = 14
+			innerBox.Add(msg)
+		} else {
+			msg := canvas.NewText(result.Message, defaultColor)
+			msg.TextSize = 10
+			innerBox.Add(msg)
+		}
+
+		main.rootVerticalSplit.Refresh()
+		tempScroll.ScrollToBottom()
+	}
+}
+
+var isDarkMode bool
 
 func GuiMain(ops *Options, dm *GameDefManager) {
 	// The steam deck (likely due to it's DPI) has scaling issues with our current version of FYNE
@@ -224,9 +256,10 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 		}
 
 		logs := make(chan Message, 100)
-		go consoleLogger(logs)
+
 		fmt.Println(ops.Gamenames)
 		go CliMain(ops, dm, logs)
+		go main.visualLogging(logs)
 	})
 	syncAllButton := widget.NewButton("Sync All", func() {
 		ops.Gamenames = []string{}
@@ -235,9 +268,10 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 		}
 
 		logs := make(chan Message, 100)
-		go consoleLogger(logs)
+
 		fmt.Println(ops.Gamenames)
 		go CliMain(ops, dm, logs)
+		go main.visualLogging(logs)
 	})
 	manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })
 	optionsButton := widget.NewButton("Options", openOptionsWindow)

@@ -58,6 +58,8 @@ func (v *ViewStack) PushContent(content fyne.CanvasObject) {
 func (v *ViewStack) SwapRoot(content fyne.CanvasObject) {
 	if len(v.viewStack) > 0 {
 		v.viewStack[0] = content
+		v.rootWindow.SetContent(content)
+		content.Show()
 	}
 }
 
