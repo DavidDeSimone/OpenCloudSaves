@@ -33,7 +33,7 @@ From there, you can run:
 ```bash
 go get
 go build
-./steamcloudupload.exe --gui
+./steamcloudupload.exe
 ```
 
 
@@ -57,7 +57,7 @@ steamcloudupload[EXT] <FLAGS>
 
 You can also run 
 ```bash
-go run *.go --gui --verbose
+go run *.go --verbose
 ```
 
 ### Linux
