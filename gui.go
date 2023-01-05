@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"sort"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
@@ -58,29 +59,34 @@ func GetMainMenu() *MainMenuContainer {
 type MainMenuContainer struct {
 	dm *GameDefManager
 
-	rootVerticalSplit *widget.SplitContainer
-	menuBar           *widget.ScrollContainer
+	rootVerticalSplit *container.Split
+	menuBar           *container.Scroll
 
 	parentContainer *fyne.Container
 	innerContainer  *fyne.Container
 
-	verticalGameScroll *widget.ScrollContainer
-	horizSplit         *widget.SplitContainer
+	verticalGameScroll *container.Scroll
+	horizSplit         *container.Split
 }
 
 func (main *MainMenuContainer) RefreshGames() {
-	if main.parentContainer != nil {
-		main.parentContainer.Remove(main.innerContainer)
-	}
-
 	main.innerContainer = container.NewVBox()
 	main.parentContainer = container.NewVBox(main.innerContainer)
 
+	defMap := main.dm.GetGameDefMap()
+
+	keys := make([]string, 0)
+	for k, _ := range defMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	list := make([]fyne.CanvasObject, 0)
 	srv := GetDefaultService()
-	for k, v := range main.dm.GetGameDefMap() {
+	for _, k := range keys {
 		key := k
-		list = append(list, widget.NewCheck(v.DisplayName, func(selected bool) {
+		value := defMap[key]
+		list = append(list, widget.NewCheck(value.DisplayName, func(selected bool) {
 			syncMap[key] = selected
 			main.parentContainer.Remove(main.innerContainer)
 
@@ -141,6 +147,7 @@ func (main *MainMenuContainer) RefreshGames() {
 						overallStatus.Text = "Not all files in Sync"
 						overallStatus.Color = getDefaultRed()
 					} else {
+						// @TODO this is kind of costly, rework to go this async
 						syncStatus, err := srv.IsFileInSync(k, v.Name, metaFile.FileId, localMetaData)
 						if err != nil || syncStatus != InSync {
 							cloudStatus.Text = "File Not in Sync"
@@ -166,35 +173,23 @@ func (main *MainMenuContainer) RefreshGames() {
 			scroll.SetMinSize(fyne.NewSize(500, 500))
 			main.innerContainer.Add(scroll)
 			main.parentContainer.Add(main.innerContainer)
-
-			// @TODO this isn't working right. selecting a game, going into the add game menu and returning breaks the app
-			main.RefreshRootView()
 		}))
 	}
-
 	main.verticalGameScroll = container.NewVScroll(container.NewVBox(list...))
 }
 
 func (main *MainMenuContainer) RefreshRootView() {
-	if main.horizSplit == nil {
-		main.horizSplit = container.NewHSplit(main.verticalGameScroll, main.parentContainer)
-		main.horizSplit.Offset = 0.10
-	} else {
-		main.horizSplit.Leading = main.verticalGameScroll
-		main.horizSplit.Trailing = main.parentContainer
-	}
+	main.horizSplit = container.NewHSplit(main.verticalGameScroll, main.parentContainer)
+	main.horizSplit.Offset = 0.10
 
-	if main.rootVerticalSplit == nil {
-		main.rootVerticalSplit = container.NewVSplit(main.menuBar, main.horizSplit)
-		main.rootVerticalSplit.Offset = 0.05
-	} else {
-		main.rootVerticalSplit.Leading = main.menuBar
-		main.rootVerticalSplit.Trailing = main.horizSplit
-		main.rootVerticalSplit.Refresh()
-	}
+	main.rootVerticalSplit = container.NewVSplit(main.menuBar, main.horizSplit)
+	main.rootVerticalSplit.Offset = 0.05
+	main.parentContainer.Add(main.innerContainer)
+	GetViewStack().SetRoot(main.rootVerticalSplit)
 }
 
 func (main *MainMenuContainer) Refresh() {
+	syncMap = make(map[string]bool)
 	main.RefreshGames()
 	main.RefreshRootView()
 }
@@ -227,6 +222,9 @@ func (main *MainMenuContainer) visualLogging(input chan Message) {
 			msg.TextSize = 10
 			innerBox.Add(msg)
 		}
+
+		GetViewStack().PeekContent().Refresh()
+		tempScroll.ScrollToBottom()
 	}
 
 	parent.Add(widget.NewButton("Close Logs", func() {

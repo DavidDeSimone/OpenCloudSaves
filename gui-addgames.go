@@ -219,8 +219,8 @@ func (g *AddGamesContainer) makeCloseButton() *widget.Button {
 			fmt.Println(err)
 		}
 
-		GetMainMenu().Refresh()
 		GetViewStack().PopContent()
+		GetMainMenu().Refresh()
 	})
 	return closeButton
 }

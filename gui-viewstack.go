@@ -63,6 +63,24 @@ func (v *ViewStack) PopContent() {
 	}
 
 	v.viewStack.Pop()
+	v.viewStack.Last().Refresh()
 	v.viewStack.Last().Show()
 	v.rootWindow.SetContent(v.viewStack.Last())
+}
+
+func (v *ViewStack) PeekContent() fyne.CanvasObject {
+	return v.viewStack.Last()
+}
+
+func (v *ViewStack) SetRoot(content fyne.CanvasObject) {
+	if v.rootWindow == nil {
+		return
+	}
+
+	if len(v.viewStack) > 0 {
+		v.viewStack[0] = content
+	}
+
+	content.Show()
+	v.rootWindow.SetContent(content)
 }
