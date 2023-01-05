@@ -76,7 +76,7 @@ func (main *MainMenuContainer) RefreshGames() {
 	defMap := main.dm.GetGameDefMap()
 
 	keys := make([]string, 0)
-	for k, _ := range defMap {
+	for k := range defMap {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
