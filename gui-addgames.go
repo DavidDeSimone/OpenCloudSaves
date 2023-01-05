@@ -12,8 +12,8 @@ import (
 
 type AddGamesContainer struct {
 	dm               *GameDefManager
-	verticalSplit    *widget.SplitContainer
-	scroll           *widget.ScrollContainer
+	verticalSplit    *cont.Split
+	scroll           *cont.Scroll
 	scrollContent    *fyne.Container
 	buttonContainer  *fyne.Container
 	contentAccordion *widget.Accordion
@@ -21,7 +21,6 @@ type AddGamesContainer struct {
 
 type GameCardContainer struct {
 	dm            *GameDefManager
-	root          *fyne.Container
 	accordionItem *widget.AccordionItem
 
 	displayNameBox   *fyne.Container
@@ -67,7 +66,7 @@ func (g *GameCardContainer) makeCard(path []*Datapath, onRemove func(int, []*Dat
 				onRemove(removeIdx, path)
 				entryPtr.Remove(innerPtr)
 			})
-			line := widget.NewHSplitContainer(textbox, buttonSplit)
+			line := cont.NewHSplit(textbox, buttonSplit)
 			line.Offset = 0.8
 
 			innerEntry.Add(line)
@@ -105,6 +104,33 @@ func (g *GameCardContainer) makeCard(path []*Datapath, onRemove func(int, []*Dat
 			})
 
 			innerEntry.Add(cont.NewHBox(widget.NewLabel("Ignored Files (Comma separated)"), ignoreEntry))
+
+			downloadCheck := widget.NewCheck("Download", func(b bool) {
+				if b {
+					n.NetAuth |= CloudOperationDownload
+				} else {
+					n.NetAuth &= ^CloudOperationDownload
+				}
+			})
+			downloadCheck.SetChecked(n.NetAuth&CloudOperationDownload != 0)
+			uploadCheck := widget.NewCheck("Upload", func(b bool) {
+				if b {
+					n.NetAuth |= CloudOperationUpload
+				} else {
+					n.NetAuth &= ^CloudOperationUpload
+				}
+			})
+			uploadCheck.SetChecked(n.NetAuth&CloudOperationUpload != 0)
+			deleteCheck := widget.NewCheck("Delete", func(b bool) {
+				if b {
+					n.NetAuth |= CloudOperationDelete
+				} else {
+					n.NetAuth &= ^CloudOperationDelete
+				}
+			})
+			deleteCheck.SetChecked(n.NetAuth&CloudOperationDelete != 0)
+
+			innerEntry.Add(cont.NewHBox(downloadCheck, uploadCheck, deleteCheck))
 		}
 	}
 
@@ -125,7 +151,9 @@ func (g *GameCardContainer) makeWinCard() {
 	winParent := g.makeCard(g.def.WinPath, winRemoveFunc)
 	winParent.Add(widget.NewButton("Add Windows Path", func() {
 		g.winEntryContainer.Remove(winParent)
-		g.def.WinPath = append(g.def.WinPath, &Datapath{})
+		g.def.WinPath = append(g.def.WinPath, &Datapath{
+			NetAuth: CloudOperationAll,
+		})
 		g.winEntryContainer.Add(g.makeCard(g.def.WinPath, winRemoveFunc))
 	}))
 
@@ -143,7 +171,9 @@ func (g *GameCardContainer) makeLinuxCard() {
 	linuxParent := g.makeCard(g.def.LinuxPath, linuxRemoveFunc)
 	linuxParent.Add(widget.NewButton("Add Linux Path", func() {
 		g.linuxEntryContainer.Remove(linuxParent)
-		g.def.LinuxPath = append(g.def.LinuxPath, &Datapath{})
+		g.def.LinuxPath = append(g.def.LinuxPath, &Datapath{
+			NetAuth: CloudOperationAll,
+		})
 		g.linuxEntryContainer.Add(g.makeCard(g.def.LinuxPath, linuxRemoveFunc))
 	}))
 
@@ -161,7 +191,9 @@ func (g *GameCardContainer) makeDarwinCard() {
 	darwinParent := g.makeCard(g.def.DarwinPath, darwinRemoveFunc)
 	darwinParent.Add(widget.NewButton("Add MacOS Path", func() {
 		g.darwinEntryContainer.Remove(darwinParent)
-		g.def.DarwinPath = append(g.def.DarwinPath, &Datapath{})
+		g.def.DarwinPath = append(g.def.DarwinPath, &Datapath{
+			NetAuth: CloudOperationAll,
+		})
 		g.darwinEntryContainer.Add(g.makeCard(g.def.DarwinPath, darwinRemoveFunc))
 	}))
 
@@ -213,7 +245,7 @@ func (g *AddGamesContainer) makeAddGameButton() *widget.Button {
 }
 
 func (g *AddGamesContainer) makeCloseButton() *widget.Button {
-	closeButton := widget.NewButton("Close", func() {
+	closeButton := widget.NewButton("Save and Close", func() {
 		err := g.dm.CommitUserOverrides()
 		if err != nil {
 			fmt.Println(err)

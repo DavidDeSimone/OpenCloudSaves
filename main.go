@@ -71,6 +71,11 @@ type Message struct {
 	Err      error
 }
 
+const CloudOperationDownload = 1 << 0
+const CloudOperationUpload = 1 << 1
+const CloudOperationDelete = 1 << 2
+const CloudOperationAll = CloudOperationDownload | CloudOperationDelete | CloudOperationUpload
+
 //go:embed credentials.json
 var creds embed.FS
 
@@ -290,8 +295,13 @@ func GetLocalMetadata(filePath string) (*GameMetadata, error) {
 	return localMetadata, nil
 }
 
-func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[string]SyncFile, dryrun bool, logs chan Message) error {
+func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files map[string]SyncFile, dryrun bool, logs chan Message) error {
+	syncPath := syncDataPath.Path
 	LogMessage(logs, "Syncing Files for %v", syncPath)
+
+	downloadAuthorized := syncDataPath.NetAuth&CloudOperationDownload != 0
+	uploadAuthorized := syncDataPath.NetAuth&CloudOperationUpload != 0
+	deleteAuthoirzed := syncDataPath.NetAuth&CloudOperationDelete != 0
 
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
@@ -308,7 +318,11 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 				return err
 			}
 			separator := string(os.PathSeparator)
-			parentPath := syncPath + separator + k + separator
+			parentPath := Datapath{
+				Path:    syncPath + separator + k + separator,
+				Parent:  k,
+				NetAuth: syncDataPath.NetAuth,
+			}
 			var fileMap map[string]SyncFile = make(map[string]SyncFile)
 			f, err := os.Open(syncPath + separator + k + separator)
 			if err != nil {
@@ -328,7 +342,7 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 				}
 
 				fileMap[file.Name()] = SyncFile{
-					Name:  parentPath + file.Name(),
+					Name:  parentPath.Path + file.Name(),
 					IsDir: isDir,
 				}
 			}
@@ -372,8 +386,13 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 	LogMessage(logs, "-------- STAGE 1 -----------")
 	LogMessage(logs, "Examining files present on cloud but deleted locally")
 	var deletedFiles map[string]bool = make(map[string]bool)
+
+	if !deleteAuthoirzed {
+		LogMessage(logs, "Skipping deletions for %v", syncDataPath.Path)
+	}
+
 	// 1. Handle the case for deleting save data
-	if localMetadata != nil {
+	if localMetadata != nil && deleteAuthoirzed {
 		// If a file is in our local metafile, but not present locally, delete on cloud.
 		for k := range localMetadata.Files {
 			if _, err := os.Stat(syncPath + k); errors.Is(err, os.ErrNotExist) {
@@ -421,6 +440,11 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 		syncfile, found := files[file.GetName()]
 		fullpath := syncfile.Name
 		if !found {
+			if !downloadAuthorized {
+				LogMessage(logs, "Skipping download for %v", file.GetName())
+				continue
+			}
+
 			// 2a. Not present on local file system, download...
 			// downloadFile(srv, file.Id, syncPath+file.GetName(), dryrun)
 			LogMessage(logs, "Queued Download for %v", file.GetName())
@@ -442,6 +466,11 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 			if fileSyncStatus == InSync {
 				LogMessage(logs, "Remote and local files in sync (id/mod timestamp) %v", file.GetId())
 			} else if fileSyncStatus == RemoteNewer {
+				if !downloadAuthorized {
+					LogMessage(logs, "Skipping download for %v", file.GetName())
+					continue
+				}
+
 				inputChannel <- SyncRequest{
 					Operation: Download,
 					FileId:    file.GetId(),
@@ -454,6 +483,11 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 
 				pendingUploadDownload += 1
 			} else {
+				if !uploadAuthorized {
+					LogMessage(logs, "Skipping Upload for %v", file.GetName())
+					continue
+				}
+
 				inputChannel <- SyncRequest{
 					Operation: Upload,
 					FileId:    file.GetId(),
@@ -500,6 +534,11 @@ func syncFiles(srv CloudDriver, parentId string, syncPath string, files map[stri
 	// 3. Check for local files not present on the cloud
 	numCreations := 0
 	for k, v := range files {
+		if !uploadAuthorized {
+			LogMessage(logs, "Skipping Initial File Uploads")
+			break
+		}
+
 		found := false
 		for _, f := range r {
 			if k == f.GetName() {
@@ -656,7 +695,7 @@ func CliMain(ops *Options, dm *GameDefManager, logs chan Message) {
 				fmt.Println(err)
 				continue
 			}
-			err = syncFiles(srv, parentId, syncpath.Path, files, dryrun, logs)
+			err = syncFiles(srv, parentId, syncpath, files, dryrun, logs)
 			if err != nil {
 				fmt.Println(err)
 				continue

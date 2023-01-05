@@ -15,10 +15,11 @@ import (
 var gamedefMap []byte
 
 type Datapath struct {
-	Path   string   `json:"path"`
-	Exts   []string `json:"exts"`
-	Ignore []string `json:"ignore"`
-	Parent string   `json:"parent"`
+	Path    string   `json:"path"`
+	Exts    []string `json:"exts"`
+	Ignore  []string `json:"ignore"`
+	Parent  string   `json:"parent"`
+	NetAuth int      `json:"netauth"`
 }
 
 // @TODO better utilize saves_cross_compatible to split saves between platforms
@@ -154,10 +155,11 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			winpath = strings.Replace(winpath, "%LocalAppData%", os.Getenv("LOCALAPPDATA"), 1)
 			winpath = strings.Replace(winpath, "%STEAM%", steamLocation, 1)
 			result = append(result, Datapath{
-				Path:   prefix + winpath + separator,
-				Exts:   datapath.Exts,
-				Parent: datapath.Parent,
-				Ignore: datapath.Ignore,
+				Path:    prefix + winpath + separator,
+				Exts:    datapath.Exts,
+				Parent:  datapath.Parent,
+				Ignore:  datapath.Ignore,
+				NetAuth: datapath.NetAuth,
 			})
 		}
 	} else if platform == "darwin" {
@@ -176,10 +178,11 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			darwinPath = strings.Replace(darwinPath, "$HOME", os.Getenv("HOME"), 1)
 
 			result = append(result, Datapath{
-				Path:   prefix + darwinPath + separator,
-				Exts:   datapath.Exts,
-				Parent: datapath.Parent,
-				Ignore: datapath.Ignore,
+				Path:    prefix + darwinPath + separator,
+				Exts:    datapath.Exts,
+				Parent:  datapath.Parent,
+				Ignore:  datapath.Ignore,
+				NetAuth: datapath.NetAuth,
 			})
 		}
 	} else if platform == "linux" {
@@ -198,10 +201,11 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			linuxPath = strings.Replace(linuxPath, "$HOME", os.Getenv("HOME"), 1)
 
 			result = append(result, Datapath{
-				Path:   prefix + linuxPath + separator,
-				Exts:   datapath.Exts,
-				Parent: datapath.Parent,
-				Ignore: datapath.Ignore,
+				Path:    prefix + linuxPath + separator,
+				Exts:    datapath.Exts,
+				Parent:  datapath.Parent,
+				Ignore:  datapath.Ignore,
+				NetAuth: datapath.NetAuth,
 			})
 		}
 	} else {
