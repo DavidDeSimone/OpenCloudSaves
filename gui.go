@@ -106,12 +106,25 @@ func (main *MainMenuContainer) RefreshGames() {
 			main.innerContainer.Add(overallStatus)
 
 			saveList := make([]*widget.AccordionItem, 0)
+			noLocal := false
+			noRemote := false
 
 			for _, syncpath := range syncpaths {
 				localMetaData, err := GetLocalMetadata(syncpath.Path + STEAM_METAFILE)
 				if err != nil || localMetaData == nil {
+					noLocal = true
 					fmt.Println(err)
 					localMetaData = &GameMetadata{
+						Version: CURRENT_META_VERSION,
+						Gameid:  syncpath.Parent,
+						Files:   make(map[string]FileMetadata),
+					}
+				}
+
+				metadata, err := srv.GetMetaData(localMetaData.ParentId, STEAM_METAFILE)
+				if err != nil || metadata == nil {
+					noRemote = true
+					metadata = &GameMetadata{
 						Version: CURRENT_META_VERSION,
 						Gameid:  syncpath.Parent,
 						Files:   make(map[string]FileMetadata),
@@ -141,19 +154,24 @@ func (main *MainMenuContainer) RefreshGames() {
 					cloudStatus.TextStyle = fyne.TextStyle{Bold: true}
 					cloudStatus.Alignment = fyne.TextAlignCenter
 					metaFile, ok := localMetaData.Files[k]
-					if !ok {
+					fmt.Printf("Logging value %t, %t\n", noLocal, noRemote)
+					if !ok || (noLocal && noRemote) {
 						cloudStatus.Text = "File Not in Sync"
 						cloudStatus.Color = getDefaultRed()
 						overallStatus.Text = "Not all files in Sync"
 						overallStatus.Color = getDefaultRed()
 					} else {
-						// @TODO this is kind of costly, rework to go this async
-						syncStatus, err := srv.IsFileInSync(k, v.Name, metaFile.FileId, localMetaData)
-						if err != nil || syncStatus != InSync {
-							cloudStatus.Text = "File Not in Sync"
-							cloudStatus.Color = getDefaultRed()
-							overallStatus.Text = "Not all files in Sync"
-							overallStatus.Color = getDefaultRed()
+						remoteMeta, remoteOk := metadata.Files[k]
+						localMeta, localOk := localMetaData.Files[k]
+						if !(remoteOk && localOk && remoteMeta.Sha256 == localMeta.Sha256) {
+							// @TODO this is kind of costly, rework to go this async
+							syncStatus, err := srv.IsFileInSync(k, v.Name, metaFile.FileId, localMetaData)
+							if err != nil || syncStatus != InSync {
+								cloudStatus.Text = "File Not in Sync"
+								cloudStatus.Color = getDefaultRed()
+								overallStatus.Text = "Not all files in Sync"
+								overallStatus.Color = getDefaultRed()
+							}
 						}
 					}
 
@@ -257,7 +275,7 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 
 	main.RefreshGames()
 
-	syncButton := widget.NewButton("Sync Selected", func() {
+	syncButton := widget.NewButton("Sync Selected Games", func() {
 		ops.Gamenames = []string{}
 		for k, v := range syncMap {
 			if v {
@@ -271,7 +289,7 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 		go CliMain(ops, dm, logs)
 		go main.visualLogging(logs)
 	})
-	syncAllButton := widget.NewButton("Sync All", func() {
+	syncAllButton := widget.NewButton("Sync All Games", func() {
 		ops.Gamenames = []string{}
 		for k := range dm.GetGameDefMap() {
 			ops.Gamenames = append(ops.Gamenames, k)
@@ -285,7 +303,7 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	})
 	manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })
 	optionsButton := widget.NewButton("Options", openOptionsWindow)
-	hlist := []fyne.CanvasObject{syncAllButton, syncButton, manageGamesButton, optionsButton}
+	hlist := []fyne.CanvasObject{syncButton, syncAllButton, manageGamesButton, optionsButton}
 	main.menuBar = container.NewHScroll(container.NewHBox(hlist...))
 
 	main.RefreshRootView()

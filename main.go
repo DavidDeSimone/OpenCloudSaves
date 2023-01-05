@@ -35,10 +35,11 @@ type FileMetadata struct {
 }
 
 type GameMetadata struct {
-	Version int                     `json:"version"`
-	Gameid  string                  `json:"gameid"`
-	Files   map[string]FileMetadata `json:"files"`
-	fileId  string
+	Version  int                     `json:"version"`
+	Gameid   string                  `json:"gameid"`
+	Files    map[string]FileMetadata `json:"files"`
+	ParentId string                  `json:"parent_id"`
+	fileId   string
 }
 
 const (
@@ -588,6 +589,7 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 
 	LogMessage(logs, "Data Upload/Download success - updating metadata...")
 	metadata.Version = CURRENT_META_VERSION
+	metadata.ParentId = parentId
 	b, err := json.Marshal(metadata)
 	if err != nil {
 		return err
