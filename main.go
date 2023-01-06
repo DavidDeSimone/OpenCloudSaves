@@ -25,6 +25,7 @@ type Options struct {
 	DryRun         []bool            `short:"d" long:"dry-run" description:"Run through the sync process without uploading/downloading from the cloud"`
 	NoGUI          []bool            `short:"u" long:"no-gui" description:"Run in CLI mode with no GUI"`
 	AddCustomGames map[string]string `short:"a" long:"add-custom-games" description:"<KEY>:<JSON_VALUE> Adds a custom game description to user_overrides.json. This accepts a JSON blobs in the format defined in gamedef_map.json"`
+	UserOverride   []string          `short:"o" long:"user-override" description:"--user-override <FILE> Provide location for custom user override JSON file for game definitions"`
 }
 
 type FileMetadata struct {
@@ -93,7 +94,8 @@ var service CloudDriver = nil
 
 func GetDefaultService() CloudDriver {
 	if service == nil {
-		service = &GoogleCloudDriver{}
+		// service = &GoogleCloudDriver{}
+		service = &LocalFsCloudDriver{}
 		service.InitDriver()
 
 	}
@@ -731,7 +733,11 @@ func main() {
 	}
 
 	noGui := len(ops.NoGUI) == 1 && ops.NoGUI[0]
-	dm := MakeGameDefManager()
+	userOverrideLocation := ""
+	if len(ops.UserOverride) > 0 {
+		userOverrideLocation = ops.UserOverride[0]
+	}
+	dm := MakeGameDefManager(userOverrideLocation)
 
 	if noGui {
 		logs := make(chan Message, 100)
