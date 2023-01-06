@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"fmt"
 	"image/color"
-	"log"
 	"os"
 	"runtime"
 	"sort"
@@ -82,7 +81,6 @@ func (main *MainMenuContainer) RefreshGames() {
 	sort.Strings(keys)
 
 	list := make([]fyne.CanvasObject, 0)
-	srv := GetDefaultService()
 	for _, k := range keys {
 		key := k
 		value := defMap[key]
@@ -97,40 +95,9 @@ func (main *MainMenuContainer) RefreshGames() {
 			syncpaths, _ := main.dm.GetSyncpathForGame(key)
 
 			main.innerContainer = container.NewVBox()
-
-			overallStatus := canvas.NewText("Status: Cloud in Sync", getDefaultGreen())
-			overallStatus.TextStyle = fyne.TextStyle{
-				Bold: true,
-			}
-			overallStatus.Alignment = fyne.TextAlignCenter
-			main.innerContainer.Add(overallStatus)
-
 			saveList := make([]*widget.AccordionItem, 0)
-			noLocal := false
-			noRemote := false
 
 			for _, syncpath := range syncpaths {
-				localMetaData, err := GetLocalMetadata(syncpath.Path + STEAM_METAFILE)
-				if err != nil || localMetaData == nil {
-					noLocal = true
-					fmt.Println(err)
-					localMetaData = &GameMetadata{
-						Version: CURRENT_META_VERSION,
-						Gameid:  syncpath.Parent,
-						Files:   make(map[string]FileMetadata),
-					}
-				}
-
-				metadata, err := srv.GetMetaData(localMetaData.ParentId, STEAM_METAFILE)
-				if err != nil || metadata == nil {
-					noRemote = true
-					metadata = &GameMetadata{
-						Version: CURRENT_META_VERSION,
-						Gameid:  syncpath.Parent,
-						Files:   make(map[string]FileMetadata),
-					}
-				}
-
 				files, _ := main.dm.GetFilesForGame(key, syncpath.Parent)
 				for k, v := range files {
 					f, err := os.Stat(v.Name)
@@ -138,55 +105,84 @@ func (main *MainMenuContainer) RefreshGames() {
 						fmt.Println(err)
 					}
 
-					del := widget.NewButton("Delete", func() {
-						log.Fatal("Not Implemented")
-					})
-
-					sync := widget.NewButton("Sync", func() {
-						log.Fatal("Not Implemented")
-					})
-					sync.Importance = widget.HighImportance
-
-					cloudStatus := canvas.NewText("", getDefaultGreen())
-					// @TODO this is lying if the entries in local meta data are matching and in sync
-					// but the remote metadata has new entries
-					cloudStatus.Text = "File in Sync"
-					cloudStatus.TextStyle = fyne.TextStyle{Bold: true}
-					cloudStatus.Alignment = fyne.TextAlignCenter
-					metaFile, ok := localMetaData.Files[k]
-					fmt.Printf("Logging value %t, %t\n", noLocal, noRemote)
-					if !ok || (noLocal && noRemote) {
-						cloudStatus.Text = "File Not in Sync"
-						cloudStatus.Color = getDefaultRed()
-						overallStatus.Text = "Not all files in Sync"
-						overallStatus.Color = getDefaultRed()
-					} else {
-						remoteMeta, remoteOk := metadata.Files[k]
-						localMeta, localOk := localMetaData.Files[k]
-						if !(remoteOk && localOk && remoteMeta.Sha256 == localMeta.Sha256) {
-							// @TODO this is kind of costly, rework to go this async
-							syncStatus, err := srv.IsFileInSync(k, v.Name, metaFile.FileId, localMetaData)
-							if err != nil || syncStatus != InSync {
-								cloudStatus.Text = "File Not in Sync"
-								cloudStatus.Color = getDefaultRed()
-								overallStatus.Text = "Not all files in Sync"
-								overallStatus.Color = getDefaultRed()
-							}
-						}
-					}
-
 					itemContainer := container.NewVBox(widget.NewLabel("Save File: "+v.Name),
 						widget.NewLabel("Date Modified: "+f.ModTime().String()),
-						cloudStatus,
-						sync,
-						del)
+						widget.NewLabel(fmt.Sprintf("Size: %vMB", f.Size()/(1024*1024))),
+					)
 					newItem := widget.NewAccordionItem(k, itemContainer)
 					saveList = append(saveList, newItem)
 
 				}
 			}
 
-			inn := widget.NewVBox(widget.NewAccordion(saveList...))
+			statusLabel := canvas.NewText("Current Status: Unknown", fyne.CurrentApp().Settings().Theme().TextColor())
+			statusLabel.Alignment = fyne.TextAlignCenter
+			statusButton := widget.NewButton("Check Sync Status", func() {
+				statusLabel.Text = "Checking Status...."
+				statusLabel.Color = fyne.CurrentApp().Settings().Theme().TextColor()
+				srv := GetDefaultService()
+				outOfSync := false
+				for _, syncpath := range syncpaths {
+					files, _ := main.dm.GetFilesForGame(key, syncpath.Parent)
+					localMetaData, err := GetLocalMetadata(syncpath.Path + STEAM_METAFILE)
+					noLocal := false
+					noRemote := false
+					if err != nil || localMetaData == nil {
+						noLocal = true
+					}
+
+					metadata, err := srv.GetMetaData(localMetaData.ParentId, STEAM_METAFILE)
+					if err != nil || metadata == nil {
+						noRemote = true
+					}
+
+					if noLocal || noRemote {
+						outOfSync = true
+						break
+					}
+
+					for k := range metadata.Files {
+						_, ok := localMetaData.Files[k]
+						if !ok {
+							outOfSync = true
+							break
+						}
+					}
+
+					for k, _ := range files {
+						local, localOk := localMetaData.Files[k]
+						remote, remoteOk := metadata.Files[k]
+
+						if localOk && remoteOk {
+							if local.Sha256 != remote.Sha256 {
+								outOfSync = true
+								break
+							}
+						} else {
+							outOfSync = true
+							break
+						}
+					}
+
+				}
+
+				if outOfSync {
+					statusLabel.Text = "Current Status: Out of Sync"
+					statusLabel.Color = getDefaultRed()
+					statusLabel.TextSize = 16
+				} else {
+					statusLabel.Text = "Current Status: In Sync"
+					statusLabel.Color = getDefaultGreen()
+					statusLabel.TextSize = 16
+				}
+			})
+			statusButton.Importance = widget.HighImportance
+			labelSplit := container.NewHSplit(statusButton, statusLabel)
+			labelSplit.Offset = 0.3
+
+			inn := widget.NewVBox(
+				labelSplit,
+				widget.NewAccordion(saveList...))
 			scroll := container.NewVScroll(inn)
 			scroll.SetMinSize(fyne.NewSize(500, 500))
 			main.innerContainer.Add(scroll)
