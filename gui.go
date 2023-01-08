@@ -131,9 +131,12 @@ func (main *MainMenuContainer) RefreshGames() {
 						noLocal = true
 					}
 
-					metadata, err := srv.GetMetaData(localMetaData.ParentId, STEAM_METAFILE)
-					if err != nil || metadata == nil {
-						noRemote = true
+					var metadata *GameMetadata = nil
+					if localMetaData != nil {
+						metadata, err = srv.GetMetaData(localMetaData.ParentId, STEAM_METAFILE)
+						if err != nil || metadata == nil {
+							noRemote = true
+						}
 					}
 
 					if noLocal || noRemote {
@@ -275,7 +278,8 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 		ops.Gamenames = []string{}
 		for k, v := range syncMap {
 			if v {
-				ops.Gamenames = append(ops.Gamenames, k)
+				entry := dm.gamedefs[k]
+				ops.Gamenames = append(ops.Gamenames, entry.DisplayName)
 			}
 		}
 
@@ -288,7 +292,8 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 	syncAllButton := widget.NewButton("Sync All Games", func() {
 		ops.Gamenames = []string{}
 		for k := range dm.GetGameDefMap() {
-			ops.Gamenames = append(ops.Gamenames, k)
+			entry := dm.gamedefs[k]
+			ops.Gamenames = append(ops.Gamenames, entry.DisplayName)
 		}
 
 		logs := make(chan Message, 100)

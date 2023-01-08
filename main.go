@@ -95,8 +95,8 @@ var service CloudDriver = nil
 
 func GetDefaultService() CloudDriver {
 	if service == nil {
-		// service = &GoogleCloudDriver{}
-		service = &LocalFsCloudDriver{}
+		service = &GoogleCloudDriver{}
+		// service = &LocalFsCloudDriver{}
 		service.InitDriver()
 
 	}
@@ -317,6 +317,7 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		go syncOp(srv, inputChannel, outputChannel)
 	}
 
+	dirList := []string{}
 	for k, v := range files {
 		if v.IsDir {
 			pid, err := createRemoteDirIfNotExists(srv, parentId, k)
@@ -336,12 +337,12 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 			}
 
 			defer f.Close()
-			files, err := f.Readdir(0)
+			filesInDir, err := f.Readdir(0)
 			if err != nil {
 				return err
 			}
 
-			for _, file := range files {
+			for _, file := range filesInDir {
 				isDir := false
 				if file.IsDir() {
 					isDir = true
@@ -357,7 +358,13 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 			if err != nil {
 				return err
 			}
+
+			dirList = append(dirList, k)
 		}
+	}
+
+	for _, d := range dirList {
+		delete(files, d)
 	}
 
 	clientuuid, err := getClientUUID()
@@ -641,11 +648,6 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		return err
 	}
 
-	LogMessage(logs, "All Operations Complete, files in sync")
-	logs <- Message{
-		Finished: true,
-	}
-
 	return nil
 }
 
@@ -736,6 +738,11 @@ func CliMain(ops *Options, dm *GameDefManager, logs chan Message) {
 			if err != nil {
 				fmt.Println(err)
 				continue
+			}
+
+			LogMessage(logs, "All Operations Complete, files in sync")
+			logs <- Message{
+				Finished: true,
 			}
 		}
 	}
