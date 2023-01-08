@@ -86,11 +86,11 @@ const CloudOperationAll = CloudOperationDownload | CloudOperationDelete | CloudO
 //go:embed credentials.json
 var creds embed.FS
 
-const APP_NAME string = "SteamCustomCloudUpload"
-const SAVE_FOLDER string = "steamsave"
-const DEFAULT_PORT string = ":54438"
-const STEAM_METAFILE string = "steamcloudloadmeta.json"
-const CURRENT_META_VERSION int = 1
+const APP_NAME = "SteamCustomCloudUpload"
+const SAVE_FOLDER = "steamsave"
+const DEFAULT_PORT = ":54438"
+const STEAM_METAFILE = "steamcloudloadmeta.json"
+const CURRENT_META_VERSION = 1
 const WORKER_POOL_SIZE = 4
 
 // var verboseLogging bool = false
