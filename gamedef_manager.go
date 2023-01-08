@@ -282,15 +282,19 @@ func (d *GameDefManager) GetGameDefMap() map[string]*GameDef {
 	return d.gamedefs
 }
 
-func MakeGameDefManager(userOverride string) *GameDefManager {
+func GetDefaultUserOverridePath() string {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		log.Fatal(err)
 	}
 	separator := string(os.PathSeparator)
 
+	return cacheDir + separator + APP_NAME + separator + "user_overrides.json"
+}
+
+func MakeGameDefManager(userOverride string) *GameDefManager {
 	if userOverride == "" {
-		userOverride = cacheDir + separator + APP_NAME + separator + "user_overrides.json"
+		userOverride = GetDefaultUserOverridePath()
 	}
 
 	dm := &GameDefManager{
@@ -299,7 +303,7 @@ func MakeGameDefManager(userOverride string) *GameDefManager {
 	}
 
 	mid := make(map[string]json.RawMessage)
-	err = json.Unmarshal(gamedefMap, &mid)
+	err := json.Unmarshal(gamedefMap, &mid)
 	if err != nil {
 		log.Fatal(err)
 	}

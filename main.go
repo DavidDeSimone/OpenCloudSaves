@@ -316,7 +316,7 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 
 	for k, v := range files {
 		if v.IsDir {
-			pid, err := createDirIfNotExists(srv, parentId, k)
+			pid, err := createRemoteDirIfNotExists(srv, parentId, k)
 			if err != nil {
 				return err
 			}
@@ -616,7 +616,7 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 	return nil
 }
 
-func createDirIfNotExists(srv CloudDriver, parentId string, name string) (string, error) {
+func createRemoteDirIfNotExists(srv CloudDriver, parentId string, name string) (string, error) {
 	resultId := ""
 	res, err := srv.ListFiles(parentId)
 
@@ -673,7 +673,7 @@ func CliMain(ops *Options, dm *GameDefManager, logs chan Message) {
 	for _, gamename := range ops.Gamenames {
 		gamename = strings.TrimSpace(gamename)
 		LogMessage(logs, "Performing Check on %v", gamename)
-		id, err := createDirIfNotExists(srv, saveFolderId, gamename)
+		id, err := createRemoteDirIfNotExists(srv, saveFolderId, gamename)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -694,7 +694,7 @@ func CliMain(ops *Options, dm *GameDefManager, logs chan Message) {
 				continue
 			}
 
-			parentId, err := createDirIfNotExists(srv, id, syncpath.Parent)
+			parentId, err := createRemoteDirIfNotExists(srv, id, syncpath.Parent)
 			if err != nil {
 				fmt.Println(err)
 				continue

@@ -36,7 +36,7 @@ type LocalFsCloudDriver struct {
 
 func (f *LocalFsCloudDriver) SetRoot(root string) error {
 	f.root = root
-	_, err := mkdirp(f.root)
+	_, err := CreateDirIfNotExist(f.root)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (f *LocalFsCloudDriver) InitDriver() error {
 	}
 
 	f.root = root + separator + STEAM_CLOUD_FS_DEFAULT + separator
-	_, err = mkdirp(f.root)
+	_, err = CreateDirIfNotExist(f.root)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (f *LocalFsCloudDriver) ListFiles(parentId string) ([]CloudFile, error) {
 	return result, nil
 }
 
-func mkdirp(path string) (string, error) {
+func CreateDirIfNotExist(path string) (string, error) {
 	modtime := ""
 
 	if stat, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
@@ -117,7 +117,7 @@ func (f *LocalFsCloudDriver) CreateDir(name string, parentId string) (CloudFile,
 	parentId = strings.Replace(parentId, "root", f.root, 1)
 	path := parentId + name + string(os.PathSeparator)
 
-	modtime, err := mkdirp(path)
+	modtime, err := CreateDirIfNotExist(path)
 	if err != nil {
 		return nil, err
 	}
