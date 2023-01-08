@@ -80,7 +80,7 @@ func CommitUserOptions() {
 	CreateDirIfNotExist(GetDefaultUserOptionsFileDir())
 	err = os.WriteFile(getDefaultUserOptionsFilePath(), data, os.ModePerm)
 	if err != nil {
-		log.Fatalf("Here %v", err)
+		log.Fatal(err)
 	}
 }
 
