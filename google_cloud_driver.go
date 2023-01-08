@@ -68,7 +68,7 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 		log.Fatal(err)
 	}
 
-	openbrowser(authURL)
+	OpenBrowser(authURL)
 
 	var tok *oauth2.Token
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
