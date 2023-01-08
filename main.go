@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/jessevdk/go-flags"
@@ -197,7 +198,7 @@ func getClientUUID() (string, error) {
 	return result, nil
 }
 
-func sync(srv CloudDriver, input chan SyncRequest, output chan SyncResponse) {
+func syncOp(srv CloudDriver, input chan SyncRequest, output chan SyncResponse) {
 	for {
 		request := <-input
 		switch request.Operation {
@@ -298,6 +299,8 @@ func GetLocalMetadata(filePath string) (*GameMetadata, error) {
 	return localMetadata, nil
 }
 
+var conflictMutex sync.Mutex
+
 func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files map[string]SyncFile, dryrun bool, logs chan Message) error {
 	syncPath := syncDataPath.Path
 	LogMessage(logs, "Syncing Files for %v", syncPath)
@@ -311,7 +314,7 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 	inputChannel := make(chan SyncRequest, 1000)
 	outputChannel := make(chan SyncResponse, 1000)
 	for i := 0; i < WORKER_POOL_SIZE; i++ {
-		go sync(srv, inputChannel, outputChannel)
+		go syncOp(srv, inputChannel, outputChannel)
 	}
 
 	for k, v := range files {
@@ -407,7 +410,37 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 							if localMetadata.Files[k].Sha256 != metadata.Files[k].Sha256 {
 								// CONFLICT - the file that we plan on deleting is NOT the same as on the server
 								// We should surface to the user if we want to delete this.
-								fmt.Println("CONFLICT!!!! ")
+								LogMessage(logs, ">>>>> Deleted File Modified on the Cloud <<<<<<<<<<")
+								LogMessage(logs, "There is a file on the cloud that you have deleted locally - %v. Local hash %v, remote hash %v", k, localMetadata.Files[k].Sha256, metadata.Files[k].Sha256)
+								LogMessage(logs, "Press d to (d)elete the file on the cloud. Press k to (k)eep the file on the cloud. Press s to (s)kip")
+
+								conflictMutex.Lock()
+								input := ""
+								defer conflictMutex.Unlock()
+
+								for {
+									fmt.Scan(&input)
+
+									if input == "d" {
+										// Delete the remote file
+										err = srv.DeleteFile(f.GetId())
+										if err != nil {
+											return err
+										}
+										delete(metadata.Files, k)
+										deletedFiles[k] = true
+										break
+									} else if input == "k" {
+										// Remove it from the local metadata, keep on trucking.
+										delete(metadata.Files, k)
+										break
+									} else if input == "s" {
+										break
+									} else {
+										LogMessage(logs, "Please enter one of the following options: d, k, or s...")
+									}
+								}
+
 							} else {
 								LogMessage(logs, "Deleting File (id) %v (%v)", f.GetName(), f.GetId())
 								err = srv.DeleteFile(f.GetId())

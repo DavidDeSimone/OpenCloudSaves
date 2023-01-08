@@ -3,3 +3,4 @@ token.json
 steamcloudupload*
 testdata*
 .DS_store
+*.app
