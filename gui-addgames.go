@@ -210,6 +210,11 @@ func (g *AddGamesContainer) makeGameCardEntry(k string, v *GameDef) *GameCardCon
 
 	entry.displayNameEntry = makeTextEntry(v.DisplayName, func(s string) {
 		v.DisplayName = s
+		delete(g.dm.gamedefs, k)
+		g.dm.gamedefs[s] = v
+
+		entry.accordionItem.Title = s
+		k = s
 	})
 	entry.displayNameBox = cont.NewHBox(widget.NewLabel("Display Name: "), entry.displayNameEntry)
 

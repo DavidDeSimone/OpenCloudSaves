@@ -228,8 +228,6 @@ func (d *GameDefManager) ApplyUserOverrides() error {
 		return err
 	}
 
-	fmt.Println(string(content))
-
 	mid := make(map[string]json.RawMessage)
 	err = json.Unmarshal(content, &mid)
 	if err != nil {
@@ -237,7 +235,6 @@ func (d *GameDefManager) ApplyUserOverrides() error {
 	}
 
 	for k, v := range mid {
-		// fmt.Println(string(v))
 		def := &GameDef{}
 		err = json.Unmarshal(v, def)
 		if err != nil {
