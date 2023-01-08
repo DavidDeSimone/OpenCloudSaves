@@ -152,7 +152,7 @@ func (main *MainMenuContainer) RefreshGames() {
 						}
 					}
 
-					for k, _ := range files {
+					for k := range files {
 						local, localOk := localMetaData.Files[k]
 						remote, remoteOk := metadata.Files[k]
 
@@ -211,7 +211,7 @@ func (main *MainMenuContainer) Refresh() {
 	main.RefreshRootView()
 }
 
-func (main *MainMenuContainer) visualLogging(input chan Message) {
+func (main *MainMenuContainer) visualLogging(input chan Message, cancel chan Cancellation) {
 	minSize := main.parentContainer.MinSize()
 	parent := container.NewVBox()
 	innerBox := container.NewVBox()
@@ -222,6 +222,14 @@ func (main *MainMenuContainer) visualLogging(input chan Message) {
 	defaultColor := fyne.CurrentApp().Settings().Theme().TextColor()
 	root := container.NewVBox(parent)
 	GetViewStack().PushContent(root)
+
+	parent.Add(widget.NewButton("Cancel", func() {
+		cancel <- Cancellation{
+			ShouldCancel: true,
+		}
+
+		GetViewStack().PopContent()
+	}))
 
 	for {
 		result := <-input
@@ -278,29 +286,30 @@ func GuiMain(ops *Options, dm *GameDefManager) {
 		ops.Gamenames = []string{}
 		for k, v := range syncMap {
 			if v {
-				entry := dm.gamedefs[k]
-				ops.Gamenames = append(ops.Gamenames, entry.DisplayName)
+
+				ops.Gamenames = append(ops.Gamenames, k)
 			}
 		}
 
 		logs := make(chan Message, 100)
+		cancel := make(chan Cancellation, 1)
 
 		fmt.Println(ops.Gamenames)
-		go CliMain(ops, dm, logs)
-		go main.visualLogging(logs)
+		go CliMain(ops, dm, logs, cancel)
+		go main.visualLogging(logs, cancel)
 	})
 	syncAllButton := widget.NewButton("Sync All Games", func() {
 		ops.Gamenames = []string{}
 		for k := range dm.GetGameDefMap() {
-			entry := dm.gamedefs[k]
-			ops.Gamenames = append(ops.Gamenames, entry.DisplayName)
+			ops.Gamenames = append(ops.Gamenames, k)
 		}
 
 		logs := make(chan Message, 100)
+		cancel := make(chan Cancellation, 1)
 
 		fmt.Println(ops.Gamenames)
-		go CliMain(ops, dm, logs)
-		go main.visualLogging(logs)
+		go CliMain(ops, dm, logs, cancel)
+		go main.visualLogging(logs, cancel)
 	})
 	manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })
 	optionsButton := widget.NewButton("Options", openOptionsWindow)

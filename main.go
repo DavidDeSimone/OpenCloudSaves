@@ -74,6 +74,10 @@ type Message struct {
 	Err      error
 }
 
+type Cancellation struct {
+	ShouldCancel bool
+}
+
 const CloudOperationDownload = 1 << 0
 const CloudOperationUpload = 1 << 1
 const CloudOperationDelete = 1 << 2
@@ -299,9 +303,22 @@ func GetLocalMetadata(filePath string) (*GameMetadata, error) {
 	return localMetadata, nil
 }
 
+func checkIfShouldCancel(cancelChannel chan Cancellation) error {
+	select {
+	case msg := <-cancelChannel:
+		if msg.ShouldCancel {
+			return errors.New("request Cancelled")
+		}
+	default:
+		return nil
+	}
+
+	return nil
+}
+
 var conflictMutex sync.Mutex
 
-func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files map[string]SyncFile, dryrun bool, logs chan Message) error {
+func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files map[string]SyncFile, dryrun bool, logs chan Message, cancel chan Cancellation) error {
 	syncPath := syncDataPath.Path
 	LogMessage(logs, "Syncing Files for %v", syncPath)
 
@@ -315,6 +332,11 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 	outputChannel := make(chan SyncResponse, 1000)
 	for i := 0; i < WORKER_POOL_SIZE; i++ {
 		go syncOp(srv, inputChannel, outputChannel)
+	}
+
+	cancelErr := checkIfShouldCancel(cancel)
+	if cancelErr != nil {
+		return cancelErr
 	}
 
 	dirList := []string{}
@@ -336,6 +358,11 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 				return err
 			}
 
+			cancelErr = checkIfShouldCancel(cancel)
+			if cancelErr != nil {
+				return cancelErr
+			}
+
 			defer f.Close()
 			filesInDir, err := f.Readdir(0)
 			if err != nil {
@@ -354,13 +381,23 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 				}
 			}
 
-			err = syncFiles(srv, pid, parentPath, fileMap, dryrun, logs)
+			cancelErr = checkIfShouldCancel(cancel)
+			if cancelErr != nil {
+				return cancelErr
+			}
+
+			err = syncFiles(srv, pid, parentPath, fileMap, dryrun, logs, cancel)
 			if err != nil {
 				return err
 			}
 
 			dirList = append(dirList, k)
 		}
+	}
+
+	cancelErr = checkIfShouldCancel(cancel)
+	if cancelErr != nil {
+		return cancelErr
 	}
 
 	for _, d := range dirList {
@@ -376,6 +413,11 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 	r, err := srv.ListFiles(parentId)
 	if err != nil {
 		return err
+	}
+
+	cancelErr = checkIfShouldCancel(cancel)
+	if cancelErr != nil {
+		return cancelErr
 	}
 
 	metadata, err := srv.GetMetaData(parentId, STEAM_METAFILE)
@@ -404,10 +446,21 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		LogMessage(logs, "Skipping deletions for %v", syncDataPath.Path)
 	}
 
+	cancelErr = checkIfShouldCancel(cancel)
+	if cancelErr != nil {
+		return cancelErr
+	}
+
 	// 1. Handle the case for deleting save data
 	if localMetadata != nil && deleteAuthoirzed {
 		// If a file is in our local metafile, but not present locally, delete on cloud.
 		for k := range localMetadata.Files {
+
+			cancelErr = checkIfShouldCancel(cancel)
+			if cancelErr != nil {
+				return cancelErr
+			}
+
 			if _, err := os.Stat(syncPath + k); errors.Is(err, os.ErrNotExist) {
 				for _, f := range r {
 					if f.GetName() == k {
@@ -470,6 +523,12 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 	LogMessage(logs, "Downloading updates to exisiting files; Uploading exisiting files")
 	pendingUploadDownload := 0
 	for _, file := range r {
+
+		cancelErr = checkIfShouldCancel(cancel)
+		if cancelErr != nil {
+			return cancelErr
+		}
+
 		// @TODO this should be an extension valid check....
 		if file.GetName() == STEAM_METAFILE {
 			continue
@@ -547,6 +606,11 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 	}
 
 	for pendingUploadDownload > 0 {
+		cancelErr = checkIfShouldCancel(cancel)
+		if cancelErr != nil {
+			return cancelErr
+		}
+
 		response := <-outputChannel
 		if response.Err != nil {
 			return response.Err
@@ -572,11 +636,21 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		pendingUploadDownload -= 1
 	}
 
+	cancelErr = checkIfShouldCancel(cancel)
+	if cancelErr != nil {
+		return cancelErr
+	}
+
 	LogMessage(logs, "-------- STAGE 3 -----------")
 	LogMessage(logs, "Download new files from remote")
 	// 3. Check for local files not present on the cloud
 	numCreations := 0
 	for k, v := range files {
+		cancelErr = checkIfShouldCancel(cancel)
+		if cancelErr != nil {
+			return cancelErr
+		}
+
 		if !uploadAuthorized {
 			LogMessage(logs, "Skipping Initial File Uploads")
 			break
@@ -608,6 +682,11 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 	}
 
 	for numCreations > 0 {
+		cancelErr = checkIfShouldCancel(cancel)
+		if cancelErr != nil {
+			return cancelErr
+		}
+
 		results := <-outputChannel
 		LogMessage(logs, "Operation Successful for %v", results.Name)
 		if results.Err != nil {
@@ -627,6 +706,11 @@ func syncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		}
 
 		numCreations -= 1
+	}
+
+	cancelErr = checkIfShouldCancel(cancel)
+	if cancelErr != nil {
+		return cancelErr
 	}
 
 	LogMessage(logs, "Data Upload/Download success - updating metadata...")
@@ -679,7 +763,7 @@ func createRemoteDirIfNotExists(srv CloudDriver, parentId string, name string) (
 	return resultId, nil
 }
 
-func CliMain(ops *Options, dm *GameDefManager, logs chan Message) {
+func CliMain(ops *Options, dm *GameDefManager, logs chan Message, cancel chan Cancellation) {
 	// verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
 	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
 
@@ -734,7 +818,7 @@ func CliMain(ops *Options, dm *GameDefManager, logs chan Message) {
 				fmt.Println(err)
 				continue
 			}
-			err = syncFiles(srv, parentId, syncpath, files, dryrun, logs)
+			err = syncFiles(srv, parentId, syncpath, files, dryrun, logs, cancel)
 			if err != nil {
 				fmt.Println(err)
 				continue
@@ -782,7 +866,9 @@ func main() {
 	if noGui {
 		logs := make(chan Message, 100)
 		go consoleLogger(logs)
-		CliMain(ops, dm, logs)
+
+		cancel := make(chan Cancellation, 1)
+		CliMain(ops, dm, logs, cancel)
 	} else {
 		GuiMain(ops, dm)
 	}
