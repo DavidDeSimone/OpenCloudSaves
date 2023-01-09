@@ -2,30 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"testing"
 )
-
-func injectTestGameDef(dm GameDefManager, testDataRoot string, t *testing.T) {
-	genericDatapath := []*Datapath{
-		{
-			Path:    testDataRoot,
-			Exts:    []string{},
-			Ignore:  []string{},
-			Parent:  t.Name(),
-			NetAuth: CloudOperationAll,
-		},
-	}
-
-	dm.GetGameDefMap()[t.Name()] = &GameDef{
-		DisplayName:          t.Name(),
-		SteamId:              "0",
-		SavesCrossCompatible: true,
-		WinPath:              genericDatapath,
-		DarwinPath:           genericDatapath,
-		LinuxPath:            genericDatapath,
-	}
-}
 
 func TestBasic(t *testing.T) {
 	service = &LocalMemFsCloudDriver{}
@@ -55,7 +35,9 @@ func TestBasic(t *testing.T) {
 	}
 	injectTestGameDef(dm, gameTestRoot, t)
 
-	err = rootFs.WriteFile(gameTestRoot+string(os.PathSeparator)+"file1", []byte("Hello World"), os.ModePerm)
+	testFile := gameTestRoot + string(os.PathSeparator) + "file1"
+	payload := "Hello World"
+	err = rootFs.WriteFile(testFile, []byte(payload), os.ModePerm)
 	if err != nil {
 		t.Error(err)
 	}
@@ -81,9 +63,41 @@ func TestBasic(t *testing.T) {
 		if msg.Err != nil {
 			t.Error(msg.Err)
 		} else if msg.Finished {
-			return
+			break
 		} else {
 			fmt.Println(msg.Message)
 		}
+	}
+
+	payloadPath := rootDir + SAVE_FOLDER + string(os.PathSeparator) + t.Name() + string(os.PathSeparator) + "saves" + string(os.PathSeparator) + "file1"
+	fmt.Println("Looking at : " + payloadPath)
+	result, err := fs.ReadFile(rootFs, payloadPath)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if string(result) != payload {
+		t.Error("payload failure...")
+	}
+}
+
+func injectTestGameDef(dm GameDefManager, testDataRoot string, t *testing.T) {
+	genericDatapath := []*Datapath{
+		{
+			Path:    testDataRoot,
+			Exts:    []string{},
+			Ignore:  []string{},
+			Parent:  "saves",
+			NetAuth: CloudOperationAll,
+		},
+	}
+
+	dm.GetGameDefMap()[t.Name()] = &GameDef{
+		DisplayName:          t.Name(),
+		SteamId:              "0",
+		SavesCrossCompatible: true,
+		WinPath:              genericDatapath,
+		DarwinPath:           genericDatapath,
+		LinuxPath:            genericDatapath,
 	}
 }
