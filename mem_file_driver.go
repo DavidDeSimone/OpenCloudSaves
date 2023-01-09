@@ -311,12 +311,14 @@ func (f *LocalMemFsCloudDriver) IsFileInSync(fileName string, filePath string, f
 		return 0, err
 	}
 
-	localFileHash, err := getFileHash(filePath)
-	if err != nil {
-		return 0, err
+	h := sha256.New()
+	if _, err := io.Copy(h, localFile); err != nil {
+		log.Fatal(err)
 	}
 
-	h := sha256.New()
+	localFileHash := hex.EncodeToString(h.Sum(nil))
+
+	h = sha256.New()
 	if _, err := io.Copy(h, remoteFile); err != nil {
 		log.Fatal(err)
 	}

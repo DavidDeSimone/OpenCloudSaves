@@ -44,6 +44,11 @@ type Cancellation struct {
 	ShouldCancel bool
 }
 
+type ChannelProvider struct {
+	logs   chan Message
+	cancel chan Cancellation
+}
+
 const CloudOperationDownload = 1 << 0
 const CloudOperationUpload = 1 << 1
 const CloudOperationDelete = 1 << 2
@@ -78,7 +83,10 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 	}
 }
 
-func CliMain(ops *Options, dm GameDefManager, logs chan Message, cancel chan Cancellation) {
+func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, localfs LocalFs) {
+	logs := channels.logs
+	cancel := channels.cancel
+
 	// verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
 	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
 
@@ -145,7 +153,7 @@ func CliMain(ops *Options, dm GameDefManager, logs chan Message, cancel chan Can
 				}
 				continue
 			}
-			err = SyncFiles(srv, parentId, syncpath, files, dryrun, logs, cancel)
+			err = SyncFiles(srv, parentId, syncpath, files, dryrun, localfs, logs, cancel)
 			if err != nil {
 				fmt.Println(err)
 				continue
@@ -191,11 +199,13 @@ func main() {
 	dm := MakeGameDefManager(userOverrideLocation)
 
 	if noGui {
-		logs := make(chan Message, 100)
-		go consoleLogger(logs)
+		channels := &ChannelProvider{
+			logs:   make(chan Message, 100),
+			cancel: make(chan Cancellation, 1),
+		}
 
-		cancel := make(chan Cancellation, 1)
-		CliMain(ops, dm, logs, cancel)
+		go consoleLogger(channels.logs)
+		CliMain(ops, dm, channels, GetDefaultLocalFs())
 	} else {
 		GuiMain(ops, dm)
 	}

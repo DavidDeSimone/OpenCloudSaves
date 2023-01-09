@@ -2,71 +2,28 @@ package main
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"testing"
 )
 
-type MockGameDefManager struct {
-	gamedefs map[string]*GameDef
-	rootFs   fs.FS
-}
-
-func (m *MockGameDefManager) ApplyUserOverrides() error {
-	return nil
-}
-func (m *MockGameDefManager) CommitUserOverrides() error {
-	return nil
-}
-func (m *MockGameDefManager) AddUserOverride(key string, jsonOverride string) error {
-	return nil
-}
-func (m *MockGameDefManager) GetGameDefMap() map[string]*GameDef {
-	return m.gamedefs
-}
-
-// @TODO
-func (m *MockGameDefManager) GetFilesForGame(id string, parent string) (map[string]SyncFile, error) {
-	return make(map[string]SyncFile), nil
-}
-
-// @TODO
-func (m *MockGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
-	return nil, nil
-}
-
 func injectTestGameDef(dm GameDefManager, testDataRoot string, t *testing.T) {
+	genericDatapath := []*Datapath{
+		{
+			Path:    testDataRoot,
+			Exts:    []string{},
+			Ignore:  []string{},
+			Parent:  t.Name(),
+			NetAuth: CloudOperationAll,
+		},
+	}
+
 	dm.GetGameDefMap()[t.Name()] = &GameDef{
 		DisplayName:          t.Name(),
 		SteamId:              "0",
 		SavesCrossCompatible: true,
-		WinPath: []*Datapath{
-			{
-				Path:    testDataRoot,
-				Exts:    []string{},
-				Ignore:  []string{},
-				Parent:  t.Name(),
-				NetAuth: CloudOperationAll,
-			},
-		},
-		DarwinPath: []*Datapath{
-			{
-				Path:    testDataRoot,
-				Exts:    []string{},
-				Ignore:  []string{},
-				Parent:  t.Name(),
-				NetAuth: CloudOperationAll,
-			},
-		},
-		LinuxPath: []*Datapath{
-			{
-				Path:    testDataRoot,
-				Exts:    []string{},
-				Ignore:  []string{},
-				Parent:  t.Name(),
-				NetAuth: CloudOperationAll,
-			},
-		},
+		WinPath:              genericDatapath,
+		DarwinPath:           genericDatapath,
+		LinuxPath:            genericDatapath,
 	}
 }
 
@@ -92,7 +49,10 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 
-	dm := &MockGameDefManager{}
+	dm := &MockGameDefManager{
+		gamedefs: make(map[string]*GameDef),
+		rootFs:   rootFs,
+	}
 	injectTestGameDef(dm, gameTestRoot, t)
 
 	err = rootFs.WriteFile(gameTestRoot+string(os.PathSeparator)+"file1", []byte("Hello World"), os.ModePerm)
@@ -105,12 +65,19 @@ func TestBasic(t *testing.T) {
 		NoGUI:     []bool{true},
 	}
 
-	logs := make(chan Message, 100)
-	cancel := make(chan Cancellation, 1)
-	go CliMain(ops, dm, logs, cancel)
+	channels := &ChannelProvider{
+		logs:   make(chan Message, 100),
+		cancel: make(chan Cancellation, 1),
+	}
+
+	mockFs := &MockLocalFs{
+		rootFs: rootFs,
+	}
+
+	go CliMain(ops, dm, channels, mockFs)
 
 	for {
-		msg := <-logs
+		msg := <-channels.logs
 		if msg.Err != nil {
 			t.Error(msg.Err)
 		} else if msg.Finished {

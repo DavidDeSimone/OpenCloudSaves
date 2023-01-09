@@ -53,9 +53,6 @@ func (d *GameDef) GetSteamLocation() string {
 
 func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 	fmt.Println("For Gamedef " + d.DisplayName)
-	if len(d.DarwinPath) > 0 {
-		fmt.Println(d.DarwinPath[0].Ignore)
-	}
 	syncpaths, err := d.GetSyncpaths()
 	if err != nil {
 		return nil, err

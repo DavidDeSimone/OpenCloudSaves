@@ -124,7 +124,7 @@ func (main *MainMenuContainer) RefreshGames() {
 				outOfSync := false
 				for _, syncpath := range syncpaths {
 					files, _ := main.dm.GetFilesForGame(key, syncpath.Parent)
-					localMetaData, err := GetLocalMetadata(syncpath.Path + STEAM_METAFILE)
+					localMetaData, err := GetLocalMetadata(syncpath.Path+STEAM_METAFILE, GetDefaultLocalFs())
 					noLocal := false
 					noRemote := false
 					if err != nil || localMetaData == nil {
@@ -290,13 +290,14 @@ func GuiMain(ops *Options, dm GameDefManager) {
 				ops.Gamenames = append(ops.Gamenames, k)
 			}
 		}
-
-		logs := make(chan Message, 100)
-		cancel := make(chan Cancellation, 1)
+		channels := &ChannelProvider{
+			logs:   make(chan Message, 100),
+			cancel: make(chan Cancellation, 1),
+		}
 
 		fmt.Println(ops.Gamenames)
-		go CliMain(ops, dm, logs, cancel)
-		go main.visualLogging(logs, cancel)
+		go CliMain(ops, dm, channels, GetDefaultLocalFs())
+		go main.visualLogging(channels.logs, channels.cancel)
 	})
 	syncAllButton := widget.NewButton("Sync All Games", func() {
 		ops.Gamenames = []string{}
@@ -304,12 +305,14 @@ func GuiMain(ops *Options, dm GameDefManager) {
 			ops.Gamenames = append(ops.Gamenames, k)
 		}
 
-		logs := make(chan Message, 100)
-		cancel := make(chan Cancellation, 1)
+		channels := &ChannelProvider{
+			logs:   make(chan Message, 100),
+			cancel: make(chan Cancellation, 1),
+		}
 
 		fmt.Println(ops.Gamenames)
-		go CliMain(ops, dm, logs, cancel)
-		go main.visualLogging(logs, cancel)
+		go CliMain(ops, dm, channels, GetDefaultLocalFs())
+		go main.visualLogging(channels.logs, channels.cancel)
 	})
 	manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })
 	optionsButton := widget.NewButton("Options", openOptionsWindow)

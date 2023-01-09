@@ -1,13 +1,9 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"sync"
 
@@ -51,23 +47,8 @@ func GetClientUUID() (string, error) {
 	return result, nil
 }
 
-func getFileHash(fileName string) (string, error) {
-	f, err := os.Open(fileName)
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(h.Sum(nil)), nil
-}
-
-func GetLocalMetadata(filePath string) (*GameMetadata, error) {
-	localMetafile, err := os.ReadFile(filePath)
+func GetLocalMetadata(filePath string, localfs LocalFs) (*GameMetadata, error) {
+	localMetafile, err := localfs.ReadFile(filePath)
 	var localMetadata *GameMetadata = nil
 	if err == nil {
 		// If we don't have a local metafile, that is fine.
@@ -149,7 +130,7 @@ func ValidateAndCreateParentFolder(srv CloudDriver) (string, error) {
 	return saveFolderFileId, nil
 }
 
-func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files map[string]SyncFile, dryrun bool, logs chan Message, cancel chan Cancellation) error {
+func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files map[string]SyncFile, dryrun bool, localfs LocalFs, logs chan Message, cancel chan Cancellation) error {
 	syncPath := syncDataPath.Path
 	LogMessage(logs, "Syncing Files for %v", syncPath)
 
@@ -184,18 +165,12 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 				NetAuth: syncDataPath.NetAuth,
 			}
 			var fileMap map[string]SyncFile = make(map[string]SyncFile)
-			f, err := os.Open(syncPath + separator + k + separator)
-			if err != nil {
-				return err
-			}
-
 			cancelErr = checkIfShouldCancel(cancel)
 			if cancelErr != nil {
 				return cancelErr
 			}
 
-			defer f.Close()
-			filesInDir, err := f.Readdir(0)
+			filesInDir, err := localfs.ReadDir(syncPath + separator + k + separator)
 			if err != nil {
 				return err
 			}
@@ -217,7 +192,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 				return cancelErr
 			}
 
-			err = SyncFiles(srv, pid, parentPath, fileMap, dryrun, logs, cancel)
+			err = SyncFiles(srv, pid, parentPath, fileMap, dryrun, localfs, logs, cancel)
 			if err != nil {
 				return err
 			}
@@ -264,7 +239,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		}
 	}
 
-	localMetadata, err := GetLocalMetadata(syncPath + STEAM_METAFILE)
+	localMetadata, err := GetLocalMetadata(syncPath+STEAM_METAFILE, localfs)
 	if err != nil {
 		return err
 	}
@@ -292,7 +267,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 				return cancelErr
 			}
 
-			if _, err := os.Stat(syncPath + k); errors.Is(err, os.ErrNotExist) {
+			if _, err := localfs.Stat(syncPath + k); errors.Is(err, os.ErrNotExist) {
 				for _, f := range r {
 					if f.GetName() == k {
 						if dryrun {
@@ -524,7 +499,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 			return results.Err
 		}
 
-		filehash, err := getFileHash(results.Path)
+		filehash, err := localfs.GetFileHash(results.Path)
 		if err != nil {
 			return err
 		}
@@ -552,7 +527,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		return err
 	}
 
-	err = os.WriteFile(syncPath+STEAM_METAFILE, b, os.ModePerm)
+	err = localfs.WriteFile(syncPath+STEAM_METAFILE, b, os.ModePerm)
 
 	if err != nil {
 		return nil
