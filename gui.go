@@ -22,7 +22,7 @@ func openOptionsWindow() {
 	GetViewStack().PushContent(MakeOptionsScreen())
 }
 
-func manageGames(dm *GameDefManager) {
+func manageGames(dm GameDefManager) {
 	GetViewStack().PushContent(MakeAddGamesScreen(dm))
 }
 
@@ -56,7 +56,7 @@ func GetMainMenu() *MainMenuContainer {
 }
 
 type MainMenuContainer struct {
-	dm *GameDefManager
+	dm GameDefManager
 
 	rootVerticalSplit *container.Split
 	menuBar           *container.Scroll
@@ -257,7 +257,7 @@ func (main *MainMenuContainer) visualLogging(input chan Message, cancel chan Can
 	}))
 }
 
-func GuiMain(ops *Options, dm *GameDefManager) {
+func GuiMain(ops *Options, dm GameDefManager) {
 	// The steam deck (likely due to it's DPI) has scaling issues with our current version of FYNE
 	// To make this smooth, we will scale the UI to make it look nice in gaming mode.
 	// Normal linux users can overwrite this.

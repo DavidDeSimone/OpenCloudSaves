@@ -78,7 +78,7 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 	}
 }
 
-func CliMain(ops *Options, dm *GameDefManager, logs chan Message, cancel chan Cancellation) {
+func CliMain(ops *Options, dm GameDefManager, logs chan Message, cancel chan Cancellation) {
 	// verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
 	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
 
@@ -110,6 +110,9 @@ func CliMain(ops *Options, dm *GameDefManager, logs chan Message, cancel chan Ca
 		id, err := CreateRemoteDirIfNotExists(srv, saveFolderId, gamename)
 		if err != nil {
 			fmt.Println(err)
+			logs <- Message{
+				Err: err,
+			}
 			continue
 		}
 
@@ -117,6 +120,9 @@ func CliMain(ops *Options, dm *GameDefManager, logs chan Message, cancel chan Ca
 		LogMessage(logs, "Identified Paths for %v: %v", gamename, syncpaths)
 		if err != nil {
 			fmt.Println(err)
+			logs <- Message{
+				Err: err,
+			}
 			continue
 		}
 
@@ -125,12 +131,18 @@ func CliMain(ops *Options, dm *GameDefManager, logs chan Message, cancel chan Ca
 			files, err := dm.GetFilesForGame(gamename, syncpath.Parent)
 			if err != nil {
 				fmt.Println(err)
+				logs <- Message{
+					Err: err,
+				}
 				continue
 			}
 
 			parentId, err := CreateRemoteDirIfNotExists(srv, id, syncpath.Parent)
 			if err != nil {
 				fmt.Println(err)
+				logs <- Message{
+					Err: err,
+				}
 				continue
 			}
 			err = SyncFiles(srv, parentId, syncpath, files, dryrun, logs, cancel)

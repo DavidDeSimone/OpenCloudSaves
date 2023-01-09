@@ -11,7 +11,7 @@ import (
 )
 
 type AddGamesContainer struct {
-	dm               *GameDefManager
+	dm               GameDefManager
 	verticalSplit    *cont.Split
 	scroll           *cont.Scroll
 	scrollContent    *fyne.Container
@@ -20,7 +20,7 @@ type AddGamesContainer struct {
 }
 
 type GameCardContainer struct {
-	dm            *GameDefManager
+	dm            GameDefManager
 	accordionItem *widget.AccordionItem
 
 	displayNameBox   *fyne.Container
@@ -209,9 +209,10 @@ func (g *AddGamesContainer) makeGameCardEntry(k string, v *GameDef) *GameCardCon
 	}
 
 	entry.displayNameEntry = makeTextEntry(v.DisplayName, func(s string) {
+		gamedefs := g.dm.GetGameDefMap()
 		v.DisplayName = s
-		delete(g.dm.gamedefs, k)
-		g.dm.gamedefs[s] = v
+		delete(gamedefs, k)
+		gamedefs[s] = v
 
 		entry.accordionItem.Title = s
 		k = s
@@ -225,7 +226,7 @@ func (g *AddGamesContainer) makeGameCardEntry(k string, v *GameDef) *GameCardCon
 	entry.deleteEntryButton = widget.NewButton("Stop Tracking "+v.DisplayName, func() {
 		// @TODO show confirmation
 		g.contentAccordion.Remove(entry.accordionItem)
-		delete(g.dm.gamedefs, k)
+		delete(entry.dm.GetGameDefMap(), k)
 	})
 	entry.deleteEntryButton.Importance = widget.HighImportance
 	entry.contentContainer.Add(entry.deleteEntryButton)
@@ -240,7 +241,7 @@ func (g *AddGamesContainer) makeAddGameButton() *widget.Button {
 		value := &GameDef{
 			DisplayName: "New Game",
 		}
-		g.dm.gamedefs[key] = value
+		g.dm.GetGameDefMap()[key] = value
 		entry := g.makeGameCardEntry(key, value)
 		g.contentAccordion.Append(entry.accordionItem)
 	})
@@ -262,7 +263,7 @@ func (g *AddGamesContainer) makeCloseButton() *widget.Button {
 	return closeButton
 }
 
-func MakeAddGamesScreen(dm *GameDefManager) fyne.CanvasObject {
+func MakeAddGamesScreen(dm GameDefManager) fyne.CanvasObject {
 	gameScreen := &AddGamesContainer{
 		dm:            dm,
 		scrollContent: cont.NewVBox(),

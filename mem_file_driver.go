@@ -50,6 +50,14 @@ func (f *LocalMemFsCloudDriver) SetRoot(root string) error {
 	return nil
 }
 
+func (f *LocalMemFsCloudDriver) GetRootFs() *memfs.FS {
+	return f.rootFS
+}
+
+func (f *LocalMemFsCloudDriver) GetRoot() string {
+	return f.root
+}
+
 func (f *LocalMemFsCloudDriver) InitDriver() error {
 	f.rootFS = memfs.New()
 	err := f.rootFS.MkdirAll("memfs", 0755)
@@ -66,21 +74,16 @@ func (f *LocalMemFsCloudDriver) ListFiles(parentId string) ([]CloudFile, error) 
 	scanId := strings.TrimSuffix(parentId, string(os.PathSeparator))
 	result := []CloudFile{}
 	fmt.Println("Walking ScanId... " + scanId)
-	err := fs.WalkDir(f.rootFS, scanId, func(path string, file fs.DirEntry, err error) error {
-		if err != nil {
-			log.Fatal(err)
-			// return err
-		}
+	dirEntries, err := fs.ReadDir(f.rootFS, scanId)
+	if err != nil {
+		return nil, err
+	}
 
-		if path == scanId {
-			return nil
-		}
-
-		fmt.Println("Path : " + path)
+	for _, file := range dirEntries {
 		fmt.Println(file.Name())
 		info, err := file.Info()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		id := parentId + file.Name()
@@ -93,12 +96,10 @@ func (f *LocalMemFsCloudDriver) ListFiles(parentId string) ([]CloudFile, error) 
 			Id:      id,
 			ModTime: info.ModTime().Format(time.RFC3339),
 		})
-
-		return nil
-	})
+	}
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return result, nil

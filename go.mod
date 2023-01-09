@@ -8,7 +8,6 @@ require (
 	github.com/andygrunwald/vdf v1.1.0
 	github.com/google/uuid v1.3.0
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/psanford/memfs v0.0.0-20210214183328-a001468d78ef
 	golang.org/x/oauth2 v0.3.0
 	golang.org/x/sys v0.3.0
 	google.golang.org/api v0.105.0

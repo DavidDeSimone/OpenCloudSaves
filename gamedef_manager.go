@@ -215,12 +215,21 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 	return result, nil
 }
 
-type GameDefManager struct {
+type FsGameDefManager struct {
 	gamedefs            map[string]*GameDef
 	userOverrideLoction string
 }
 
-func (d *GameDefManager) ApplyUserOverrides() error {
+type GameDefManager interface {
+	ApplyUserOverrides() error
+	CommitUserOverrides() error
+	AddUserOverride(key string, jsonOverride string) error
+	GetGameDefMap() map[string]*GameDef
+	GetFilesForGame(id string, parent string) (map[string]SyncFile, error)
+	GetSyncpathForGame(id string) ([]Datapath, error)
+}
+
+func (d *FsGameDefManager) ApplyUserOverrides() error {
 	fileName := d.userOverrideLoction
 	content, err := os.ReadFile(fileName)
 	if err != nil {
@@ -235,6 +244,7 @@ func (d *GameDefManager) ApplyUserOverrides() error {
 	}
 
 	for k, v := range mid {
+		// fmt.Println(string(v))
 		def := &GameDef{}
 		err = json.Unmarshal(v, def)
 		if err != nil {
@@ -248,7 +258,7 @@ func (d *GameDefManager) ApplyUserOverrides() error {
 	return nil
 }
 
-func (d *GameDefManager) CommitUserOverrides() error {
+func (d *FsGameDefManager) CommitUserOverrides() error {
 	newResult, err := json.Marshal(d.gamedefs)
 	if err != nil {
 		return err
@@ -263,7 +273,7 @@ func (d *GameDefManager) CommitUserOverrides() error {
 	return nil
 }
 
-func (d *GameDefManager) AddUserOverride(key string, jsonOverride string) error {
+func (d *FsGameDefManager) AddUserOverride(key string, jsonOverride string) error {
 	def := &GameDef{}
 	err := json.Unmarshal([]byte(jsonOverride), def)
 	if err != nil {
@@ -275,7 +285,7 @@ func (d *GameDefManager) AddUserOverride(key string, jsonOverride string) error 
 	return d.CommitUserOverrides()
 }
 
-func (d *GameDefManager) GetGameDefMap() map[string]*GameDef {
+func (d *FsGameDefManager) GetGameDefMap() map[string]*GameDef {
 	return d.gamedefs
 }
 
@@ -289,12 +299,12 @@ func GetDefaultUserOverridePath() string {
 	return cacheDir + separator + APP_NAME + separator + "user_overrides.json"
 }
 
-func MakeGameDefManager(userOverride string) *GameDefManager {
+func MakeGameDefManager(userOverride string) GameDefManager {
 	if userOverride == "" {
 		userOverride = GetDefaultUserOverridePath()
 	}
 
-	dm := &GameDefManager{
+	dm := &FsGameDefManager{
 		gamedefs:            make(map[string]*GameDef),
 		userOverrideLoction: userOverride,
 	}
@@ -319,7 +329,7 @@ func MakeGameDefManager(userOverride string) *GameDefManager {
 	return dm
 }
 
-func (d *GameDefManager) GetFilesForGame(id string, parent string) (map[string]SyncFile, error) {
+func (d *FsGameDefManager) GetFilesForGame(id string, parent string) (map[string]SyncFile, error) {
 	driver, ok := d.gamedefs[id]
 	if !ok {
 		return nil, fmt.Errorf("failed to find game (%v)", id)
@@ -335,7 +345,7 @@ func (d *GameDefManager) GetFilesForGame(id string, parent string) (map[string]S
 	return files, nil
 }
 
-func (d *GameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
+func (d *FsGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
 	driver, ok := d.gamedefs[id]
 	if !ok {
 		return nil, fmt.Errorf("failed to find game (%v)", id)
