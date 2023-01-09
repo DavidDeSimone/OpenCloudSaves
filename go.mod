@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	fyne.io/fyne v1.4.3
-	github.com/DavidDeSimone/memfs v0.0.0-20230108231208-42d2315f266e
+	github.com/DavidDeSimone/memfs v0.15.0
 	github.com/andygrunwald/vdf v1.1.0
 	github.com/google/uuid v1.3.0
 	github.com/jessevdk/go-flags v1.5.0

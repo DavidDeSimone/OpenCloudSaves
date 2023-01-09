@@ -427,7 +427,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		fullpath := response.Path
 		fileName := response.Name
 
-		newFileHash, err := getFileHash(fullpath)
+		newFileHash, err := localfs.GetFileHash(fullpath)
 		if err != nil {
 			return err
 		}
