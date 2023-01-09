@@ -154,7 +154,7 @@ func (f *LocalMemFsCloudDriver) DownloadFile(fileId string, filePath string, fil
 		return nil, err
 	}
 
-	err = os.WriteFile(filePath, content, os.ModePerm)
+	err = f.rootFS.WriteFile(filePath, content, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (f *LocalMemFsCloudDriver) DownloadFile(fileId string, filePath string, fil
 func (f *LocalMemFsCloudDriver) UploadFile(fileId string, filePath string, fileName string) (CloudFile, error) {
 	fmt.Println("Operation Upload File on -> " + fileId)
 
-	bytes, err := os.ReadFile(filePath)
+	bytes, err := fs.ReadFile(f.rootFS, filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func (f *LocalMemFsCloudDriver) CreateFile(parentId string, fileName string, fil
 	fmt.Println("Operation Create File on -> " + parentId)
 	parentId = strings.Replace(parentId, "root", f.root, 1)
 
-	bytes, err := os.ReadFile(filePath)
+	bytes, err := fs.ReadFile(f.rootFS, filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +289,7 @@ func (f *LocalMemFsCloudDriver) DeleteFile(fileId string) error {
 func (f *LocalMemFsCloudDriver) IsFileInSync(fileName string, filePath string, fileId string, metadata *GameMetadata) (int, error) {
 	fmt.Printf("Comparing Files.....")
 
-	localFile, err := os.Open(filePath)
+	localFile, err := f.rootFS.Open(filePath)
 	if err != nil {
 		return 0, err
 	}
