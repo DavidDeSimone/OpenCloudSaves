@@ -1,11 +1,13 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -50,39 +52,53 @@ func (f *LocalMemFsCloudDriver) SetRoot(root string) error {
 
 func (f *LocalMemFsCloudDriver) InitDriver() error {
 	f.rootFS = memfs.New()
-	err := f.rootFS.MkdirAll("./", os.ModePerm)
+	err := f.rootFS.MkdirAll("memfs", 0755)
 	if err != nil {
 		return err
 	}
-
-	f.root = "./"
+	f.root = "memfs/"
 	return nil
 }
 
 func (f *LocalMemFsCloudDriver) ListFiles(parentId string) ([]CloudFile, error) {
+	fmt.Println("Listing Files.... " + parentId)
 	parentId = strings.Replace(parentId, "root", f.root, 1)
-	files, err := fs.ReadDir(f.rootFS, parentId)
-	if err != nil {
-		return nil, err
-	}
-
+	scanId := strings.TrimSuffix(parentId, string(os.PathSeparator))
 	result := []CloudFile{}
-	for _, f := range files {
-		info, err := f.Info()
+	fmt.Println("Walking ScanId... " + scanId)
+	err := fs.WalkDir(f.rootFS, scanId, func(path string, file fs.DirEntry, err error) error {
 		if err != nil {
-			return nil, err
+			log.Fatal(err)
+			// return err
 		}
 
-		id := parentId + f.Name()
+		if path == scanId {
+			return nil
+		}
+
+		fmt.Println("Path : " + path)
+		fmt.Println(file.Name())
+		info, err := file.Info()
+		if err != nil {
+			return err
+		}
+
+		id := parentId + file.Name()
 		if info.IsDir() {
 			id += string(os.PathSeparator)
 		}
-
+		fmt.Println("Id -> " + id)
 		result = append(result, &LocalMemFsFile{
-			Name:    f.Name(),
+			Name:    file.Name(),
 			Id:      id,
 			ModTime: info.ModTime().Format(time.RFC3339),
 		})
+
+		return nil
+	})
+
+	if err != nil {
+		panic(err)
 	}
 
 	return result, nil
@@ -91,7 +107,10 @@ func (f *LocalMemFsCloudDriver) ListFiles(parentId string) ([]CloudFile, error) 
 func (f *LocalMemFsCloudDriver) CreateMemDirIfNotExist(path string) (string, error) {
 	modtime := ""
 
-	if stat, err := f.rootFS.Open(path); errors.Is(err, os.ErrNotExist) {
+	path = strings.TrimSuffix(path, string(os.PathSeparator))
+	stat, err := f.rootFS.Open(path)
+	fmt.Println("Making Dir " + path)
+	if err != nil {
 		err := f.rootFS.MkdirAll(path, os.ModePerm)
 		if err != nil {
 			return "", err
@@ -105,18 +124,21 @@ func (f *LocalMemFsCloudDriver) CreateMemDirIfNotExist(path string) (string, err
 		modtime = stat.ModTime().Format(time.RFC3339)
 	}
 
+	fmt.Println("Mod Time -> " + modtime)
 	return modtime, nil
 }
 
 func (f *LocalMemFsCloudDriver) CreateDir(name string, parentId string) (CloudFile, error) {
 	parentId = strings.Replace(parentId, "root", f.root, 1)
 	path := parentId + name + string(os.PathSeparator)
+	fmt.Println("Creating Dir " + path)
 
 	modtime, err := f.CreateMemDirIfNotExist(path)
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Println("CreateDir Complete")
 	return &LocalMemFsFile{
 		Name:    name,
 		Id:      path,
@@ -124,21 +146,15 @@ func (f *LocalMemFsCloudDriver) CreateDir(name string, parentId string) (CloudFi
 	}, nil
 }
 
-func (f *LocalMemFsCloudDriver) copyMemFileContents(src, dst string) (err error) {
-	content, err := fs.ReadFile(f.rootFS, src)
-	if err != nil {
-		return err
-	}
-
-	err = f.rootFS.WriteFile(dst, content, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	return
-}
-
 func (f *LocalMemFsCloudDriver) DownloadFile(fileId string, filePath string, fileName string) (CloudFile, error) {
-	err := f.copyMemFileContents(fileId, filePath)
+	fmt.Println("Operation Download File on -> " + fileId)
+
+	content, err := fs.ReadFile(f.rootFS, fileId)
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.WriteFile(filePath, content, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
@@ -153,6 +169,7 @@ func (f *LocalMemFsCloudDriver) DownloadFile(fileId string, filePath string, fil
 		return nil, err
 	}
 
+	fmt.Println("Download complete.....")
 	return &LocalMemFsFile{
 		Name:    fileName,
 		Id:      filePath,
@@ -161,7 +178,14 @@ func (f *LocalMemFsCloudDriver) DownloadFile(fileId string, filePath string, fil
 }
 
 func (f *LocalMemFsCloudDriver) UploadFile(fileId string, filePath string, fileName string) (CloudFile, error) {
-	err := f.copyMemFileContents(filePath, fileId)
+	fmt.Println("Operation Upload File on -> " + fileId)
+
+	bytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = f.rootFS.WriteFile(fileId, bytes, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
@@ -176,6 +200,7 @@ func (f *LocalMemFsCloudDriver) UploadFile(fileId string, filePath string, fileN
 		return nil, err
 	}
 
+	fmt.Println("Upload Complete....")
 	return &LocalMemFsFile{
 		Name:    fileName,
 		Id:      filePath,
@@ -184,8 +209,15 @@ func (f *LocalMemFsCloudDriver) UploadFile(fileId string, filePath string, fileN
 }
 
 func (f *LocalMemFsCloudDriver) CreateFile(parentId string, fileName string, filePath string) (CloudFile, error) {
+	fmt.Println("Operation Create File on -> " + parentId)
 	parentId = strings.Replace(parentId, "root", f.root, 1)
-	err := f.copyMemFileContents(filePath, parentId+fileName)
+
+	bytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = f.rootFS.WriteFile(parentId+fileName, bytes, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
@@ -200,6 +232,7 @@ func (f *LocalMemFsCloudDriver) CreateFile(parentId string, fileName string, fil
 		return nil, err
 	}
 
+	fmt.Println("Creation Complete....")
 	return &LocalMemFsFile{
 		Name:    fileName,
 		Id:      parentId + fileName,
@@ -208,13 +241,10 @@ func (f *LocalMemFsCloudDriver) CreateFile(parentId string, fileName string, fil
 }
 
 func (f *LocalMemFsCloudDriver) GetMetaData(parentId string, fileName string) (*GameMetadata, error) {
+	fmt.Println("Getting Metadata -> " + parentId + fileName)
 	metaFile, err := f.rootFS.Open(parentId + fileName)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, nil
-		} else {
-			return nil, err
-		}
+		return nil, nil
 	}
 
 	if err != nil {
@@ -236,30 +266,30 @@ func (f *LocalMemFsCloudDriver) GetMetaData(parentId string, fileName string) (*
 
 	metadata.fileId = parentId + fileName
 
+	fmt.Println("Fetched metadata -> " + metadata.fileId)
 	return metadata, nil
 }
 
 func (f *LocalMemFsCloudDriver) UpdateMetaData(parentId string, fileName string, filePath string, metaData *GameMetadata) error {
-
+	fmt.Println("Updating Metadata...")
 	bytes, err := json.Marshal(metaData)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("Meta Upload complete...")
 	return f.rootFS.WriteFile(parentId+fileName, bytes, os.ModePerm)
 }
 
 func (f *LocalMemFsCloudDriver) DeleteFile(fileId string) error {
-	file, err := f.rootFS.Open(fileId)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	fmt.Println("Deleteing File...")
 	return f.rootFS.Remove(fileId)
 }
 
 func (f *LocalMemFsCloudDriver) IsFileInSync(fileName string, filePath string, fileId string, metadata *GameMetadata) (int, error) {
-	localFile, err := f.rootFS.Open(filePath)
+	fmt.Printf("Comparing Files.....")
+
+	localFile, err := os.Open(filePath)
 	if err != nil {
 		return 0, err
 	}
@@ -284,10 +314,13 @@ func (f *LocalMemFsCloudDriver) IsFileInSync(fileName string, filePath string, f
 	if err != nil {
 		return 0, err
 	}
-	remoteFileHash, err := getFileHash(fileId)
-	if err != nil {
-		return 0, err
+
+	h := sha256.New()
+	if _, err := io.Copy(h, remoteFile); err != nil {
+		log.Fatal(err)
 	}
+
+	remoteFileHash := hex.EncodeToString(h.Sum(nil))
 
 	if localStat.ModTime().Equal(remoteStat.ModTime()) || localFileHash == remoteFileHash {
 		return InSync, nil
