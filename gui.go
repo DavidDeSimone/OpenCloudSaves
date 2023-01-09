@@ -69,8 +69,11 @@ type MainMenuContainer struct {
 }
 
 func (main *MainMenuContainer) RefreshGames() {
+	defaultText := "Select a game to view saves files!"
+	defaultLabel := widget.NewLabel(defaultText)
+	defaultLabel.Alignment = fyne.TextAlignCenter
 	main.innerContainer = container.NewVBox()
-	main.parentContainer = container.NewVBox(main.innerContainer)
+	main.parentContainer = container.NewVBox(defaultLabel, main.innerContainer)
 
 	defMap := main.dm.GetGameDefMap()
 
@@ -85,6 +88,12 @@ func (main *MainMenuContainer) RefreshGames() {
 		key := k
 		value := defMap[key]
 		list = append(list, widget.NewCheck(value.DisplayName, func(selected bool) {
+			if selected {
+				defaultLabel.Text = "Currently Viewing: " + value.DisplayName
+			} else {
+				defaultLabel.Text = defaultText
+			}
+
 			syncMap[key] = selected
 			main.parentContainer.Remove(main.innerContainer)
 
