@@ -62,7 +62,7 @@ const SAVE_FOLDER = "steamsave"
 const DEFAULT_PORT = ":54438"
 const STEAM_METAFILE = "steamcloudloadmeta.json"
 const CURRENT_META_VERSION = 1
-const WORKER_POOL_SIZE = 4
+const WORKER_POOL_SIZE = 12
 
 var service CloudDriver = nil
 

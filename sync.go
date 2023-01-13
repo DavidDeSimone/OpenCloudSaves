@@ -354,8 +354,6 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 			}
 
 			// 2a. Not present on local file system, download...
-			// downloadFile(srv, file.Id, syncPath+file.GetName(), dryrun)
-			LogMessage(logs, "Queued Download for %v", file.GetName())
 			inputChannel <- SyncRequest{
 				Operation: Download,
 				FileId:    file.GetId(),
@@ -387,8 +385,6 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 					Dryrun:    dryrun,
 				}
 
-				LogMessage(logs, "Queued Download for %v", file.GetName())
-
 				pendingUploadDownload += 1
 			} else {
 				if !uploadAuthorized {
@@ -404,13 +400,13 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 					Dryrun:    dryrun,
 				}
 
-				LogMessage(logs, "Queued Upload for %v", file.GetName())
-
 				pendingUploadDownload += 1
 			}
 		}
 	}
 
+	totalPendingOperations := pendingUploadDownload
+	lastPercentage := 0
 	for pendingUploadDownload > 0 {
 		cancelErr = checkIfShouldCancel(cancel)
 		if cancelErr != nil {
@@ -422,7 +418,6 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 			return response.Err
 		}
 
-		LogMessage(logs, "Operation complete for %v", response.Name)
 		newModifiedTime := response.Result
 		fullpath := response.Path
 		fileName := response.Name
@@ -440,6 +435,12 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		}
 
 		pendingUploadDownload -= 1
+
+		percentage := int(1.0 - (float64(pendingUploadDownload)/float64(totalPendingOperations))*100)
+		if percentage > lastPercentage {
+			LogMessage(logs, "Percentage Complete: %v%%", percentage)
+			lastPercentage = percentage
+		}
 	}
 
 	cancelErr = checkIfShouldCancel(cancel)
@@ -483,10 +484,12 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 				Path:      v.Name,
 			}
 			numCreations += 1
-			LogMessage(logs, "Queue upload for file %v", v.Name)
 		}
 	}
 
+	LogMessage(logs, "Queue upload for %v files", numCreations)
+	totalCreations := numCreations
+	lastPercentage = 0
 	for numCreations > 0 {
 		cancelErr = checkIfShouldCancel(cancel)
 		if cancelErr != nil {
@@ -494,15 +497,15 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		}
 
 		results := <-outputChannel
-		LogMessage(logs, "Operation Successful for %v", results.Name)
 		if results.Err != nil {
 			return results.Err
 		}
 
-		filehash, err := localfs.GetFileHash(results.Path)
-		if err != nil {
-			return err
-		}
+		filehash := "foo"
+		// filehash, err := localfs.GetFileHash(results.Path)
+		// if err != nil {
+		// 	return err
+		// }
 
 		metadata.Files[results.Name] = FileMetadata{
 			Sha256:         filehash,
@@ -512,6 +515,12 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files ma
 		}
 
 		numCreations -= 1
+		percentage := int((1.0 - (float64(numCreations) / float64(totalCreations))) * 100)
+		if percentage > lastPercentage {
+			LogMessage(logs, "Percentage Complete: %v%%", percentage)
+			lastPercentage = percentage
+		}
+
 	}
 
 	cancelErr = checkIfShouldCancel(cancel)
