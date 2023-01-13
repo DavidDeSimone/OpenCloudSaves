@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
+// @TODO the way to mock our tests is to inject via the channels
+// of sync requests.
 func TestBasic(t *testing.T) {
 
 }

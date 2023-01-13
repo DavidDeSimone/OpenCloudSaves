@@ -2,14 +2,20 @@ package main
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 )
+
+type CloudRecord struct {
+	Files []string `json:"files"`
+}
 
 var clientUUID string
 
@@ -115,19 +121,20 @@ func ValidateAndCreateParentFolder(srv CloudDriver) (string, error) {
 	return saveFolderFileId, nil
 }
 
-func zipSource(source, target string) error {
+func zipSource(source, target string) ([]string, error) {
 	// 1. Create a ZIP file and zip.Writer
 	f, err := os.Create(target)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer f.Close()
 
 	writer := zip.NewWriter(f)
 	defer writer.Close()
 
+	fileList := []string{}
 	// 2. Go through all the files of the source
-	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -157,6 +164,7 @@ func zipSource(source, target string) error {
 		}
 
 		if info.IsDir() {
+			fileList = append(fileList, strings.Replace(path, source, "", 1))
 			return nil
 		}
 
@@ -166,10 +174,12 @@ func zipSource(source, target string) error {
 		}
 		defer f.Close()
 
-		fmt.Println("Copying " + path)
+		fileList = append(fileList, strings.Replace(path, source, "", 1))
 		_, err = io.Copy(headerWriter, f)
 		return err
 	})
+
+	return fileList, err
 }
 
 func unzipSource(source, destination string) error {
@@ -233,12 +243,9 @@ func unzipFile(f *zip.File, destination string) error {
 		}
 		defer destinationFile.Close()
 
-		fmt.Println("Overwriting file " + destinationFile.Name())
 		if _, err := io.Copy(destinationFile, zippedFile); err != nil {
 			return err
 		}
-	} else {
-		fmt.Println("Not modifying " + filePath)
 	}
 
 	return nil
@@ -253,7 +260,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 
 	downloadAuthorized := syncDataPath.NetAuth&CloudOperationDownload != 0
 	uploadAuthorized := syncDataPath.NetAuth&CloudOperationUpload != 0
-	// deleteAuthoirzed := syncDataPath.NetAuth&CloudOperationDelete != 0
+	deleteAuthoirzed := syncDataPath.NetAuth&CloudOperationDelete != 0
 
 	// Test if folder exists, and if it does, what it contains
 	// Update folder with data if file names match and files are newer
@@ -263,9 +270,35 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 		go SyncOp(srv, inputChannel, outputChannel)
 	}
 
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return err
+	}
+
+	record := &CloudRecord{}
+	metaFileName := cacheDir + string(os.PathSeparator) + parentId + ".json"
+	if _, err := os.Stat(metaFileName); !errors.Is(err, os.ErrNotExist) {
+		buf, err := os.ReadFile(metaFileName)
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(buf, record)
+		if err != nil {
+			return err
+		}
+	}
+
 	cancelErr := checkIfShouldCancel(cancel)
 	if cancelErr != nil {
 		return cancelErr
+	}
+
+	deleteList := []string{}
+	for _, file := range record.Files {
+		if _, err := os.Stat(syncPath + file); errors.Is(err, os.ErrNotExist) {
+			deleteList = append(deleteList, syncPath+file)
+		}
 	}
 
 	zipExists := false
@@ -306,8 +339,21 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 		}
 	}
 
+	if deleteAuthoirzed {
+		for _, file := range deleteList {
+			// Since deleting a file may result in a
+			// recursive delete, this can fail based on delete
+			// order. Think deleting dir and dir/file.txt
+			// where you delete dir first.
+			err = os.RemoveAll(file)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	}
+
 	os.Remove(filePath)
-	err = zipSource(syncDataPath.Path, filePath)
+	fileList, err := zipSource(syncDataPath.Path, filePath)
 	if err != nil {
 		return err
 	}
@@ -334,6 +380,19 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 		result := <-outputChannel
 		if result.Err != nil {
 			return result.Err
+		}
+
+		record := &CloudRecord{
+			Files: fileList,
+		}
+		buf, err := json.Marshal(record)
+		if err != nil {
+			return err
+		}
+
+		err = os.WriteFile(metaFileName, buf, os.ModePerm)
+		if err != nil {
+			return err
 		}
 	}
 
