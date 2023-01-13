@@ -4,9 +4,7 @@ go 1.19
 
 require (
 	fyne.io/fyne v1.4.3
-	github.com/DavidDeSimone/memfs v0.15.0
 	github.com/andygrunwald/vdf v1.1.0
-	github.com/google/uuid v1.3.0
 	github.com/jessevdk/go-flags v1.5.0
 	golang.org/x/oauth2 v0.3.0
 	golang.org/x/sys v0.3.0
@@ -25,6 +23,7 @@ require (
 	github.com/goki/freetype v0.0.0-20220119013949-7a161fd3728c // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
