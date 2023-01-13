@@ -224,9 +224,10 @@ func (g *AddGamesContainer) makeGameCardEntry(k string, v *GameDef) *GameCardCon
 	entry.makeDarwinCard()
 	entry.makeLinuxCard()
 	entry.deleteEntryButton = widget.NewButton("Stop Tracking "+v.DisplayName, func() {
-		// @TODO show confirmation
 		g.contentAccordion.Remove(entry.accordionItem)
 		delete(entry.dm.GetGameDefMap(), k)
+		g.scroll.ScrollToTop()
+
 	})
 	entry.deleteEntryButton.Importance = widget.HighImportance
 	entry.contentContainer.Add(entry.deleteEntryButton)
