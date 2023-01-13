@@ -44,7 +44,7 @@ const SAVE_FOLDER = "steamsave"
 const DEFAULT_PORT = ":54438"
 const STEAM_METAFILE = "steamcloudloadmeta.json"
 const CURRENT_META_VERSION = 1
-const WORKER_POOL_SIZE = 12
+const WORKER_POOL_SIZE = 4
 
 var service CloudDriver = nil
 
@@ -66,8 +66,6 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 
 func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider) {
 	logs := channels.logs
-	cancel := channels.cancel
-
 	LogMessage(logs, "Main Initalized")
 
 	addCustomGamesArgsLen := len(ops.AddCustomGames)
@@ -122,7 +120,7 @@ func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider) {
 				}
 				continue
 			}
-			err = SyncFiles(srv, parentId, syncpath, logs, cancel)
+			err = SyncFiles(srv, parentId, syncpath, channels)
 			if err != nil {
 				fmt.Println(err)
 				continue

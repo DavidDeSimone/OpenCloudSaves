@@ -12,7 +12,6 @@ type SyncRequest struct {
 	Path      string
 	ParentId  string
 	FileId    string
-	Dryrun    bool
 }
 
 type SyncResponse struct {

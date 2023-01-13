@@ -166,6 +166,7 @@ func zipSource(source, target string) error {
 		}
 		defer f.Close()
 
+		fmt.Println("Copying " + path)
 		_, err = io.Copy(headerWriter, f)
 		return err
 	})
@@ -216,11 +217,6 @@ func unzipFile(f *zip.File, destination string) error {
 	}
 
 	// 6. Create a destination file for unzipped content
-	destinationFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-	if err != nil {
-		return err
-	}
-	defer destinationFile.Close()
 
 	// 7. Unzip the content of a file and copy it to the destination file
 	zippedFile, err := f.Open()
@@ -229,25 +225,29 @@ func unzipFile(f *zip.File, destination string) error {
 	}
 	defer zippedFile.Close()
 
-	destinationStat, err := destinationFile.Stat()
-	if err != nil {
-		return err
-	}
+	destinationStat, err := os.Stat(filePath)
+	if err != nil || f.Modified.After(destinationStat.ModTime()) {
+		destinationFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return err
+		}
+		defer destinationFile.Close()
 
-	if f.Modified.After(destinationStat.ModTime()) {
 		fmt.Println("Overwriting file " + destinationFile.Name())
 		if _, err := io.Copy(destinationFile, zippedFile); err != nil {
 			return err
 		}
 	} else {
-		fmt.Println("Not modifying " + destinationFile.Name())
+		fmt.Println("Not modifying " + filePath)
 	}
 
 	return nil
 }
 
 // @TODO a better handling of delete
-func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, logs chan Message, cancel chan Cancellation) error {
+func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels *ChannelProvider) error {
+	logs := channels.logs
+	cancel := channels.cancel
 	syncPath := syncDataPath.Path
 	LogMessage(logs, "Syncing Files for %v", syncPath)
 
@@ -279,7 +279,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, logs cha
 
 	var exisitingCloudFile CloudFile = nil
 	for _, cloudFile := range cloudFiles {
-		if cloudFile.GetName() == syncDataPath.Parent {
+		if cloudFile.GetName() == fileName {
 			zipExists = true
 			exisitingCloudFile = cloudFile
 			break
@@ -287,21 +287,18 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, logs cha
 	}
 
 	if exisitingCloudFile != nil && downloadAuthorized {
-		fmt.Println("File Exists....")
 		inputChannel <- SyncRequest{
 			Operation: Download,
-			Name:      syncDataPath.Parent,
+			Name:      fileName,
 			Path:      filePath,
 			ParentId:  parentId,
 			FileId:    exisitingCloudFile.GetId(),
-			Dryrun:    false,
 		}
 
 		downloadResult := <-outputChannel
 		if downloadResult.Err != nil {
 			return downloadResult.Err
 		}
-		fmt.Println("Download Complete....")
 
 		err = unzipSource(filePath, syncDataPath.Path)
 		if err != nil {
@@ -309,7 +306,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, logs cha
 		}
 	}
 
-	fmt.Println("Zipping " + filePath)
+	os.Remove(filePath)
 	err = zipSource(syncDataPath.Path, filePath)
 	if err != nil {
 		return err
@@ -321,14 +318,18 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, logs cha
 	}
 
 	if uploadAuthorized {
-		inputChannel <- SyncRequest{
+		syncRequest := SyncRequest{
 			Operation: operation,
-			Name:      syncDataPath.Parent,
+			Name:      fileName,
 			Path:      filePath,
 			ParentId:  parentId,
-			FileId:    exisitingCloudFile.GetId(),
-			Dryrun:    false,
 		}
+
+		if exisitingCloudFile != nil && operation == Upload {
+			syncRequest.FileId = exisitingCloudFile.GetId()
+		}
+
+		inputChannel <- syncRequest
 
 		result := <-outputChannel
 		if result.Err != nil {
