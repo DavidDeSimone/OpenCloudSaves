@@ -52,7 +52,6 @@ func (d *GameDef) GetSteamLocation() string {
 }
 
 func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
-	fmt.Println("For Gamedef " + d.DisplayName)
 	syncpaths, err := d.GetSyncpaths()
 	if err != nil {
 		return nil, err
@@ -60,11 +59,8 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 
 	result := make(map[string]map[string]SyncFile)
 	for _, syncpath := range syncpaths {
-		fmt.Println(syncpath)
 		ignoreMap := make(map[string]bool)
-		fmt.Println(syncpath.Ignore)
 		for _, ignore := range syncpath.Ignore {
-			fmt.Println("Will ignore -> " + ignore)
 			ignoreMap[ignore] = true
 		}
 
@@ -92,9 +88,7 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 
 		for _, file := range files {
 			_, ok := ignoreMap[file.Name()]
-			fmt.Println("Examining " + file.Name())
 			if ok {
-				fmt.Println("Ignoring " + file.Name())
 				continue
 			}
 
@@ -147,7 +141,6 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 
 		for _, datapath := range d.WinPath {
 			path := datapath.Path
-			fmt.Println(os.Getenv("APPDATA"))
 			winpath := strings.Replace(path, "%AppData%", os.Getenv("APPDATA"), 1)
 			winpath = strings.Replace(winpath, "%LocalAppData%", os.Getenv("LOCALAPPDATA"), 1)
 			winpath = strings.Replace(winpath, "%STEAM%", steamLocation, 1)
@@ -241,16 +234,12 @@ func (d *FsGameDefManager) ApplyUserOverrides() error {
 	}
 
 	for k, v := range mid {
-		// fmt.Println(string(v))
 		def := &GameDef{}
 		err = json.Unmarshal(v, def)
 		if err != nil {
 			log.Fatal(err)
 		}
 		d.gamedefs[k] = def
-		if def.DarwinPath != nil && len(def.DarwinPath) > 0 {
-			fmt.Println(def.DarwinPath[0].Ignore)
-		}
 	}
 	return nil
 }

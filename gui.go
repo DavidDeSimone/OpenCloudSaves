@@ -26,15 +26,6 @@ func manageGames(dm GameDefManager) {
 	GetViewStack().PushContent(MakeAddGamesScreen(dm))
 }
 
-func getDefaultGreen() color.Color {
-	return color.RGBA{
-		R: 65,
-		G: 255,
-		B: 65,
-		A: 255,
-	}
-}
-
 func getDefaultRed() color.Color {
 	return color.RGBA{
 		R: 255,
@@ -124,76 +115,7 @@ func (main *MainMenuContainer) RefreshGames() {
 				}
 			}
 
-			statusLabel := canvas.NewText("Current Status: Unknown", fyne.CurrentApp().Settings().Theme().TextColor())
-			statusLabel.Alignment = fyne.TextAlignCenter
-			statusButton := widget.NewButton("Check Sync Status", func() {
-				statusLabel.Text = "Checking Status...."
-				statusLabel.Color = fyne.CurrentApp().Settings().Theme().TextColor()
-				srv := GetDefaultService()
-				outOfSync := false
-				for _, syncpath := range syncpaths {
-					files, _ := main.dm.GetFilesForGame(key, syncpath.Parent)
-					localMetaData, err := GetLocalMetadata(syncpath.Path+STEAM_METAFILE, GetDefaultLocalFs())
-					noLocal := false
-					noRemote := false
-					if err != nil || localMetaData == nil {
-						noLocal = true
-					}
-
-					var metadata *GameMetadata = nil
-					if localMetaData != nil {
-						metadata, err = srv.GetMetaData(localMetaData.ParentId, STEAM_METAFILE)
-						if err != nil || metadata == nil {
-							noRemote = true
-						}
-					}
-
-					if noLocal || noRemote {
-						outOfSync = true
-						break
-					}
-
-					for k := range metadata.Files {
-						_, ok := localMetaData.Files[k]
-						if !ok {
-							outOfSync = true
-							break
-						}
-					}
-
-					for k := range files {
-						local, localOk := localMetaData.Files[k]
-						remote, remoteOk := metadata.Files[k]
-
-						if localOk && remoteOk {
-							if local.Sha256 != remote.Sha256 {
-								outOfSync = true
-								break
-							}
-						} else {
-							outOfSync = true
-							break
-						}
-					}
-
-				}
-
-				if outOfSync {
-					statusLabel.Text = "Current Status: Out of Sync"
-					statusLabel.Color = getDefaultRed()
-					statusLabel.TextSize = 16
-				} else {
-					statusLabel.Text = "Current Status: In Sync"
-					statusLabel.Color = getDefaultGreen()
-					statusLabel.TextSize = 16
-				}
-			})
-			statusButton.Importance = widget.HighImportance
-			labelSplit := container.NewHSplit(statusButton, statusLabel)
-			labelSplit.Offset = 0.3
-
 			inn := widget.NewVBox(
-				labelSplit,
 				widget.NewAccordion(saveList...))
 			scroll := container.NewVScroll(inn)
 			scroll.SetMinSize(fyne.NewSize(500, 500))
@@ -304,7 +226,6 @@ func GuiMain(ops *Options, dm GameDefManager) {
 			cancel: make(chan Cancellation, 1),
 		}
 
-		fmt.Println(ops.Gamenames)
 		go CliMain(ops, dm, channels, GetDefaultLocalFs())
 		go main.visualLogging(channels.logs, channels.cancel)
 	})
@@ -319,7 +240,6 @@ func GuiMain(ops *Options, dm GameDefManager) {
 			cancel: make(chan Cancellation, 1),
 		}
 
-		fmt.Println(ops.Gamenames)
 		go CliMain(ops, dm, channels, GetDefaultLocalFs())
 		go main.visualLogging(channels.logs, channels.cancel)
 	})

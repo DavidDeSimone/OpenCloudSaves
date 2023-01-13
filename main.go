@@ -19,21 +19,6 @@ type Options struct {
 	UserOverride   []string          `short:"o" long:"user-override" description:"--user-override <FILE> Provide location for custom user override JSON file for game definitions"`
 }
 
-type FileMetadata struct {
-	Sha256         string `json:"sha256"`
-	LastModified   string `json:"lastmodified"`
-	Lastclientuuid string `json:"lastclientuuid"`
-	FileId         string `json:"fileid"`
-}
-
-type GameMetadata struct {
-	Version  int                     `json:"version"`
-	Gameid   string                  `json:"gameid"`
-	Files    map[string]FileMetadata `json:"files"`
-	ParentId string                  `json:"parent_id"`
-	fileId   string
-}
-
 type Message struct {
 	Finished bool
 	Message  string

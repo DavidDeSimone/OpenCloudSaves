@@ -21,7 +21,4 @@ type CloudDriver interface {
 	UploadFile(fileId string, filePath string, fileName string) (CloudFile, error)
 	CreateFile(parentId string, fileName string, filePath string) (CloudFile, error)
 	DeleteFile(fileId string) error
-	IsFileInSync(fileName string, filePath string, fileId string, metaData *GameMetadata) (int, error)
-	GetMetaData(parentId string, fileName string) (*GameMetadata, error)
-	UpdateMetaData(parentId string, fileName string, filePath string, metaData *GameMetadata) error
 }

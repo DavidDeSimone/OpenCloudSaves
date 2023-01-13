@@ -1,13 +1,8 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -241,96 +236,7 @@ func (f *LocalMemFsCloudDriver) CreateFile(parentId string, fileName string, fil
 	}, nil
 }
 
-func (f *LocalMemFsCloudDriver) GetMetaData(parentId string, fileName string) (*GameMetadata, error) {
-	fmt.Println("Getting Metadata -> " + parentId + fileName)
-	metaFile, err := f.rootFS.Open(parentId + fileName)
-	if err != nil {
-		return nil, nil
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer metaFile.Close()
-
-	bytes, err := io.ReadAll(metaFile)
-	if err != nil {
-		return nil, err
-	}
-
-	metadata := &GameMetadata{}
-	err = json.Unmarshal(bytes, metadata)
-	if err != nil {
-		return nil, err
-	}
-
-	metadata.fileId = parentId + fileName
-
-	fmt.Println("Fetched metadata -> " + metadata.fileId)
-	return metadata, nil
-}
-
-func (f *LocalMemFsCloudDriver) UpdateMetaData(parentId string, fileName string, filePath string, metaData *GameMetadata) error {
-	fmt.Println("Updating Metadata...")
-	bytes, err := json.Marshal(metaData)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Meta Upload complete...")
-	return f.rootFS.WriteFile(parentId+fileName, bytes, os.ModePerm)
-}
-
 func (f *LocalMemFsCloudDriver) DeleteFile(fileId string) error {
 	fmt.Println("Deleteing File...")
 	return f.rootFS.Remove(fileId)
-}
-
-func (f *LocalMemFsCloudDriver) IsFileInSync(fileName string, filePath string, fileId string, metadata *GameMetadata) (int, error) {
-	fmt.Printf("Comparing Files.....")
-
-	localFile, err := f.rootFS.Open(filePath)
-	if err != nil {
-		return 0, err
-	}
-	defer localFile.Close()
-	localStat, err := localFile.Stat()
-	if err != nil {
-		return 0, err
-	}
-	fmt.Println(fileId)
-	remoteFile, err := f.rootFS.Open(fileId)
-	if err != nil {
-		return 0, err
-	}
-	defer remoteFile.Close()
-
-	remoteStat, err := remoteFile.Stat()
-	if err != nil {
-		return 0, err
-	}
-
-	h := sha256.New()
-	if _, err := io.Copy(h, localFile); err != nil {
-		log.Fatal(err)
-	}
-
-	localFileHash := hex.EncodeToString(h.Sum(nil))
-
-	h = sha256.New()
-	if _, err := io.Copy(h, remoteFile); err != nil {
-		log.Fatal(err)
-	}
-
-	remoteFileHash := hex.EncodeToString(h.Sum(nil))
-
-	if localStat.ModTime().Equal(remoteStat.ModTime()) || localFileHash == remoteFileHash {
-		return InSync, nil
-	} else if localStat.ModTime().After(remoteStat.ModTime()) {
-		return LocalNewer, nil
-	} else {
-		return RemoteNewer, nil
-	}
-
 }
