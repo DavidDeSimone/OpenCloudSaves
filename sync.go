@@ -9,48 +9,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 type CloudRecord struct {
 	Files []string `json:"files"`
-}
-
-var clientUUID string
-
-func GetClientUUID() (string, error) {
-	if clientUUID != "" {
-		return clientUUID, nil
-	}
-
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		return "", err
-	}
-	separator := string(os.PathSeparator)
-
-	fileName := cacheDir + separator + APP_NAME + separator + "uuid"
-	err = os.MkdirAll(cacheDir+separator+APP_NAME, os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-
-	f, err := os.ReadFile(fileName)
-
-	result := ""
-	if err != nil {
-		result = uuid.New().String()
-		err = os.WriteFile(fileName, []byte(result), os.ModePerm)
-		if err != nil {
-			return "", err
-		}
-	} else {
-		result = string(f)
-	}
-
-	clientUUID = result
-	return result, nil
 }
 
 func checkIfShouldCancel(cancelChannel chan Cancellation) error {
@@ -226,15 +188,14 @@ func unzipFile(f *zip.File, destination string) error {
 		return err
 	}
 
-	// 6. Create a destination file for unzipped content
-
-	// 7. Unzip the content of a file and copy it to the destination file
+	// 6. Unzip the content of a file and copy it to the destination file
 	zippedFile, err := f.Open()
 	if err != nil {
 		return err
 	}
 	defer zippedFile.Close()
 
+	// 7. Create a destination file for unzipped content
 	destinationStat, err := os.Stat(filePath)
 	if err != nil || f.Modified.After(destinationStat.ModTime()) {
 		destinationFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
@@ -251,7 +212,6 @@ func unzipFile(f *zip.File, destination string) error {
 	return nil
 }
 
-// @TODO a better handling of delete
 func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels *ChannelProvider) error {
 	logs := channels.logs
 	cancel := channels.cancel
@@ -262,10 +222,9 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 	uploadAuthorized := syncDataPath.NetAuth&CloudOperationUpload != 0
 	deleteAuthoirzed := syncDataPath.NetAuth&CloudOperationDelete != 0
 
-	// Test if folder exists, and if it does, what it contains
-	// Update folder with data if file names match and files are newer
-	inputChannel := make(chan SyncRequest, 1000)
-	outputChannel := make(chan SyncResponse, 1000)
+	// @TODO move this to channel provider  to allow for mocking/unit testing
+	inputChannel := make(chan SyncRequest, 10)
+	outputChannel := make(chan SyncResponse, 10)
 	for i := 0; i < WORKER_POOL_SIZE; i++ {
 		go SyncOp(srv, inputChannel, outputChannel)
 	}
@@ -381,19 +340,19 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 		if result.Err != nil {
 			return result.Err
 		}
+	}
 
-		record := &CloudRecord{
-			Files: fileList,
-		}
-		buf, err := json.Marshal(record)
-		if err != nil {
-			return err
-		}
+	record = &CloudRecord{
+		Files: fileList,
+	}
+	buf, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
 
-		err = os.WriteFile(metaFileName, buf, os.ModePerm)
-		if err != nil {
-			return err
-		}
+	err = os.WriteFile(metaFileName, buf, os.ModePerm)
+	if err != nil {
+		return err
 	}
 
 	return nil

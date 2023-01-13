@@ -6,13 +6,6 @@ type CloudFile interface {
 	GetModTime() string
 }
 
-const (
-	NotFound    = -1
-	InSync      = 0
-	LocalNewer  = 1
-	RemoteNewer = 2
-)
-
 type CloudDriver interface {
 	InitDriver() error
 	ListFiles(parentId string) ([]CloudFile, error)
