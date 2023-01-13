@@ -212,6 +212,8 @@ func unzipFile(f *zip.File, destination string) error {
 	return nil
 }
 
+// @TODO
+// Need to add a filter file for the data path ignored files / zip'd files
 func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels *ChannelProvider) error {
 	logs := channels.logs
 	cancel := channels.cancel
