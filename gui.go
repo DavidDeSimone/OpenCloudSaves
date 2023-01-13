@@ -154,13 +154,14 @@ func (main *MainMenuContainer) visualLogging(input chan Message, cancel chan Can
 	root := container.NewVBox(parent)
 	GetViewStack().PushContent(root)
 
-	parent.Add(widget.NewButton("Cancel", func() {
+	cancelButton := widget.NewButton("Cancel", func() {
 		cancel <- Cancellation{
 			ShouldCancel: true,
 		}
 
 		GetViewStack().PopContent()
-	}))
+	})
+	parent.Add(cancelButton)
 
 	for {
 		result := <-input
@@ -183,9 +184,11 @@ func (main *MainMenuContainer) visualLogging(input chan Message, cancel chan Can
 		tempScroll.ScrollToBottom()
 	}
 
-	parent.Add(widget.NewButton("Close Logs", func() {
+	cancelButton.Text = "Close Logs"
+	cancelButton.OnTapped = func() {
 		GetViewStack().PopContent()
-	}))
+	}
+	cancelButton.Refresh()
 }
 
 func GuiMain(ops *Options, dm GameDefManager) {
