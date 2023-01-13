@@ -10,10 +10,7 @@ import (
 )
 
 type Options struct {
-	Verbose        []bool            `short:"v" long:"verbose" description:"Show verbose debug information"`
 	Gamenames      []string          `short:"g" long:"gamenames" description:"The name of the game(s) you will attempt to sync"`
-	Gamepath       []string          `short:"p" long:"gamepath" description:"The path to your game"`
-	DryRun         []bool            `short:"d" long:"dry-run" description:"Run through the sync process without uploading/downloading from the cloud"`
 	NoGUI          []bool            `short:"u" long:"no-gui" description:"Run in CLI mode with no GUI"`
 	AddCustomGames map[string]string `short:"a" long:"add-custom-games" description:"<KEY>:<JSON_VALUE> Adds a custom game description to user_overrides.json. This accepts a JSON blobs in the format defined in gamedef_map.json"`
 	UserOverride   []string          `short:"o" long:"user-override" description:"--user-override <FILE> Provide location for custom user override JSON file for game definitions"`
@@ -54,7 +51,6 @@ var service CloudDriver = nil
 func GetDefaultService() CloudDriver {
 	if service == nil {
 		service = &GoogleCloudDriver{}
-		// service = &LocalFsCloudDriver{}
 		service.InitDriver()
 
 	}
@@ -68,12 +64,9 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 	}
 }
 
-func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, localfs LocalFs) {
+func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider) {
 	logs := channels.logs
 	cancel := channels.cancel
-
-	// verboseLogging = len(ops.Verbose) == 1 && ops.Verbose[0]
-	dryrun := len(ops.DryRun) == 1 && ops.DryRun[0]
 
 	LogMessage(logs, "Main Initalized")
 
@@ -121,15 +114,6 @@ func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, localfs
 
 		for _, syncpath := range syncpaths {
 			LogMessage(logs, "Examining Path %v", syncpath.Path)
-			files, err := dm.GetFilesForGame(gamename, syncpath.Parent)
-			if err != nil {
-				fmt.Println(err)
-				logs <- Message{
-					Err: err,
-				}
-				continue
-			}
-
 			parentId, err := CreateRemoteDirIfNotExists(srv, id, syncpath.Parent)
 			if err != nil {
 				fmt.Println(err)
@@ -138,7 +122,7 @@ func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, localfs
 				}
 				continue
 			}
-			err = SyncFiles(srv, parentId, syncpath, files, dryrun, localfs, logs, cancel)
+			err = SyncFiles(srv, parentId, syncpath, logs, cancel)
 			if err != nil {
 				fmt.Println(err)
 				continue
@@ -190,7 +174,7 @@ func main() {
 		}
 
 		go consoleLogger(channels.logs)
-		CliMain(ops, dm, channels, GetDefaultLocalFs())
+		CliMain(ops, dm, channels)
 	} else {
 		GuiMain(ops, dm)
 	}

@@ -7,12 +7,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/google/uuid"
 )
 
-var conflictMutex sync.Mutex
 var clientUUID string
 
 func GetClientUUID() (string, error) {
@@ -249,7 +247,7 @@ func unzipFile(f *zip.File, destination string) error {
 }
 
 // @TODO a better handling of delete
-func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, files map[string]SyncFile, dryrun bool, localfs LocalFs, logs chan Message, cancel chan Cancellation) error {
+func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, logs chan Message, cancel chan Cancellation) error {
 	syncPath := syncDataPath.Path
 	LogMessage(logs, "Syncing Files for %v", syncPath)
 
