@@ -22,19 +22,19 @@ li {
   float: left;
 }
 
-li a {
+li div {
   display: block;
-  color: white;
+  color: rgb(255, 255, 255);
   text-align: center;
   padding: 14px 16px;
   text-decoration: none;
 }
 
-li a:hover:not(.active) {
+li div:hover:not(.activeButton) {
   background-color: #111;
 }
 
-.active {
+.activeButton {
   background-color: #04AA6D;
 }
 
@@ -66,15 +66,33 @@ li a:hover:not(.active) {
     height: 50px;
 }
 
+.btn {
+  border: none;
+  color: white;
+  padding: 14px 28px;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.success {background-color: #04AA6D;} /* Green */
+.success:hover {background-color: #2c6a2e;}
+
+.danger {
+    padding: 8px 28px;
+    margin-top: 4px;
+    background-color: #f44336;
+} /* Red */ 
+.danger:hover {background: #da190b;}
+
 </style>
 </head>
 <body>
 
     <ul class="topnav">
-        <li><a class="active" href="#home">Home</a></li>
-        <li><a href="#news">News</a></li>
-        <li><a href="#contact">Contact</a></li>
-        <li><a href="#about">About</a></li>
+        <li><div class="activeButton">SyncAll</div></li>
+        <li><div>Add Games</div></li>
+        <li><div>Options</div></li>
       </ul>
 
       <div class="padding"></div>
@@ -91,8 +109,9 @@ li a:hover:not(.active) {
 
 <button class="accordion">Game 3</button>
 <div class="panel">
-  File Info
-  Sync Button
+  <div>File Info</div>
+  <div class="btn success">Sync Game</div>
+  <div class="btn danger">Stop Tracking</div>
 </div>
 
 <script>

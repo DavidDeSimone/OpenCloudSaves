@@ -12,7 +12,7 @@ RUN openssl s_client -showcerts -connect proxy.golang.org:443 </dev/null 2>/dev/
 # Update certificates
 RUN update-ca-certificates
 
-RUN apt-get install -y golang git gcc libgl1-mesa-dev xorg-dev libgtk-3-dev
+RUN apt-get install -y golang git gcc libgtk-3-dev libwebkit2gtk-4.0-dev
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
