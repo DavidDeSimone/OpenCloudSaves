@@ -229,7 +229,7 @@ func GuiMain(ops *Options, dm GameDefManager) {
 			cancel: make(chan Cancellation, 1),
 		}
 
-		go CliMain(ops, dm, channels)
+		go CliMain(ops, dm, channels, SyncOp)
 		go main.visualLogging(channels.logs, channels.cancel)
 	})
 	syncAllButton := widget.NewButton("Sync All Games", func() {
@@ -243,7 +243,7 @@ func GuiMain(ops *Options, dm GameDefManager) {
 			cancel: make(chan Cancellation, 1),
 		}
 
-		go CliMain(ops, dm, channels)
+		go CliMain(ops, dm, channels, SyncOp)
 		go main.visualLogging(channels.logs, channels.cancel)
 	})
 	manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })

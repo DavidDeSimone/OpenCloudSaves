@@ -229,12 +229,8 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 	uploadAuthorized := syncDataPath.NetAuth&CloudOperationUpload != 0
 	deleteAuthoirzed := syncDataPath.NetAuth&CloudOperationDelete != 0
 
-	// @TODO move this to channel provider  to allow for mocking/unit testing
-	inputChannel := make(chan SyncRequest, 10)
-	outputChannel := make(chan SyncResponse, 10)
-	for i := 0; i < WORKER_POOL_SIZE; i++ {
-		go SyncOp(srv, inputChannel, outputChannel)
-	}
+	inputChannel := channels.input
+	outputChannel := channels.output
 
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {

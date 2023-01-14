@@ -29,6 +29,8 @@ type Cancellation struct {
 type ChannelProvider struct {
 	logs   chan Message
 	cancel chan Cancellation
+	input  chan SyncRequest
+	output chan SyncResponse
 }
 
 const CloudOperationDownload = 1 << 0
@@ -64,7 +66,7 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 	}
 }
 
-func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider) {
+func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, syncFunc func(srv CloudDriver, input chan SyncRequest, output chan SyncResponse)) {
 	logs := channels.logs
 	LogMessage(logs, "Main Initalized")
 
@@ -84,6 +86,10 @@ func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider) {
 	if err != nil {
 		log.Println(err)
 		return
+	}
+
+	for i := 0; i < WORKER_POOL_SIZE; i++ {
+		go syncFunc(srv, channels.input, channels.output)
 	}
 
 	LogMessage(logs, "Cloud Service Initialized...")
@@ -169,10 +175,12 @@ func main() {
 		channels := &ChannelProvider{
 			logs:   make(chan Message, 100),
 			cancel: make(chan Cancellation, 1),
+			input:  make(chan SyncRequest, 10),
+			output: make(chan SyncResponse, 10),
 		}
 
 		go consoleLogger(channels.logs)
-		CliMain(ops, dm, channels)
+		CliMain(ops, dm, channels, SyncOp)
 	} else {
 		GuiMain(ops, dm)
 	}
