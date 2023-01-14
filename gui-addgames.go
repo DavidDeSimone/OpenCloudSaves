@@ -69,6 +69,7 @@ func (g *GameCardContainer) makeCard(path []*Datapath, onRemove func(int, []*Dat
 				filename, err := dialog.Directory().Browse()
 				if err != nil {
 					fmt.Println(err)
+					return
 				}
 
 				textEntryFunc(filename)
