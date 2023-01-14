@@ -83,7 +83,7 @@ func ValidateAndCreateParentFolder(srv CloudDriver) (string, error) {
 	return saveFolderFileId, nil
 }
 
-func zipSource(source, target string) ([]string, error) {
+func zipSource(source, target string, filter func(string) bool) ([]string, error) {
 	// 1. Create a ZIP file and zip.Writer
 	f, err := os.Create(target)
 	if err != nil {
@@ -99,6 +99,11 @@ func zipSource(source, target string) ([]string, error) {
 	err = filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+
+		referenceName := strings.Replace(path, source, "", 1)
+		if filter(referenceName) {
+			return nil
 		}
 
 		// 3. Create a local file header
@@ -126,7 +131,7 @@ func zipSource(source, target string) ([]string, error) {
 		}
 
 		if info.IsDir() {
-			fileList = append(fileList, strings.Replace(path, source, "", 1))
+			fileList = append(fileList, referenceName)
 			return nil
 		}
 
@@ -136,7 +141,7 @@ func zipSource(source, target string) ([]string, error) {
 		}
 		defer f.Close()
 
-		fileList = append(fileList, strings.Replace(path, source, "", 1))
+		fileList = append(fileList, referenceName)
 		_, err = io.Copy(headerWriter, f)
 		return err
 	})
@@ -314,7 +319,30 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 	}
 
 	os.Remove(filePath)
-	fileList, err := zipSource(syncDataPath.Path, filePath)
+	fileList, err := zipSource(syncDataPath.Path, filePath,
+		func(s string) bool {
+			for _, ignore := range syncDataPath.Ignore {
+				if s == ignore {
+					return true
+				}
+			}
+
+			if len(syncDataPath.Exts) == 0 {
+				return false
+			}
+
+			anyExtMatches := false
+			fileExt := filepath.Ext(s)
+			for _, ext := range syncDataPath.Exts {
+				if ext == fileExt {
+					anyExtMatches = true
+					break
+				}
+			}
+
+			return anyExtMatches
+
+		})
 	if err != nil {
 		return err
 	}

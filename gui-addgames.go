@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne"
 	cont "fyne.io/fyne/container"
 	"fyne.io/fyne/widget"
+	"github.com/sqweek/dialog"
 )
 
 type AddGamesContainer struct {
@@ -51,21 +52,36 @@ func (g *GameCardContainer) makeCard(path []*Datapath, onRemove func(int, []*Dat
 	if len(path) > 0 {
 
 		for i, n := range path {
-			textbox := makeTextEntry(n.Path, func(s string) {
+			textEntryFunc := func(s string) {
 				separator := os.PathSeparator
 				n.Path = s
 				entries := strings.Split(s, string(separator))
 				n.Parent = entries[len(entries)-1]
 
 				fmt.Printf("Updated %v with values %v\n", n.Path, n.Parent)
-			})
+			}
+			textbox := makeTextEntry(n.Path, textEntryFunc)
 
 			entryPtr, innerPtr := parent, innerEntry
 			removeIdx := i
-			buttonSplit := widget.NewButton("Remove", func() {
+
+			selectButton := widget.NewButton("Select", func() {
+				filename, err := dialog.Directory().Browse()
+				if err != nil {
+					fmt.Println(err)
+				}
+
+				textEntryFunc(filename)
+				textbox.Text = filename
+				textbox.Refresh()
+
+			})
+			removeButton := widget.NewButton("Remove", func() {
 				onRemove(removeIdx, path)
 				entryPtr.Remove(innerPtr)
 			})
+
+			buttonSplit := cont.NewHSplit(selectButton, removeButton)
 			line := cont.NewHSplit(textbox, buttonSplit)
 			line.Offset = 0.8
 

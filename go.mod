@@ -6,6 +6,7 @@ require (
 	fyne.io/fyne v1.4.3
 	github.com/andygrunwald/vdf v1.1.0
 	github.com/jessevdk/go-flags v1.5.0
+	github.com/sqweek/dialog v0.0.0-20220809060634-e981b270ebbf
 	golang.org/x/oauth2 v0.3.0
 	golang.org/x/sys v0.3.0
 	google.golang.org/api v0.105.0
@@ -14,6 +15,7 @@ require (
 require (
 	cloud.google.com/go/compute v1.13.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.2 // indirect
+	github.com/TheTitanrain/w32 v0.0.0-20180517000239-4f5cfb03fabf // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/fyne-io/mobile v0.1.2 // indirect

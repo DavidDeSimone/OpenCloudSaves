@@ -66,12 +66,12 @@ In addition to golang, you will need the following deps depending on your distro
 
 Debian / Ubuntu: 
 ```
-sudo apt-get install golang gcc libgl1-mesa-dev xorg-dev
+sudo apt-get install golang gcc libgl1-mesa-dev xorg-devlibgtk-3-dev
 ```
-
+<!-- 
 Fedora: 
 ```
-sudo dnf install golang gcc libXcursor-devel libXrandr-devel mesa-libGL-devel libXi-devel libXinerama-devel libXxf86vm-devel
+sudo dnf install golang gcc libXcursor-devel libXrandr-devel mesa-libGL-devel libXi-devel libXinerama-devel libXxf86vm-devel 
 ```
 
 Arch Linux: 
@@ -97,4 +97,4 @@ sudo xbps-install -S go base-devel xorg-server-devel libXrandr-devel libXcursor-
 Alpine Linux 
 ```
 sudo apk add go gcc libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev linux-headers mesa-dev
-```
+``` -->

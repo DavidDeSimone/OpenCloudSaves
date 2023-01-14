@@ -9,6 +9,8 @@ fyne.io/fyne v1.4.3 h1:356CnXCiYrrfaLGsB7qLK3c6ktzyh8WR05v/2RBu51I=
 fyne.io/fyne v1.4.3/go.mod h1:8kiPBNSDmuplxs9WnKCkaWYqbcXFy0DeAzwa6PBO9Z8=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Kodeworks/golang-image-ico v0.0.0-20141118225523-73f0f4cfade9/go.mod h1:7uhhqiBaR4CpN0k9rMjOtjpcfGd6DG2m04zQxKnWQ0I=
+github.com/TheTitanrain/w32 v0.0.0-20180517000239-4f5cfb03fabf h1:FPsprx82rdrX2jiKyS17BH6IrTmUBYqZa/CXT4uvb+I=
+github.com/TheTitanrain/w32 v0.0.0-20180517000239-4f5cfb03fabf/go.mod h1:peYoMncQljjNS6tZwI9WVyQB3qZS6u79/N3mBOcnd3I=
 github.com/akavel/rsrc v0.8.0/go.mod h1:uLoCtb9J+EyAqh+26kdrTgmzRBFPGOolLWKpdxkKq+c=
 github.com/andygrunwald/vdf v1.1.0 h1:gmstp0R7DOepIZvWoSJY97ix7QOrsxpGPU6KusKXqvw=
 github.com/andygrunwald/vdf v1.1.0/go.mod h1:f31AAs7HOKvs5B167iwLHwKuqKc4bE46Vdt7xQogA0o=
@@ -89,6 +91,8 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/pflag v1.0.3/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnInEg4=
+github.com/sqweek/dialog v0.0.0-20220809060634-e981b270ebbf h1:pCxn3BCfu8n8VUhYl4zS1BftoZoYY0J4qVF3dqAQ4aU=
+github.com/sqweek/dialog v0.0.0-20220809060634-e981b270ebbf/go.mod h1:/qNPSY91qTz/8TgHEMioAUc6q7+3SOybeKczHMXFcXw=
 github.com/srwiley/oksvg v0.0.0-20200311192757-870daf9aa564/go.mod h1:afMbS0qvv1m5tfENCwnOdZGOF8RGR/FsZ7bvBxQGZG4=
 github.com/srwiley/oksvg v0.0.0-20220731023508-a61f04f16b76 h1:Ga2uagHhDeGysCixLAzH0mS2TU+CrbQavmsHUNkEEVA=
 github.com/srwiley/oksvg v0.0.0-20220731023508-a61f04f16b76/go.mod h1:cNQ3dwVJtS5Hmnjxy6AgTPd0Inb3pW05ftPSX7NZO7Q=
