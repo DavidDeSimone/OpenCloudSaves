@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"image/color"
 	"os"
-	"runtime"
 	"sort"
 
 	"fyne.io/fyne"
-	"fyne.io/fyne/app"
 	"fyne.io/fyne/canvas"
 	"fyne.io/fyne/container"
 	"fyne.io/fyne/widget"
+	"github.com/webview/webview"
 )
+
+//go:embed html/index.html
+var htmlMain string
 
 //go:embed icon.jpg
 var icon []byte
@@ -203,69 +205,81 @@ func GuiMain(ops *Options, dm GameDefManager) {
 	// 	os.Setenv("FYNE_SCALE", "0.25")
 	// }
 
-	a := app.New()
-	a.SetIcon(fyne.NewStaticResource("Icon", icon))
-
-	w := a.NewWindow("Steam Custom Cloud Uploads")
-	w.FullScreen()
-	w.Resize(fyne.NewSize(800, 600))
-	w.CenterOnScreen()
-
-	main := GetMainMenu()
-	main.dm = dm
-
-	main.RefreshGames()
-
-	syncButton := widget.NewButton("Sync Selected Games", func() {
-		ops.Gamenames = []string{}
-		for k, v := range syncMap {
-			if v {
-
-				ops.Gamenames = append(ops.Gamenames, k)
-			}
-		}
-		channels := &ChannelProvider{
-			logs:   make(chan Message, 100),
-			cancel: make(chan Cancellation, 1),
-		}
-
-		go CliMain(ops, dm, channels, SyncOp)
-		go main.visualLogging(channels.logs, channels.cancel)
+	debug := true
+	w := webview.New(debug)
+	defer w.Destroy()
+	w.SetTitle("Steam Custom Cloud Uploads")
+	w.SetSize(800, 600, webview.HintNone)
+	w.SetHtml(htmlMain)
+	w.Bind("log", func(s string) {
+		fmt.Println(s)
 	})
-	syncAllButton := widget.NewButton("Sync All Games", func() {
-		ops.Gamenames = []string{}
-		for k := range dm.GetGameDefMap() {
-			ops.Gamenames = append(ops.Gamenames, k)
-		}
+	// w.Navigate("https://en.m.wikipedia.org/wiki/Main_Page")
+	w.Run()
 
-		channels := &ChannelProvider{
-			logs:   make(chan Message, 100),
-			cancel: make(chan Cancellation, 1),
-		}
+	// a := app.New()
+	// a.SetIcon(fyne.NewStaticResource("Icon", icon))
 
-		go CliMain(ops, dm, channels, SyncOp)
-		go main.visualLogging(channels.logs, channels.cancel)
-	})
-	manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })
-	optionsButton := widget.NewButton("Options", openOptionsWindow)
-	hlist := []fyne.CanvasObject{syncButton, syncAllButton, manageGamesButton, optionsButton}
-	main.menuBar = container.NewHScroll(container.NewHBox(hlist...))
+	// w := a.NewWindow("Steam Custom Cloud Uploads")
+	// w.FullScreen()
+	// w.Resize(fyne.NewSize(800, 600))
+	// w.CenterOnScreen()
 
-	main.RefreshRootView()
+	// main := GetMainMenu()
+	// main.dm = dm
 
-	// Work around for issue https://github.com/DavidDeSimone/CustomSteamCloudUploads/issues/16
-	if runtime.GOOS == "darwin" {
-		w.SetFixedSize(true)
-	}
+	// main.RefreshGames()
 
-	v := GetViewStack()
-	v.SetMainWindow(w)
-	v.PushContent(main.rootVerticalSplit)
+	// syncButton := widget.NewButton("Sync Selected Games", func() {
+	// 	ops.Gamenames = []string{}
+	// 	for k, v := range syncMap {
+	// 		if v {
 
-	w.SetCloseIntercept(func() {
-		dm.CommitUserOverrides()
-		os.Exit(0)
-	})
-	// w.SetContent(cont)
-	w.ShowAndRun()
+	// 			ops.Gamenames = append(ops.Gamenames, k)
+	// 		}
+	// 	}
+	// 	channels := &ChannelProvider{
+	// 		logs:   make(chan Message, 100),
+	// 		cancel: make(chan Cancellation, 1),
+	// 	}
+
+	// 	go CliMain(ops, dm, channels, SyncOp)
+	// 	go main.visualLogging(channels.logs, channels.cancel)
+	// })
+	// syncAllButton := widget.NewButton("Sync All Games", func() {
+	// 	ops.Gamenames = []string{}
+	// 	for k := range dm.GetGameDefMap() {
+	// 		ops.Gamenames = append(ops.Gamenames, k)
+	// 	}
+
+	// 	channels := &ChannelProvider{
+	// 		logs:   make(chan Message, 100),
+	// 		cancel: make(chan Cancellation, 1),
+	// 	}
+
+	// 	go CliMain(ops, dm, channels, SyncOp)
+	// 	go main.visualLogging(channels.logs, channels.cancel)
+	// })
+	// manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })
+	// optionsButton := widget.NewButton("Options", openOptionsWindow)
+	// hlist := []fyne.CanvasObject{syncButton, syncAllButton, manageGamesButton, optionsButton}
+	// main.menuBar = container.NewHScroll(container.NewHBox(hlist...))
+
+	// main.RefreshRootView()
+
+	// // Work around for issue https://github.com/DavidDeSimone/CustomSteamCloudUploads/issues/16
+	// if runtime.GOOS == "darwin" {
+	// 	w.SetFixedSize(true)
+	// }
+
+	// v := GetViewStack()
+	// v.SetMainWindow(w)
+	// v.PushContent(main.rootVerticalSplit)
+
+	// w.SetCloseIntercept(func() {
+	// 	dm.CommitUserOverrides()
+	// 	os.Exit(0)
+	// })
+	// // w.SetContent(cont)
+	// w.ShowAndRun()
 }
