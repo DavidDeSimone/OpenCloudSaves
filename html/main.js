@@ -1,3 +1,7 @@
+function onSyncButtonClicked(_element) {
+    log('clicked')
+}
+
 function setupModalHandler() {
     // Get the modal
     var modal = document.getElementById('id01');

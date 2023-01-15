@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
+	"time"
 
 	"github.com/webview/webview"
 )
@@ -52,7 +53,9 @@ func GuiMain(ops *Options, dm GameDefManager) {
 	defer w.Destroy()
 	w.SetTitle("Steam Custom Cloud Uploads")
 	w.SetSize(800, 600, webview.HintNone)
+	fmt.Println(time.Now().UnixMilli())
 	bindFunctions(w)
 	w.SetHtml(executeTemplate())
+	fmt.Println(time.Now().UnixMilli())
 	w.Run()
 }

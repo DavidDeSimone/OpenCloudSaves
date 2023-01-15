@@ -7,7 +7,6 @@
     <ul class="topnav">
         <li><div class="activeButton">SyncAll</div></li>
         <li><div onclick="document.getElementById('id01').style.display='block'" style="width:auto;">Add Games</div></li>
-        <li><div>Options</div></li>
       </ul>
 
       <div class="padding"></div>
@@ -25,8 +24,9 @@
 <button class="accordion">Game 3</button>
 <div class="panel">
   <div>
-    <button class="btn success">Sync Game</button>
+    <button class="btn success" onclick="onSyncButtonClicked(this)">Sync Game</button>
     <button class="btnaddl neutralbtn">Edit</button>
+    <button class="removebtn">Remove</button>
   </div>
   
   <table id="customers">
