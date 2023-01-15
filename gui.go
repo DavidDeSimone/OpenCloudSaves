@@ -52,7 +52,7 @@ func GuiMain(ops *Options, dm GameDefManager) {
 	defer w.Destroy()
 	w.SetTitle("Steam Custom Cloud Uploads")
 	w.SetSize(800, 600, webview.HintNone)
-	w.SetHtml(executeTemplate())
 	bindFunctions(w)
+	w.SetHtml(executeTemplate())
 	w.Run()
 }

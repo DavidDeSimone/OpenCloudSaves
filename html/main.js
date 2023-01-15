@@ -32,4 +32,4 @@ function main() {
     setupAccordionHandler();
 }
 
-(() => main())() 
+main()
