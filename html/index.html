@@ -3,95 +3,14 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-}
-ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background-color: #333;
-  position: fixed;
-  top: 0;
-  width: 100%;
-}
-
-li {
-  float: left;
-}
-
-li div {
-  display: block;
-  color: rgb(255, 255, 255);
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-}
-
-li div:hover:not(.activeButton) {
-  background-color: #111;
-}
-
-.activeButton {
-  background-color: #04AA6D;
-}
-
-.accordion {
-  background-color: #eee;
-  color: #444;
-  cursor: pointer;
-  padding: 18px;
-  width: 100%;
-  border: none;
-  text-align: left;
-  outline: none;
-  font-size: 15px;
-  transition: 0.4s;
-}
-
-.active, .accordion:hover {
-  background-color: #ccc; 
-}
-
-.panel {
-  padding: 0 18px;
-  display: none;
-  background-color: white;
-  overflow: hidden;
-}
-
-.padding {
-    height: 50px;
-}
-
-.btn {
-  border: none;
-  color: white;
-  padding: 14px 28px;
-  font-size: 16px;
-  cursor: pointer;
-  text-align: center;
-}
-
-.success {background-color: #04AA6D;} /* Green */
-.success:hover {background-color: #2c6a2e;}
-
-.danger {
-    padding: 8px 28px;
-    margin-top: 4px;
-    background-color: #f44336;
-} /* Red */ 
-.danger:hover {background: #da190b;}
-
+    /* ___CSS_AUTO_INJECT___ */
 </style>
 </head>
 <body>
 
     <ul class="topnav">
         <li><div class="activeButton">SyncAll</div></li>
-        <li><div>Add Games</div></li>
+        <li><div onclick="document.getElementById('id01').style.display='block'" style="width:auto;">Add Games</div></li>
         <li><div>Options</div></li>
       </ul>
 
@@ -110,25 +29,73 @@ li div:hover:not(.activeButton) {
 <button class="accordion">Game 3</button>
 <div class="panel">
   <div>File Info</div>
+  <div>
   <div class="btn success">Sync Game</div>
   <div class="btn danger">Stop Tracking</div>
+  </div>
 </div>
 
+<div id="id01" class="modal">
+    <span onclick="document.getElementById('id01').style.display='none'" class="close" title="Close Modal">&times;</span>
+    <form class="modal-content" action="/action_page.php">
+      <div class="container">
+        <h1>Add a game</h1>
+        <hr>
+        <label for="email"><b>Windows</b></label>
+        <input type="text" placeholder="Gamepath" name="path">
+        <button class="selectbtn">Select</button>
+  
+        <input type="text" placeholder="Extensions" name="ignorelist">
+        <input type="text" placeholder="Ignore List" name="ignorelist">
+  
+  
+        
+        <div>
+        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Download
+        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Upload
+        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Delete
+        </div>
+  
+        <label for="email"><b>MacOS</b></label>
+        <input type="text" placeholder="Gamepath" name="path">
+        <button class="selectbtn">Select</button>
+  
+        <input type="text" placeholder="Extensions" name="ignorelist">
+        <input type="text" placeholder="Ignore List" name="ignorelist">
+  
+  
+        
+        <div>
+        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Download
+        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Upload
+        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Delete
+        </div>
+  
+        <label for="email"><b>Linux</b></label>
+        <input type="text" placeholder="Gamepath" name="path">
+        <button class="selectbtn">Select</button>
+  
+        <input type="text" placeholder="Extensions" name="ignorelist">
+        <input type="text" placeholder="Ignore List" name="ignorelist">
+  
+  
+        
+        <div>
+        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Download
+        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Upload
+        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Delete
+        </div>
+  
+        <div class="clearfix">
+          <button type="button" onclick="document.getElementById('id01').style.display='none'" class="cancelbtn">Cancel</button>
+          <button type="submit" class="signupbtn">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  
 <script>
-var acc = document.getElementsByClassName("accordion");
-var i;
-
-for (i = 0; i < acc.length; i++) {
-  acc[i].addEventListener("click", function() {
-    this.classList.toggle("active");
-    var panel = this.nextElementSibling;
-    if (panel.style.display === "block") {
-      panel.style.display = "none";
-    } else {
-      panel.style.display = "block";
-    }
-  });
-}
+    /* __JS_AUTO_INJECT__ */
 </script>
 
 </body>
