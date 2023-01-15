@@ -2,12 +2,8 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-    /* ___CSS_AUTO_INJECT___ */
-</style>
 </head>
 <body>
-
     <ul class="topnav">
         <li><div class="activeButton">SyncAll</div></li>
         <li><div onclick="document.getElementById('id01').style.display='block'" style="width:auto;">Add Games</div></li>
@@ -28,12 +24,72 @@
 
 <button class="accordion">Game 3</button>
 <div class="panel">
-  <div>File Info</div>
   <div>
-  <div class="btn success">Sync Game</div>
-  <div class="btn danger">Stop Tracking</div>
+    <button class="btn success">Sync Game</button>
+    <button class="btnaddl neutralbtn">Edit</button>
   </div>
+  
+  <table id="customers">
+    <tr>
+      <th>Filename</th>
+      <th>Modified</th>
+      <th>Size</th>
+    </tr>
+    <tr>
+      <td>Alfreds Futterkiste</td>
+      <td>Maria Anders</td>
+      <td>Germany</td>
+    </tr>
+    <tr>
+      <td>Berglunds snabbköp</td>
+      <td>Christina Berglund</td>
+      <td>Sweden</td>
+    </tr>
+    <tr>
+      <td>Centro comercial Moctezuma</td>
+      <td>Francisco Chang</td>
+      <td>Mexico</td>
+    </tr>
+    <tr>
+      <td>Ernst Handel</td>
+      <td>Roland Mendel</td>
+      <td>Austria</td>
+    </tr>
+    <tr>
+      <td>Island Trading</td>
+      <td>Helen Bennett</td>
+      <td>UK</td>
+    </tr>
+    <tr>
+      <td>Königlich Essen</td>
+      <td>Philip Cramer</td>
+      <td>Germany</td>
+    </tr>
+    <tr>
+      <td>Laughing Bacchus Winecellars</td>
+      <td>Yoshi Tannamuri</td>
+      <td>Canada</td>
+    </tr>
+    <tr>
+      <td>Magazzini Alimentari Riuniti</td>
+      <td>Giovanni Rovelli</td>
+      <td>Italy</td>
+    </tr>
+    <tr>
+      <td>North/South</td>
+      <td>Simon Crowther</td>
+      <td>UK</td>
+    </tr>
+    <tr>
+      <td>Paris spécialités</td>
+      <td>Marie Bertrand</td>
+      <td>France</td>
+    </tr>
+  </table>
+
 </div>
+
+
 
 <div id="id01" class="modal">
     <span onclick="document.getElementById('id01').style.display='none'" class="close" title="Close Modal">&times;</span>
@@ -87,16 +143,12 @@
         </div>
   
         <div class="clearfix">
-          <button type="button" onclick="document.getElementById('id01').style.display='none'" class="cancelbtn">Cancel</button>
-          <button type="submit" class="signupbtn">Save</button>
+          <button type="button" onclick="document.getElementById('id01').style.display='none'" class="cancelbtn contentbutton">Cancel</button>
+          <button type="submit" class="signupbtn contentbutton">Save</button>
         </div>
       </div>
     </form>
   </div>
-  
-<script>
-    /* __JS_AUTO_INJECT__ */
-</script>
 
 </body>
 </html> 
