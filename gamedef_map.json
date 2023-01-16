@@ -1,5 +1,5 @@
 {
-    "factorio": {
+    "Factorio": {
         "display_name": "Factorio",
         "steam_id": "427520",
         "win_path": [{"path": "%AppData%\\Factorio\\saves", "parent": "saves", "exts": [".zip"], "netauth":7}],
@@ -7,7 +7,7 @@
         "darwin_path":  [{"path": "~/Library/Application Support/factorio/saves", "parent": "saves", "exts": [".zip"], "netauth":7}],
         "saves_cross_compatible": true
     },
-    "dwarf_fortress": {
+    "Dwarf Fortress": {
         "display_name": "Dwarf Fortress",
         "steam_id": "975370",
         "win_path": [{"path": "%STEAM%\\steamapps\\common\\Dwarf Fortress\\save", "parent": "save", "netauth":7}],
@@ -15,7 +15,7 @@
         "darwin_path": [],
         "saves_cross_compatible": true
     },
-    "city_skylines": {
+    "City Skylines": {
         "display_name": "City Skylines",
         "steam_id": "255710",
         "win_path": [{"path": "%LocalAppData%\\Colossal Order\\Cities_Skylines\\Saves", "parent": "saves", "exts": [".crp"], "netauth":7}],

@@ -1,271 +1,352 @@
 package main
 
 import (
-	_ "embed"
+	"bufio"
+	"bytes"
+	"embed"
 	"fmt"
-	"image/color"
+	"html/template"
+	"log"
 	"os"
-	"runtime"
+	"path/filepath"
 	"sort"
+	"time"
 
-	"fyne.io/fyne"
-	"fyne.io/fyne/app"
-	"fyne.io/fyne/canvas"
-	"fyne.io/fyne/container"
-	"fyne.io/fyne/widget"
+	"github.com/webview/webview"
 )
 
-//go:embed icon.jpg
-var icon []byte
+//go:embed html/index.html
+var htmlMain embed.FS
 
-func openOptionsWindow() {
-	GetViewStack().PushContent(MakeOptionsScreen())
+//go:embed html/style.css
+var cssContent string
+
+//go:embed html/main.js
+var jsContent string
+
+type SaveFile struct {
+	Filename   string
+	ModifiedBy string
+	Size       string
 }
 
-func manageGames(dm GameDefManager) {
-	GetViewStack().PushContent(MakeAddGamesScreen(dm))
+type Game struct {
+	Name      string
+	Def       *GameDef
+	SaveFiles []SaveFile
 }
 
-func getDefaultRed() color.Color {
-	return color.RGBA{
-		R: 255,
-		G: 65,
-		B: 65,
-		A: 255,
+type HtmlInput struct {
+	Games     []Game
+	Platforms []string
+}
+
+func consoleLog(s string) {
+	fmt.Println(s)
+}
+
+func syncGame(key string) {
+	ops := &Options{
+		Gamenames: []string{key},
 	}
-}
-
-var mainMenu *MainMenuContainer = nil
-var syncMap map[string]bool = make(map[string]bool)
-
-func GetMainMenu() *MainMenuContainer {
-	if mainMenu == nil {
-		mainMenu = &MainMenuContainer{}
+	dm := MakeGameDefManager("")
+	channels := &ChannelProvider{
+		logs:   make(chan Message, 100),
+		cancel: make(chan Cancellation, 1),
+		input:  make(chan SyncRequest, 10),
+		output: make(chan SyncResponse, 10),
 	}
 
-	return mainMenu
+	go consoleLogger(channels.logs)
+	go CliMain(ops, dm, channels, SyncOp)
 }
 
-type MainMenuContainer struct {
-	dm GameDefManager
-
-	rootVerticalSplit *container.Split
-	menuBar           *container.Scroll
-
-	parentContainer *fyne.Container
-	innerContainer  *fyne.Container
-
-	verticalGameScroll *container.Scroll
-	horizSplit         *container.Split
+type GuiDatapath struct {
+	Path     string
+	Exts     []string
+	Ignore   []string
+	Download bool
+	Upload   bool
+	Delete   bool
 }
 
-func (main *MainMenuContainer) RefreshGames() {
-	defaultText := "Select a game to view saves files!"
-	defaultLabel := widget.NewLabel(defaultText)
-	defaultLabel.Alignment = fyne.TextAlignCenter
-	main.innerContainer = container.NewVBox()
-	main.parentContainer = container.NewVBox(defaultLabel, main.innerContainer)
+type GuiGamedef struct {
+	Name    string
+	Windows GuiDatapath
+	MacOS   GuiDatapath
+	Linux   GuiDatapath
+}
 
-	defMap := main.dm.GetGameDefMap()
+func removeGamedefByKey(key string) {
+	dm := MakeGameDefManager("")
+	gamedefMap := dm.GetGameDefMap()
+	delete(gamedefMap, key)
+	dm.CommitUserOverrides()
+}
 
-	keys := make([]string, 0)
-	for k := range defMap {
-		keys = append(keys, k)
+func fetchGamedef(key string) (*GuiGamedef, error) {
+	dm := MakeGameDefManager("")
+	gamedefMap := dm.GetGameDefMap()
+	def, ok := gamedefMap[key]
+	if !ok {
+		return nil, fmt.Errorf("gamedef not found")
 	}
-	sort.Strings(keys)
 
-	list := make([]fyne.CanvasObject, 0)
-	for _, k := range keys {
-		key := k
-		value := defMap[key]
-		list = append(list, widget.NewCheck(value.DisplayName, func(selected bool) {
-			if selected {
-				defaultLabel.Text = "Currently Viewing: " + value.DisplayName
-			} else {
-				defaultLabel.Text = defaultText
+	result := &GuiGamedef{
+		Name: def.DisplayName,
+	}
+
+	if len(def.WinPath) > 0 {
+		path := def.WinPath[0]
+		result.Windows = GuiDatapath{
+			Path:     path.Path,
+			Exts:     path.Exts,
+			Ignore:   path.Ignore,
+			Download: path.NetAuth&CloudOperationDownload != 0,
+			Upload:   path.NetAuth&CloudOperationUpload != 0,
+			Delete:   path.NetAuth&CloudOperationDelete != 0,
+		}
+	}
+
+	if len(def.DarwinPath) > 0 {
+		path := def.DarwinPath[0]
+		result.MacOS = GuiDatapath{
+			Path:     path.Path,
+			Exts:     path.Exts,
+			Ignore:   path.Ignore,
+			Download: path.NetAuth&CloudOperationDownload != 0,
+			Upload:   path.NetAuth&CloudOperationUpload != 0,
+			Delete:   path.NetAuth&CloudOperationDelete != 0,
+		}
+	}
+
+	if len(def.LinuxPath) > 0 {
+		path := def.LinuxPath[0]
+		result.Linux = GuiDatapath{
+			Path:     path.Path,
+			Exts:     path.Exts,
+			Ignore:   path.Ignore,
+			Download: path.NetAuth&CloudOperationDownload != 0,
+			Upload:   path.NetAuth&CloudOperationUpload != 0,
+			Delete:   path.NetAuth&CloudOperationDelete != 0,
+		}
+	}
+
+	return result, nil
+}
+
+func commitGamedef(gamedef GuiGamedef) {
+	dm := MakeGameDefManager("")
+	gamedefMap := dm.GetGameDefMap()
+	gamedefMap[gamedef.Name] = &GameDef{
+		DisplayName: gamedef.Name,
+		SteamId:     "0",
+	}
+
+	netauth := 0
+	if gamedef.Windows.Download {
+		netauth |= CloudOperationDownload
+	}
+	if gamedef.Windows.Upload {
+		netauth |= CloudOperationUpload
+	}
+	if gamedef.Windows.Delete {
+		netauth |= CloudOperationDelete
+	}
+	parent := filepath.Dir(gamedef.Windows.Path)
+	gamedefMap[gamedef.Name].WinPath = []*Datapath{
+		{
+			Path:    gamedef.Windows.Path,
+			Exts:    gamedef.Windows.Exts,
+			Ignore:  gamedef.Windows.Ignore,
+			Parent:  parent,
+			NetAuth: netauth,
+		},
+	}
+
+	netauth = 0
+	if gamedef.MacOS.Download {
+		netauth |= CloudOperationDownload
+	}
+	if gamedef.MacOS.Upload {
+		netauth |= CloudOperationUpload
+	}
+	if gamedef.MacOS.Delete {
+		netauth |= CloudOperationDelete
+	}
+	parent = filepath.Dir(gamedef.MacOS.Path)
+	gamedefMap[gamedef.Name].DarwinPath = []*Datapath{
+		{
+			Path:    gamedef.MacOS.Path,
+			Exts:    gamedef.MacOS.Exts,
+			Ignore:  gamedef.MacOS.Ignore,
+			Parent:  parent,
+			NetAuth: netauth,
+		},
+	}
+
+	netauth = 0
+	if gamedef.Linux.Download {
+		netauth |= CloudOperationDownload
+	}
+	if gamedef.Linux.Upload {
+		netauth |= CloudOperationUpload
+	}
+	if gamedef.Linux.Delete {
+		netauth |= CloudOperationDelete
+	}
+	parent = filepath.Dir(gamedef.Linux.Path)
+	gamedefMap[gamedef.Name].LinuxPath = []*Datapath{
+		{
+			Path:    gamedef.Linux.Path,
+			Exts:    gamedef.Linux.Exts,
+			Ignore:  gamedef.Linux.Ignore,
+			Parent:  parent,
+			NetAuth: netauth,
+		},
+	}
+
+	dm.CommitUserOverrides()
+}
+
+func bindFunctions(w webview.WebView) {
+	w.Bind("log", consoleLog)
+	w.Bind("syncGame", syncGame)
+	w.Bind("refresh", func() {
+		refreshMainContent(w)
+	})
+	w.Bind("commitGamedef", commitGamedef)
+	w.Bind("removeGamedefByKey", removeGamedefByKey)
+	w.Bind("fetchGamedef", fetchGamedef)
+}
+
+func DirSize(path string) (int64, error) {
+	var size int64
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size, err
+}
+
+func buildGamelist(dm GameDefManager) []Game {
+	games := []Game{}
+	for k, v := range dm.GetGameDefMap() {
+		game := Game{
+			Name: k,
+			Def:  v,
+		}
+
+		game.SaveFiles = []SaveFile{}
+		paths, err := v.GetSyncpaths()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		for _, datapath := range paths {
+			fmt.Println("Datapath " + datapath.Path)
+			// @TODO better handle empty path being root
+			// because of the logic in GetSyncpaths
+			if datapath.Path == "" || datapath.Path == "/" {
+				continue
 			}
 
-			syncMap[key] = selected
-			main.parentContainer.Remove(main.innerContainer)
-
-			if !selected {
-				return
+			dirFiles, err := os.ReadDir(datapath.Path)
+			if err != nil {
+				fmt.Println(err)
+				continue
 			}
 
-			syncpaths, _ := main.dm.GetSyncpathForGame(key)
+			for _, dirFile := range dirFiles {
+				fmt.Println("Examining " + dirFile.Name())
+				if SyncFilter(dirFile.Name(), datapath) {
+					continue
+				}
 
-			main.innerContainer = container.NewVBox()
-			saveList := make([]*widget.AccordionItem, 0)
+				info, err := dirFile.Info()
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
 
-			for _, syncpath := range syncpaths {
-				files, _ := main.dm.GetFilesForGame(key, syncpath.Parent)
-				for k, v := range files {
-					f, err := os.Stat(v.Name)
+				size := info.Size()
+				if info.IsDir() {
+					size, err = DirSize(datapath.Path + string(os.PathSeparator) + info.Name())
 					if err != nil {
 						fmt.Println(err)
+						continue
 					}
-
-					itemContainer := container.NewVBox(widget.NewLabel("Save File: "+v.Name),
-						widget.NewLabel("Date Modified: "+f.ModTime().String()),
-						widget.NewLabel(fmt.Sprintf("Size: %vMB", f.Size()/(1024*1024))),
-					)
-					newItem := widget.NewAccordionItem(k, itemContainer)
-					saveList = append(saveList, newItem)
-
 				}
+
+				game.SaveFiles = append(game.SaveFiles, SaveFile{
+					Filename:   info.Name(),
+					ModifiedBy: info.ModTime().Format(time.RFC3339),
+					Size:       fmt.Sprintf("%vMB", size/(1024*1024)),
+				})
 			}
-
-			inn := widget.NewVBox(
-				widget.NewAccordion(saveList...))
-			scroll := container.NewVScroll(inn)
-			scroll.SetMinSize(fyne.NewSize(500, 500))
-			main.innerContainer.Add(scroll)
-			main.parentContainer.Add(main.innerContainer)
-		}))
-	}
-	main.verticalGameScroll = container.NewVScroll(container.NewVBox(list...))
-}
-
-func (main *MainMenuContainer) RefreshRootView() {
-	main.horizSplit = container.NewHSplit(main.verticalGameScroll, main.parentContainer)
-	main.horizSplit.Offset = 0.10
-
-	main.rootVerticalSplit = container.NewVSplit(main.menuBar, main.horizSplit)
-	main.rootVerticalSplit.Offset = 0.05
-	main.parentContainer.Add(main.innerContainer)
-	GetViewStack().SetRoot(main.rootVerticalSplit)
-}
-
-func (main *MainMenuContainer) Refresh() {
-	syncMap = make(map[string]bool)
-	main.RefreshGames()
-	main.RefreshRootView()
-}
-
-func (main *MainMenuContainer) visualLogging(input chan Message, cancel chan Cancellation) {
-	minSize := main.parentContainer.MinSize()
-	parent := container.NewVBox()
-	innerBox := container.NewVBox()
-	tempScroll := container.NewScroll(innerBox)
-	tempScroll.SetMinSize(minSize)
-	parent.Add(tempScroll)
-
-	defaultColor := fyne.CurrentApp().Settings().Theme().TextColor()
-	root := container.NewVBox(parent)
-	GetViewStack().PushContent(root)
-
-	cancelButton := widget.NewButton("Cancel", func() {
-		cancel <- Cancellation{
-			ShouldCancel: true,
 		}
 
-		GetViewStack().PopContent()
+		games = append(games, game)
+	}
+
+	return games
+}
+
+func executeTemplate() (string, error) {
+	dm := MakeGameDefManager("")
+	games := buildGamelist(dm)
+
+	sort.Slice(games, func(i, j int) bool {
+		return games[i].Def.DisplayName < games[j].Def.DisplayName
 	})
-	parent.Add(cancelButton)
-
-	for {
-		result := <-input
-		if result.Finished {
-			fmt.Println("Console Logger Complete...")
-			break
-		}
-
-		if result.Err != nil {
-			msg := canvas.NewText(result.Err.Error(), getDefaultRed())
-			msg.TextSize = 14
-			innerBox.Add(msg)
-		} else {
-			msg := canvas.NewText(result.Message, defaultColor)
-			msg.TextSize = 10
-			innerBox.Add(msg)
-		}
-
-		GetViewStack().PeekContent().Refresh()
-		tempScroll.ScrollToBottom()
+	input := HtmlInput{
+		Games:     games,
+		Platforms: []string{"Windows", "MacOS", "Linux"},
 	}
 
-	cancelButton.Text = "Close Logs"
-	cancelButton.OnTapped = func() {
-		GetViewStack().PopContent()
+	var b bytes.Buffer
+	htmlWriter := bufio.NewWriterSize(&b, 2*1024*1024)
+
+	templ := template.Must(template.ParseFS(htmlMain, "html/index.html"))
+	err := templ.Execute(htmlWriter, input)
+	if err != nil {
+		return "", err
 	}
-	cancelButton.Refresh()
+
+	htmlWriter.Flush()
+	result := b.String()
+	js := fmt.Sprintf("<script>%v</script>", jsContent)
+	css := fmt.Sprintf("<style>%v</style>", cssContent)
+	finalResult := css + result + js
+	// fmt.Println(result)
+	return finalResult, nil
+}
+
+func refreshMainContent(w webview.WebView) error {
+	html, err := executeTemplate()
+	if err != nil {
+		return err
+	}
+
+	w.SetHtml(html)
+	return nil
 }
 
 func GuiMain(ops *Options, dm GameDefManager) {
-	// The steam deck (likely due to it's DPI) has scaling issues with our current version of FYNE
-	// To make this smooth, we will scale the UI to make it look nice in gaming mode.
-	// Normal linux users can overwrite this.
-
-	// @TODO this makes the window look bad in game mode, needs more investigation
-	// Not using this in game mode makes the UI look great, but our mouse X/Y is limited to the upper right
-	// quadrant of the UI
-	// if runtime.GOOS == "linux" && os.Getenv("FYNE_SCALE") == "" {
-	// 	os.Setenv("FYNE_SCALE", "0.25")
-	// }
-
-	a := app.New()
-	a.SetIcon(fyne.NewStaticResource("Icon", icon))
-
-	w := a.NewWindow("Steam Custom Cloud Uploads")
-	w.FullScreen()
-	w.Resize(fyne.NewSize(800, 600))
-	w.CenterOnScreen()
-
-	main := GetMainMenu()
-	main.dm = dm
-
-	main.RefreshGames()
-
-	syncButton := widget.NewButton("Sync Selected Games", func() {
-		ops.Gamenames = []string{}
-		for k, v := range syncMap {
-			if v {
-
-				ops.Gamenames = append(ops.Gamenames, k)
-			}
-		}
-		channels := &ChannelProvider{
-			logs:   make(chan Message, 100),
-			cancel: make(chan Cancellation, 1),
-		}
-
-		go CliMain(ops, dm, channels, SyncOp)
-		go main.visualLogging(channels.logs, channels.cancel)
-	})
-	syncAllButton := widget.NewButton("Sync All Games", func() {
-		ops.Gamenames = []string{}
-		for k := range dm.GetGameDefMap() {
-			ops.Gamenames = append(ops.Gamenames, k)
-		}
-
-		channels := &ChannelProvider{
-			logs:   make(chan Message, 100),
-			cancel: make(chan Cancellation, 1),
-		}
-
-		go CliMain(ops, dm, channels, SyncOp)
-		go main.visualLogging(channels.logs, channels.cancel)
-	})
-	manageGamesButton := widget.NewButton("Manage Games", func() { manageGames(dm) })
-	optionsButton := widget.NewButton("Options", openOptionsWindow)
-	hlist := []fyne.CanvasObject{syncButton, syncAllButton, manageGamesButton, optionsButton}
-	main.menuBar = container.NewHScroll(container.NewHBox(hlist...))
-
-	main.RefreshRootView()
-
-	// Work around for issue https://github.com/DavidDeSimone/CustomSteamCloudUploads/issues/16
-	if runtime.GOOS == "darwin" {
-		w.SetFixedSize(true)
+	debug := true
+	w := webview.New(debug)
+	defer w.Destroy()
+	w.SetTitle("Steam Custom Cloud Uploads")
+	w.SetSize(800, 600, webview.HintNone)
+	bindFunctions(w)
+	err := refreshMainContent(w)
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	v := GetViewStack()
-	v.SetMainWindow(w)
-	v.PushContent(main.rootVerticalSplit)
-
-	w.SetCloseIntercept(func() {
-		dm.CommitUserOverrides()
-		os.Exit(0)
-	})
-	// w.SetContent(cont)
-	w.ShowAndRun()
+	w.Run()
 }

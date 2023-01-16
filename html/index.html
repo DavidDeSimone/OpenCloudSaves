@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <ul class="topnav">
+        <li><div class="activeButton">SyncAll</div></li>
+        <li><div onclick="openAddGamesMenu()" style="width:auto;">Add Games</div></li>
+      </ul>
+
+      <div class="padding"></div>
+
+<div>
+{{range .Games}}
+<button class="accordion">{{.Def.DisplayName}}</button>
+<div class="panel">
+    <div>
+        <button class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
+        <button class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>
+        <button class="removebtn" onclick="onRemoveButtonClicked(this, '{{.Name}}')">Remove</button>
+      </div>
+      <table id="customers">
+        <tr>
+          <th>Filename</th>
+          <th>Modified</th>
+          <th>Size</th>
+        </tr>
+        <tr>
+        {{range .SaveFiles}}
+            <td>{{.Filename}}</td>
+            <td>{{.ModifiedBy}}</td>
+            <td>{{.Size}}</td>
+          </tr>
+        {{end}}
+      </table>
+    
+
+</div>
+{{end}}
+</div>
+
+
+<div id="id01" class="modal">
+    <span onclick="onAddGameClosed()" class="close" title="Close Modal">&times;</span>
+    <div class="modal-content">
+      <div class="container">
+        <h1>Add a game</h1>
+        <div>
+            <b>Game Name</b>
+            <input required id="gamename" type="text" value="New Game">
+        </div>
+        <hr>
+        {{range .Platforms}}
+        <label><b>{{.}}</b></label>
+        <input id="{{.}}-path" type="text" placeholder="Gamepath" name="path">
+        <button class="selectbtn">Select</button>
+  
+        <input id="{{.}}-ext" type="text" placeholder="Extensions" name="ignorelist">
+        <input id="{{.}}-ignore" type="text" placeholder="Ignore List" name="ignorelist">
+        <div>
+            <input id="{{.}}-download" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Download
+            <input id="{{.}}-upload" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Upload
+            <input id="{{.}}-delete" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Delete
+        </div>
+        {{end}}
+  
+        <div class="clearfix">
+          <button onclick="onAddGameClosed()" class="cancelbtn contentbutton">Cancel</button>
+          <button onclick="submitGamedef()" class="signupbtn contentbutton">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html> 

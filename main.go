@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -14,6 +15,7 @@ type Options struct {
 	NoGUI          []bool            `short:"u" long:"no-gui" description:"Run in CLI mode with no GUI"`
 	AddCustomGames map[string]string `short:"a" long:"add-custom-games" description:"<KEY>:<JSON_VALUE> Adds a custom game description to user_overrides.json. This accepts a JSON blobs in the format defined in gamedef_map.json"`
 	UserOverride   []string          `short:"o" long:"user-override" description:"--user-override <FILE> Provide location for custom user override JSON file for game definitions"`
+	PrintGameDefs  []bool            `short:"p" long:"print-gamedefs" description:"Print current gamedef map as JSON"`
 }
 
 type Message struct {
@@ -68,6 +70,26 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 
 func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, syncFunc func(srv CloudDriver, input chan SyncRequest, output chan SyncResponse)) {
 	logs := channels.logs
+
+	if len(ops.PrintGameDefs) > 0 {
+		result := dm.GetGameDefMap()
+		marshedResult, err := json.Marshal(result)
+		fmt.Println(string(marshedResult))
+		if err != nil {
+			logs <- Message{
+				Err:      err,
+				Finished: true,
+			}
+		} else {
+			logs <- Message{
+				Message:  string(marshedResult),
+				Finished: true,
+			}
+		}
+
+		return
+	}
+
 	LogMessage(logs, "Main Initalized")
 
 	addCustomGamesArgsLen := len(ops.AddCustomGames)
@@ -144,7 +166,6 @@ func consoleLogger(input chan Message) {
 	for {
 		result := <-input
 		if result.Finished {
-			fmt.Println("Console Logger Complete...")
 			break
 		}
 
