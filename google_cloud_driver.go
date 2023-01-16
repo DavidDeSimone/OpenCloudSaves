@@ -249,7 +249,10 @@ func (d *GoogleCloudDriver) UploadFile(fileId string, filePath string, fileName 
 		ModifiedTime: modifiedAtTime,
 	}
 
-	res, err := d.srv.Files.Update(fileId, ff).Media(osf).ProgressUpdater(prorgress).Do()
+	size := stat.Size()
+	res, err := d.srv.Files.Update(fileId, ff).Media(osf).ProgressUpdater(func(current, total int64) {
+		prorgress(current, size)
+	}).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +281,10 @@ func (d *GoogleCloudDriver) CreateFile(parentId string, fileName string, filePat
 		Parents:      []string{parentId},
 	}
 
-	result, err := d.srv.Files.Create(saveUpload).Media(file).ProgressUpdater(prorgress).Do()
+	size := stat.Size()
+	result, err := d.srv.Files.Create(saveUpload).Media(file).ProgressUpdater(func(current, total int64) {
+		prorgress(current, size)
+	}).Do()
 	if err != nil {
 		return nil, err
 	}

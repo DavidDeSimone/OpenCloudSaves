@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/webview/webview"
@@ -46,6 +47,29 @@ func consoleLog(s string) {
 	fmt.Println(s)
 }
 
+var chanelMutex sync.Mutex
+var channelMap map[string]*ChannelProvider = make(map[string]*ChannelProvider)
+
+func pollProgress(key string) (*ProgressEvent, error) {
+	chanelMutex.Lock()
+	channels, ok := channelMap[key]
+	chanelMutex.Unlock()
+
+	if !ok {
+		return nil, fmt.Errorf("failed to find progress event")
+	}
+
+	result := &ProgressEvent{}
+	select {
+	case res := <-channels.progress:
+		result = &res
+	default:
+		//no-op
+	}
+
+	return result, nil
+}
+
 func syncGame(key string) {
 	ops := &Options{
 		Gamenames: []string{key},
@@ -61,23 +85,28 @@ func syncGame(key string) {
 
 	// go consoleLogger(channels.logs)
 	go CliMain(ops, dm, channels, SyncOp)
+	chanelMutex.Lock()
+	defer chanelMutex.Unlock()
+
+	channelMap[key] = channels
+
 	// @TODO this needs to yield to JS. Instead, we should have this be a go thread
 	// and then JS needs to poll that channel on main thread.
-	for {
-		select {
-		case res := <-channels.progress:
-			fmt.Println(res)
-		case <-time.After(1 * time.Second):
-			fmt.Println("timeout 1")
-		}
+	// for {
+	// 	select {
+	// 	case res := <-channels.progress:
+	// 		fmt.Println(res)
+	// 	case <-time.After(1 * time.Second):
+	// 		fmt.Println("timeout 1")
+	// 	}
 
-		// msg := <-channels.logs
-		// if msg.Finished {
-		// 	break
-		// } else {
-		// 	fmt.Println(msg.Message)
-		// }
-	}
+	// 	// msg := <-channels.logs
+	// 	// if msg.Finished {
+	// 	// 	break
+	// 	// } else {
+	// 	// 	fmt.Println(msg.Message)
+	// 	// }
+	// }
 }
 
 type GuiDatapath struct {
@@ -261,6 +290,7 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("commitGamedef", commitGamedef)
 	w.Bind("removeGamedefByKey", removeGamedefByKey)
 	w.Bind("fetchGamedef", fetchGamedef)
+	w.Bind("pollProgress", pollProgress)
 }
 
 func DirSize(path string) (int64, error) {

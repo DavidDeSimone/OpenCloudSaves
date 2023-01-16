@@ -1,8 +1,21 @@
 let pendingEdit = null;
 
-function onSyncButtonClicked(element, name) {
+async function onSyncButtonClicked(element, name) {
     log(`Sync ${name}`)
-    syncGame(name)
+    await syncGame(name)
+    const interval = setInterval(async () => {
+        log("Polling Progres...")
+        const el = document.getElementById(`${name}-progress`);
+        const res = await pollProgress(name);
+        if (res.Total == 0) {
+            return;
+        }
+
+        el.style.width = `${(res.Current / res.Total) * 100}%`;
+        if (res.Current == res.Total) {
+            clearInterval(interval);
+        }
+    }, 1000)
 }
 
 async function onEditButtonClicked(element, name) {

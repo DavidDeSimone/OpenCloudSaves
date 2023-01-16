@@ -7,7 +7,10 @@
     <ul class="topnav">
         <li><div class="activeButton">SyncAll</div></li>
         <li><div onclick="openAddGamesMenu()" style="width:auto;">Add Games</div></li>
-      </ul>
+        <div class="search-container">
+              <input type="text" placeholder="Search.." name="search">
+          </div>  
+    </ul>
 
       <div class="padding"></div>
 
@@ -16,7 +19,7 @@
 <button class="accordion">{{.Def.DisplayName}}</button>
 <div class="panel">
     <div class="meter" style="height: 30px;">
-        <span style="width: 50%"></span>
+        <span id="{{.Def.DisplayName}}-progress" style="width: 1%"></span>
     </div>
     <div>
         <button class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
