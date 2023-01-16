@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sqweek/dialog"
 	"github.com/webview/webview"
 )
 
@@ -53,6 +54,10 @@ func consoleLog(s string) {
 
 var chanelMutex sync.Mutex
 var channelMap map[string]*ChannelProvider = make(map[string]*ChannelProvider)
+
+func openDirDialog() (string, error) {
+	return dialog.Directory().Title("Select Folder").Browse()
+}
 
 func pollLogs(key string) (string, error) {
 	chanelMutex.Lock()
@@ -314,6 +319,7 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("require", func(path string) {
 		load(w, path)
 	})
+	w.Bind("openDirDialog", openDirDialog)
 }
 
 func DirSize(path string) (int64, error) {

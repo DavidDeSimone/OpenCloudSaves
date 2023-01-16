@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/andygrunwald/vdf v1.1.0
 	github.com/jessevdk/go-flags v1.5.0
+	github.com/sqweek/dialog v0.0.0-20220809060634-e981b270ebbf
 	github.com/webview/webview v0.0.0-20230110200822-73aee3dae745
 	golang.org/x/oauth2 v0.3.0
 	golang.org/x/sys v0.3.0
@@ -14,6 +15,7 @@ require (
 require (
 	cloud.google.com/go/compute v1.13.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.2 // indirect
+	github.com/TheTitanrain/w32 v0.0.0-20180517000239-4f5cfb03fabf // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect

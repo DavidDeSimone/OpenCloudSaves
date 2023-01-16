@@ -1,6 +1,12 @@
 const DEFAULT_SEARCH_SCORE = 150;
 let pendingEdit = null;
 
+async function onSelectClicked(element, name) {
+    const dir = await openDirDialog();
+    pathEl = document.getElementById(`${name}-path`);
+    pathEl.value = dir;
+}
+
 
 async function onSyncButtonClicked(element, name) {
     log(`Sync ${name}`)

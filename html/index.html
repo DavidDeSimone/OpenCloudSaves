@@ -60,7 +60,7 @@
         {{range .Platforms}}
         <label><b>{{.}}</b></label>
         <input id="{{.}}-path" type="text" placeholder="Gamepath" name="path">
-        <button class="selectbtn">Select</button>
+        <button class="selectbtn" onclick="onSelectClicked(this, '{{.}}')">Select</button>
   
         <input id="{{.}}-ext" type="text" placeholder="Extensions" name="ignorelist">
         <input id="{{.}}-ignore" type="text" placeholder="Ignore List" name="ignorelist">
