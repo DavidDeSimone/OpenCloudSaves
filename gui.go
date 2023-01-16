@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -16,6 +17,9 @@ import (
 
 	"github.com/webview/webview"
 )
+
+//go:embed html
+var html embed.FS
 
 //go:embed html/index.html
 var htmlMain embed.FS
@@ -286,6 +290,16 @@ func commitGamedef(gamedef GuiGamedef) {
 	dm.CommitUserOverrides()
 }
 
+func load(w webview.WebView, path string) error {
+	b, err := fs.ReadFile(html, path)
+	if err != nil {
+		return err
+	}
+
+	w.Eval(string(b))
+	return nil
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -297,6 +311,9 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("fetchGamedef", fetchGamedef)
 	w.Bind("pollProgress", pollProgress)
 	w.Bind("pollLogs", pollLogs)
+	w.Bind("require", func(path string) {
+		load(w, path)
+	})
 }
 
 func DirSize(path string) (int64, error) {

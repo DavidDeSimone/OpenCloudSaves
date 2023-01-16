@@ -1,4 +1,6 @@
+const DEFAULT_SEARCH_SCORE = 150;
 let pendingEdit = null;
+
 
 async function onSyncButtonClicked(element, name) {
     log(`Sync ${name}`)
@@ -130,6 +132,28 @@ function submitGamedef() {
     refresh()
 }
 
+async function onChangeSearch(element) {
+    const name = element.value
+
+    var acc = document.getElementsByClassName("accordion");
+    var i;
+    
+    for (i = 0; i < acc.length; i++) {
+        if (name === "") {
+            acc[i].style.display = "block";
+            continue
+        }
+
+        const res = fuzzyMatch(name.toLowerCase(), acc[i].id.replace("-accordion", "").toLowerCase())
+        if (res[0] || res[1] > DEFAULT_SEARCH_SCORE) {
+            acc[i].style.display = "block";
+        } else {
+            acc[i].style.display = "none";
+        }
+    }
+}
+
+
 function setupAccordionHandler() {
     var acc = document.getElementsByClassName("accordion");
     var i;
@@ -147,8 +171,7 @@ function setupAccordionHandler() {
     }
 }
 
-function main() {
+setTimeout(async () => { 
     setupAccordionHandler();
-}
-
-main()
+    await require('html/fuzzy-search.js');
+});

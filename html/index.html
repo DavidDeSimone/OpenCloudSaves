@@ -5,10 +5,9 @@
 </head>
 <body>
     <ul class="topnav">
-        <li><div class="activeButton">SyncAll</div></li>
-        <li><div onclick="openAddGamesMenu()" style="width:auto;">Add Games</div></li>
+        <li><div class="activeButton" onclick="openAddGamesMenu()" style="width:auto;">Add Games</div></li>
         <div class="search-container">
-              <input type="text" placeholder="Search.." name="search">
+              <input type="text" placeholder="Search.." name="search" onchange="onChangeSearch(this)" onkeypress="onChangeSearch(this)" onpaste = "onChangeSearch(this)" oninput = "onChangeSearch(this)">
           </div>  
     </ul>
 
@@ -16,8 +15,8 @@
 
 <div>
 {{range .Games}}
-<button class="accordion">{{.Def.DisplayName}}</button>
-<div class="panel">
+<button class="accordion" id="{{.Def.DisplayName}}-accordion">{{.Def.DisplayName}}</button>
+<div class="panel" id="{{.Def.DisplayName}}-panel">
     <div id="{{.Def.DisplayName}}-log" style="display: none;">This will be the log message</div>
     <div class="meter" style="height: 30px;">
         <span id="{{.Def.DisplayName}}-progress" style="width: 1%; display: none;"></span>
