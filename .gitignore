@@ -4,3 +4,4 @@ steamcloudupload*
 testdata*
 .DS_store
 *.app
+bin/
