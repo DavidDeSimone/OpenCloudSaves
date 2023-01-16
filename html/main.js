@@ -4,16 +4,32 @@ async function onSyncButtonClicked(element, name) {
     log(`Sync ${name}`)
     await syncGame(name)
     const interval = setInterval(async () => {
-        log("Polling Progres...")
-        const el = document.getElementById(`${name}-progress`);
+        const logEl = document.getElementById(`${name}-log`);
+        const progressEl = document.getElementById(`${name}-progress`);
+
+        logEl.style.display = "block";
+        progressEl.style.display = "block";
+
+        const logValue = await pollLogs(name);
+        log(logValue)
+        if (logValue != "") {
+            logEl.textContent = logValue
+        }
+
+
+
         const res = await pollProgress(name);
         if (res.Total == 0) {
             return;
         }
 
-        el.style.width = `${(res.Current / res.Total) * 100}%`;
+        progressEl.style.width = `${(res.Current / res.Total) * 100}%`;
         if (res.Current == res.Total) {
             clearInterval(interval);
+            setTimeout(() => {
+                logEl.style.display = "none";
+                progressEl.style.display = "none";
+            }, 5000)
         }
     }, 1000)
 }

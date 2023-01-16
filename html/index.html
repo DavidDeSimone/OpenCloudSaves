@@ -18,8 +18,9 @@
 {{range .Games}}
 <button class="accordion">{{.Def.DisplayName}}</button>
 <div class="panel">
+    <div id="{{.Def.DisplayName}}-log" style="display: none;">This will be the log message</div>
     <div class="meter" style="height: 30px;">
-        <span id="{{.Def.DisplayName}}-progress" style="width: 1%"></span>
+        <span id="{{.Def.DisplayName}}-progress" style="width: 1%; display: none;"></span>
     </div>
     <div>
         <button class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
