@@ -42,62 +42,35 @@
 
 
 <div id="id01" class="modal">
-    <span onclick="document.getElementById('id01').style.display='none'" class="close" title="Close Modal">&times;</span>
-    <form class="modal-content" action="/action_page.php">
+    <span onclick="onAddGameClosed()" class="close" title="Close Modal">&times;</span>
+    <div class="modal-content">
       <div class="container">
         <h1>Add a game</h1>
+        <div>
+            <b>Game Name</b>
+            <input required id="gamename" type="text" value="New Game">
+        </div>
         <hr>
-        <label for="email"><b>Windows</b></label>
-        <input type="text" placeholder="Gamepath" name="path">
+        {{range .Platforms}}
+        <label><b>{{.}}</b></label>
+        <input id="{{.}}-path" type="text" placeholder="Gamepath" name="path">
         <button class="selectbtn">Select</button>
   
-        <input type="text" placeholder="Extensions" name="ignorelist">
-        <input type="text" placeholder="Ignore List" name="ignorelist">
-  
-  
-        
+        <input id="{{.}}-ext" type="text" placeholder="Extensions" name="ignorelist">
+        <input id="{{.}}-ignore" type="text" placeholder="Ignore List" name="ignorelist">
         <div>
-        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Download
-        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Upload
-        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Delete
+            <input id="{{.}}-download" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Download
+            <input id="{{.}}-upload" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Upload
+            <input id="{{.}}-delete" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Delete
         </div>
-  
-        <label for="email"><b>MacOS</b></label>
-        <input type="text" placeholder="Gamepath" name="path">
-        <button class="selectbtn">Select</button>
-  
-        <input type="text" placeholder="Extensions" name="ignorelist">
-        <input type="text" placeholder="Ignore List" name="ignorelist">
-  
-  
-        
-        <div>
-        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Download
-        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Upload
-        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Delete
-        </div>
-  
-        <label for="email"><b>Linux</b></label>
-        <input type="text" placeholder="Gamepath" name="path">
-        <button class="selectbtn">Select</button>
-  
-        <input type="text" placeholder="Extensions" name="ignorelist">
-        <input type="text" placeholder="Ignore List" name="ignorelist">
-  
-  
-        
-        <div>
-        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Download
-        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Upload
-        <input type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Delete
-        </div>
+        {{end}}
   
         <div class="clearfix">
-          <button type="button" onclick="document.getElementById('id01').style.display='none'" class="cancelbtn contentbutton">Cancel</button>
-          <button type="submit" class="signupbtn contentbutton">Save</button>
+          <button onclick="onAddGameClosed()" class="cancelbtn contentbutton">Cancel</button>
+          <button onclick="submitGamedef()" class="signupbtn contentbutton">Save</button>
         </div>
       </div>
-    </form>
+    </div>
   </div>
 
 </body>

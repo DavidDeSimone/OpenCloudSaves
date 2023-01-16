@@ -37,7 +37,8 @@ type Game struct {
 }
 
 type HtmlInput struct {
-	Games []Game
+	Games     []Game
+	Platforms []string
 }
 
 func consoleLog(s string) {
@@ -145,7 +146,8 @@ func executeTemplate() (string, error) {
 		return games[i].Def.DisplayName < games[j].Def.DisplayName
 	})
 	input := HtmlInput{
-		Games: games,
+		Games:     games,
+		Platforms: []string{"Windows", "MacOS", "Linux"},
 	}
 
 	var b bytes.Buffer

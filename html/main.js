@@ -5,23 +5,73 @@ function onSyncButtonClicked(element, name) {
 
 function onEditButtonClicked(element, name) {
     log(`Edit ${name}`)
-    refresh();
 }
 
 function onRemoveButtonClicked(element, name) {
     log(`Remove ${name}`)
 }
 
-function setupModalHandler() {
-    // Get the modal
-    var modal = document.getElementById('id01');
+function onAddGameClosed() {
+    document.getElementById('id01').style.display='none';
+    refresh();
+}
 
-    // When the user clicks anywhere outside of the modal, close it
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
+function deserGamedef(gamedef) {
+    ["Windows", "MacOS", "Linux"].forEach(element => {
+        const def = gamedef[element];
+        pathEl = document.getElementById(`${element}-path`);
+        extEl = document.getElementById(`${element}-ext`);
+        ignoreEl = document.getElementById(`${element}-ignore`);
+        downloadEl = document.getElementById(`${element}-download`);
+        uploadEl = document.getElementById(`${element}-upload`);
+        deleteEl = document.getElementById(`${element}-delete`);
+
+        extEl.value = def.Exts.join(',');
+        ignoreEl.value = def.Ignore.join(',');
+        pathEl.value = def.Path;
+        downloadEl.checked = def.Download;
+        uploadEl.checked = def.Upload;
+        deleteEl.checked = def.Delete;
+    });
+}
+
+function submitGamedef() {
+    document.getElementById('id01').style.display='none';
+    gamenameEl = document.getElementById('gamename');
+    let result = {
+        Name: gamenameEl.value
+    };
+
+    ["Windows", "MacOS", "Linux"].forEach(element => {
+        pathEl = document.getElementById(`${element}-path`)
+        extEl = document.getElementById(`${element}-ext`)
+        ignoreEl = document.getElementById(`${element}-ignore`)
+        downloadEl = document.getElementById(`${element}-download`)
+        uploadEl = document.getElementById(`${element}-upload`)
+        deleteEl = document.getElementById(`${element}-delete`)
+
+        let extensions = [];
+        if (extEl.value) {
+            extensions = extEl.value.split(',');
         }
-    }
+
+        let ignoreList = [];
+        if (ignoreEl.value) {
+            ignoreList = ignoreList.value.split(',');
+        }
+
+        result[element] = {
+            Path: pathEl.value || "",
+            Exts: extensions,
+            Ignore: ignoreList,
+            Download: downloadEl.checked,
+            Upload: uploadEl.checked,
+            Delete: deleteEl.checked
+        };
+    });
+
+    const s = JSON.stringify(result)
+    log(s)
 }
 
 function setupAccordionHandler() {
@@ -42,12 +92,7 @@ function setupAccordionHandler() {
 }
 
 function main() {
-    setupModalHandler();
     setupAccordionHandler();
 }
 
-try { 
-    main()
-} catch (e) {
-    log("" + e)
-}
+main()
