@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -55,7 +56,7 @@ func getClient(config *oauth2.Config) *http.Client {
 		tok = getTokenFromWeb(config)
 		saveToken(tokFile, tok)
 	}
-	return config.Client(context.Background(), tok)
+	return config.Client(context.TODO(), tok)
 }
 
 // Request a token from the web, then returns the retrieved token.
@@ -132,6 +133,20 @@ func makeService() *drive.Service {
 
 func (d *GoogleCloudDriver) InitDriver() error {
 	d.srv = makeService()
+	_, err := d.srv.Files.Get("'root'").Do()
+	if err != nil {
+		if strings.Contains(err.Error(), "Token has been expired or revoked.") {
+			cacheDir, err := os.UserCacheDir()
+			if err != nil {
+				return err
+			}
+
+			tokFile := cacheDir + string(os.PathSeparator) + "token.json"
+			os.Remove(tokFile)
+			d.srv = makeService()
+		}
+	}
+
 	return nil
 }
 func (d *GoogleCloudDriver) ListFiles(parentId string) ([]CloudFile, error) {
