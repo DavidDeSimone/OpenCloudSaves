@@ -23,22 +23,22 @@ type SyncResponse struct {
 	Err       error
 }
 
-func SyncOp(srv CloudDriver, input chan SyncRequest, output chan SyncResponse) {
+func SyncOp(srv CloudDriver, input chan SyncRequest, output chan SyncResponse, progress chan ProgressEvent) {
 	for {
 		request := <-input
 		switch request.Operation {
 		case Create:
-			CreateOperation(srv, request, output)
+			CreateOperation(srv, request, output, progress)
 		case Download:
-			DownloadOperation(srv, request, output)
+			DownloadOperation(srv, request, output, progress)
 		case Upload:
-			UploadOperation(srv, request, output)
+			UploadOperation(srv, request, output, progress)
 		}
 	}
 }
 
-func CreateOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse) {
-	result, err := srv.CreateFile(request.ParentId, request.Name, request.Path)
+func CreateOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse, progress chan ProgressEvent) {
+	result, err := srv.CreateFile(request.ParentId, request.Name, request.Path, func(i1, i2 int64) { progress <- ProgressEvent{Current: i1, Total: i2} })
 	resultModtime := ""
 	resultFileId := ""
 	if result != nil {
@@ -56,8 +56,8 @@ func CreateOperation(srv CloudDriver, request SyncRequest, output chan SyncRespo
 	}
 }
 
-func DownloadOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse) {
-	result, err := srv.DownloadFile(request.FileId, request.Path, request.Name) //downloadFile(srv, request.FileId, request.Name, request.Dryrun)
+func DownloadOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse, progress chan ProgressEvent) {
+	result, err := srv.DownloadFile(request.FileId, request.Path, request.Name, func(i1, i2 int64) { progress <- ProgressEvent{Current: i1, Total: i2} }) //downloadFile(srv, request.FileId, request.Name, request.Dryrun)
 	resultModtime := ""
 	resultFileId := ""
 	if result != nil {
@@ -75,8 +75,8 @@ func DownloadOperation(srv CloudDriver, request SyncRequest, output chan SyncRes
 	}
 }
 
-func UploadOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse) {
-	result, err := srv.UploadFile(request.FileId, request.Path, request.Name) //uploadFile(srv, request.FileId, request.Path, request.Dryrun)
+func UploadOperation(srv CloudDriver, request SyncRequest, output chan SyncResponse, progress chan ProgressEvent) {
+	result, err := srv.UploadFile(request.FileId, request.Path, request.Name, func(i1, i2 int64) { progress <- ProgressEvent{Current: i1, Total: i2} }) //uploadFile(srv, request.FileId, request.Path, request.Dryrun)
 	resultModtime := ""
 	resultFileId := ""
 	if result != nil {

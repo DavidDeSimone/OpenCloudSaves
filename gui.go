@@ -52,14 +52,32 @@ func syncGame(key string) {
 	}
 	dm := MakeGameDefManager("")
 	channels := &ChannelProvider{
-		logs:   make(chan Message, 100),
-		cancel: make(chan Cancellation, 1),
-		input:  make(chan SyncRequest, 10),
-		output: make(chan SyncResponse, 10),
+		logs:     make(chan Message, 100),
+		cancel:   make(chan Cancellation, 1),
+		input:    make(chan SyncRequest, 10),
+		output:   make(chan SyncResponse, 10),
+		progress: make(chan ProgressEvent, 20),
 	}
 
-	go consoleLogger(channels.logs)
+	// go consoleLogger(channels.logs)
 	go CliMain(ops, dm, channels, SyncOp)
+	// @TODO this needs to yield to JS. Instead, we should have this be a go thread
+	// and then JS needs to poll that channel on main thread.
+	for {
+		select {
+		case res := <-channels.progress:
+			fmt.Println(res)
+		case <-time.After(1 * time.Second):
+			fmt.Println("timeout 1")
+		}
+
+		// msg := <-channels.logs
+		// if msg.Finished {
+		// 	break
+		// } else {
+		// 	fmt.Println(msg.Message)
+		// }
+	}
 }
 
 type GuiDatapath struct {

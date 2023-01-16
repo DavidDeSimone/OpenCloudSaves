@@ -28,11 +28,17 @@ type Cancellation struct {
 	ShouldCancel bool
 }
 
+type ProgressEvent struct {
+	Current int64
+	Total   int64
+}
+
 type ChannelProvider struct {
-	logs   chan Message
-	cancel chan Cancellation
-	input  chan SyncRequest
-	output chan SyncResponse
+	logs     chan Message
+	cancel   chan Cancellation
+	input    chan SyncRequest
+	output   chan SyncResponse
+	progress chan ProgressEvent
 }
 
 const CloudOperationDownload = 1 << 0
@@ -68,7 +74,7 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 	}
 }
 
-func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, syncFunc func(srv CloudDriver, input chan SyncRequest, output chan SyncResponse)) {
+func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, syncFunc func(srv CloudDriver, input chan SyncRequest, output chan SyncResponse, progress chan ProgressEvent)) {
 	logs := channels.logs
 
 	if len(ops.PrintGameDefs) > 0 {
@@ -111,7 +117,7 @@ func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, syncFun
 	}
 
 	for i := 0; i < WORKER_POOL_SIZE; i++ {
-		go syncFunc(srv, channels.input, channels.output)
+		go syncFunc(srv, channels.input, channels.output, channels.progress)
 	}
 
 	LogMessage(logs, "Cloud Service Initialized...")
@@ -194,10 +200,11 @@ func main() {
 
 	if noGui {
 		channels := &ChannelProvider{
-			logs:   make(chan Message, 100),
-			cancel: make(chan Cancellation, 1),
-			input:  make(chan SyncRequest, 10),
-			output: make(chan SyncResponse, 10),
+			logs:     make(chan Message, 100),
+			cancel:   make(chan Cancellation, 1),
+			input:    make(chan SyncRequest, 10),
+			output:   make(chan SyncResponse, 10),
+			progress: make(chan ProgressEvent, 15),
 		}
 
 		go consoleLogger(channels.logs)

@@ -15,6 +15,9 @@
 {{range .Games}}
 <button class="accordion">{{.Def.DisplayName}}</button>
 <div class="panel">
+    <div class="meter" style="height: 30px;">
+        <span style="width: 50%"></span>
+    </div>
     <div>
         <button class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         <button class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>
