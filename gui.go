@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"embed"
-	_ "embed"
 	"fmt"
 	"html/template"
 	"os"
@@ -29,6 +28,7 @@ type SaveFile struct {
 }
 
 type Game struct {
+	Name      string
 	Def       *GameDef
 	SaveFiles []SaveFile
 }
@@ -41,16 +41,36 @@ func consoleLog(s string) {
 	fmt.Println(s)
 }
 
+func syncGame(key string) {
+	ops := &Options{
+		Gamenames: []string{key},
+	}
+	dm := MakeGameDefManager("")
+	channels := &ChannelProvider{
+		logs:   make(chan Message, 100),
+		cancel: make(chan Cancellation, 1),
+		input:  make(chan SyncRequest, 10),
+		output: make(chan SyncResponse, 10),
+	}
+
+	go consoleLogger(channels.logs)
+	go CliMain(ops, dm, channels, SyncOp)
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
+	w.Bind("syncGame", syncGame)
 }
 
 func executeTemplate() (string, error) {
 	dm := MakeGameDefManager("")
 	games := []Game{}
-	for _, v := range dm.GetGameDefMap() {
-		game := Game{}
-		game.Def = v
+	for k, v := range dm.GetGameDefMap() {
+		game := Game{
+			Name: k,
+			Def:  v,
+		}
+
 		game.SaveFiles = []SaveFile{}
 		paths, err := v.GetSyncpaths()
 		if err != nil {

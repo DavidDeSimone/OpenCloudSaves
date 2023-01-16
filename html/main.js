@@ -1,13 +1,14 @@
-function onSyncButtonClicked(_element) {
-    log('clicked')
+function onSyncButtonClicked(element, name) {
+    log(`Sync ${name}`)
+    syncGame(name)
 }
 
-function onEditButtonClicked(_element) {
-
+function onEditButtonClicked(element, name) {
+    log(`Edit ${name}`)
 }
 
-function onRemoveButtonClicked(_element) {
-
+function onRemoveButtonClicked(element, name) {
+    log(`Remove ${name}`)
 }
 
 function setupModalHandler() {

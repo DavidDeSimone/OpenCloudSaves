@@ -16,9 +16,9 @@
 <button class="accordion">{{.Def.DisplayName}}</button>
 <div class="panel">
     <div>
-        <button class="btn success" onclick="onSyncButtonClicked(this)">Sync Game</button>
-        <button class="btnaddl neutralbtn" onclick="onEditButtonClicked(this)">Edit</button>
-        <button class="removebtn" onclick="onRemoveButtonClicked(this)">Remove</button>
+        <button class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
+        <button class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>
+        <button class="removebtn" onclick="onRemoveButtonClicked(this, '{{.Name}}')">Remove</button>
       </div>
       <table id="customers">
         <tr>
