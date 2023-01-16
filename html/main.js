@@ -1,22 +1,44 @@
+let pendingEdit = null;
+
 function onSyncButtonClicked(element, name) {
     log(`Sync ${name}`)
     syncGame(name)
 }
 
-function onEditButtonClicked(element, name) {
-    log(`Edit ${name}`)
+async function onEditButtonClicked(element, name) {
+    log(`Edit ${name}`);
+    pendingEdit = name;
+
+    const def = await fetchGamedef(name);
+    deserGamedef(def);
+    openAddGamesMenu(false);
 }
 
 function onRemoveButtonClicked(element, name) {
     log(`Remove ${name}`)
+    removeGamedefByKey(name)
+    refresh()
 }
 
 function onAddGameClosed() {
+    pendingEdit = null;
     document.getElementById('id01').style.display='none';
     refresh();
 }
 
+function openAddGamesMenu(deser = true) {
+    document.getElementById('id01').style.display='block';
+    if (deser) {
+        deserGamedef({
+            Name: "New Game"
+        })
+    }
+}
+
 function deserGamedef(gamedef) {
+    const gamenameEl = document.getElementById('gamename');
+    gamenameEl.value = gamedef.Name;
+
     ["Windows", "MacOS", "Linux"].forEach(element => {
         const def = gamedef[element];
         pathEl = document.getElementById(`${element}-path`);
@@ -26,8 +48,8 @@ function deserGamedef(gamedef) {
         uploadEl = document.getElementById(`${element}-upload`);
         deleteEl = document.getElementById(`${element}-delete`);
 
-        extEl.value = def.Exts.join(',');
-        ignoreEl.value = def.Ignore.join(',');
+        extEl.value = def.Exts ? def.Exts.join(',') : "";
+        ignoreEl.value = def.Ignore ? def.Ignore.join(',') : "";
         pathEl.value = def.Path;
         downloadEl.checked = def.Download;
         uploadEl.checked = def.Upload;
@@ -52,12 +74,12 @@ function submitGamedef() {
 
         let extensions = [];
         if (extEl.value) {
-            extensions = extEl.value.split(',');
+            extensions = extEl.value.split(',') || [extEl.value];
         }
 
         let ignoreList = [];
         if (ignoreEl.value) {
-            ignoreList = ignoreList.value.split(',');
+            ignoreList = ignoreEl.value.split(',') || [ignoreEl.value];
         }
 
         result[element] = {
@@ -70,8 +92,13 @@ function submitGamedef() {
         };
     });
 
-    const s = JSON.stringify(result)
-    log(s)
+    if (pendingEdit) {
+        removeGamedefByKey(pendingEdit);
+        pendingEdit = null;
+    }
+
+    commitGamedef(result)
+    refresh()
 }
 
 function setupAccordionHandler() {

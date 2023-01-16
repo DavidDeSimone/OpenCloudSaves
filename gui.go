@@ -61,12 +61,163 @@ func syncGame(key string) {
 	go CliMain(ops, dm, channels, SyncOp)
 }
 
+type GuiDatapath struct {
+	Path     string
+	Exts     []string
+	Ignore   []string
+	Download bool
+	Upload   bool
+	Delete   bool
+}
+
+type GuiGamedef struct {
+	Name    string
+	Windows GuiDatapath
+	MacOS   GuiDatapath
+	Linux   GuiDatapath
+}
+
+func removeGamedefByKey(key string) {
+	dm := MakeGameDefManager("")
+	gamedefMap := dm.GetGameDefMap()
+	delete(gamedefMap, key)
+	dm.CommitUserOverrides()
+}
+
+func fetchGamedef(key string) (*GuiGamedef, error) {
+	dm := MakeGameDefManager("")
+	gamedefMap := dm.GetGameDefMap()
+	def, ok := gamedefMap[key]
+	if !ok {
+		return nil, fmt.Errorf("gamedef not found")
+	}
+
+	result := &GuiGamedef{
+		Name: def.DisplayName,
+	}
+
+	if len(def.WinPath) > 0 {
+		path := def.WinPath[0]
+		result.Windows = GuiDatapath{
+			Path:     path.Path,
+			Exts:     path.Exts,
+			Ignore:   path.Ignore,
+			Download: path.NetAuth&CloudOperationDownload != 0,
+			Upload:   path.NetAuth&CloudOperationUpload != 0,
+			Delete:   path.NetAuth&CloudOperationDelete != 0,
+		}
+	}
+
+	if len(def.DarwinPath) > 0 {
+		path := def.DarwinPath[0]
+		result.MacOS = GuiDatapath{
+			Path:     path.Path,
+			Exts:     path.Exts,
+			Ignore:   path.Ignore,
+			Download: path.NetAuth&CloudOperationDownload != 0,
+			Upload:   path.NetAuth&CloudOperationUpload != 0,
+			Delete:   path.NetAuth&CloudOperationDelete != 0,
+		}
+	}
+
+	if len(def.LinuxPath) > 0 {
+		path := def.LinuxPath[0]
+		result.Linux = GuiDatapath{
+			Path:     path.Path,
+			Exts:     path.Exts,
+			Ignore:   path.Ignore,
+			Download: path.NetAuth&CloudOperationDownload != 0,
+			Upload:   path.NetAuth&CloudOperationUpload != 0,
+			Delete:   path.NetAuth&CloudOperationDelete != 0,
+		}
+	}
+
+	return result, nil
+}
+
+func commitGamedef(gamedef GuiGamedef) {
+	dm := MakeGameDefManager("")
+	gamedefMap := dm.GetGameDefMap()
+	gamedefMap[gamedef.Name] = &GameDef{
+		DisplayName: gamedef.Name,
+		SteamId:     "0",
+	}
+
+	netauth := 0
+	if gamedef.Windows.Download {
+		netauth |= CloudOperationDownload
+	}
+	if gamedef.Windows.Upload {
+		netauth |= CloudOperationUpload
+	}
+	if gamedef.Windows.Delete {
+		netauth |= CloudOperationDelete
+	}
+	parent := filepath.Dir(gamedef.Windows.Path)
+	gamedefMap[gamedef.Name].WinPath = []*Datapath{
+		{
+			Path:    gamedef.Windows.Path,
+			Exts:    gamedef.Windows.Exts,
+			Ignore:  gamedef.Windows.Ignore,
+			Parent:  parent,
+			NetAuth: netauth,
+		},
+	}
+
+	netauth = 0
+	if gamedef.MacOS.Download {
+		netauth |= CloudOperationDownload
+	}
+	if gamedef.MacOS.Upload {
+		netauth |= CloudOperationUpload
+	}
+	if gamedef.MacOS.Delete {
+		netauth |= CloudOperationDelete
+	}
+	parent = filepath.Dir(gamedef.MacOS.Path)
+	gamedefMap[gamedef.Name].DarwinPath = []*Datapath{
+		{
+			Path:    gamedef.MacOS.Path,
+			Exts:    gamedef.MacOS.Exts,
+			Ignore:  gamedef.MacOS.Ignore,
+			Parent:  parent,
+			NetAuth: netauth,
+		},
+	}
+
+	netauth = 0
+	if gamedef.Linux.Download {
+		netauth |= CloudOperationDownload
+	}
+	if gamedef.Linux.Upload {
+		netauth |= CloudOperationUpload
+	}
+	if gamedef.Linux.Delete {
+		netauth |= CloudOperationDelete
+	}
+	parent = filepath.Dir(gamedef.Linux.Path)
+	gamedefMap[gamedef.Name].LinuxPath = []*Datapath{
+		{
+			Path:    gamedef.Linux.Path,
+			Exts:    gamedef.Linux.Exts,
+			Ignore:  gamedef.Linux.Ignore,
+			Parent:  parent,
+			NetAuth: netauth,
+		},
+	}
+
+	dm.CommitUserOverrides()
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
 	w.Bind("refresh", func() {
 		refreshMainContent(w)
 	})
+	w.Bind("commitGamedef", commitGamedef)
+	w.Bind("removeGamedefByKey", removeGamedefByKey)
+	w.Bind("fetchGamedef", fetchGamedef)
 }
 
 func DirSize(path string) (int64, error) {
@@ -98,6 +249,13 @@ func buildGamelist(dm GameDefManager) []Game {
 			continue
 		}
 		for _, datapath := range paths {
+			fmt.Println("Datapath " + datapath.Path)
+			// @TODO better handle empty path being root
+			// because of the logic in GetSyncpaths
+			if datapath.Path == "" || datapath.Path == "/" {
+				continue
+			}
+
 			dirFiles, err := os.ReadDir(datapath.Path)
 			if err != nil {
 				fmt.Println(err)
@@ -105,6 +263,7 @@ func buildGamelist(dm GameDefManager) []Game {
 			}
 
 			for _, dirFile := range dirFiles {
+				fmt.Println("Examining " + dirFile.Name())
 				if SyncFilter(dirFile.Name(), datapath) {
 					continue
 				}
