@@ -102,7 +102,9 @@ func zipSource(source, target string, filter func(string) bool) ([]string, error
 		}
 
 		referenceName := strings.Replace(path, source, "", 1)
+		fmt.Println("Examining " + referenceName)
 		if filter(referenceName) {
+			fmt.Println("Ignoring File " + referenceName)
 			return nil
 		}
 
@@ -217,8 +219,6 @@ func unzipFile(f *zip.File, destination string) error {
 	return nil
 }
 
-// @TODO
-// Need to add a filter file for the data path ignored files / zip'd files
 func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels *ChannelProvider) error {
 	logs := channels.logs
 	cancel := channels.cancel
@@ -336,7 +336,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 				}
 			}
 
-			return anyExtMatches
+			return !anyExtMatches
 
 		})
 	if err != nil {
