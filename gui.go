@@ -6,7 +6,9 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"log"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/webview/webview"
@@ -60,10 +62,12 @@ func syncGame(key string) {
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
+	w.Bind("refresh", func() {
+		refreshMainContent(w)
+	})
 }
 
-func executeTemplate() (string, error) {
-	dm := MakeGameDefManager("")
+func buildGamelist(dm GameDefManager) []Game {
 	games := []Game{}
 	for k, v := range dm.GetGameDefMap() {
 		game := Game{
@@ -85,6 +89,10 @@ func executeTemplate() (string, error) {
 			}
 
 			for _, dirFile := range dirFiles {
+				if SyncFilter(dirFile.Name(), datapath) {
+					continue
+				}
+
 				info, err := dirFile.Info()
 				if err != nil {
 					fmt.Println(err)
@@ -102,6 +110,16 @@ func executeTemplate() (string, error) {
 		games = append(games, game)
 	}
 
+	return games
+}
+
+func executeTemplate() (string, error) {
+	dm := MakeGameDefManager("")
+	games := buildGamelist(dm)
+
+	sort.Slice(games, func(i, j int) bool {
+		return games[i].Def.DisplayName < games[j].Def.DisplayName
+	})
 	input := HtmlInput{
 		Games: games,
 	}
@@ -124,6 +142,16 @@ func executeTemplate() (string, error) {
 	return finalResult, nil
 }
 
+func refreshMainContent(w webview.WebView) error {
+	html, err := executeTemplate()
+	if err != nil {
+		return err
+	}
+
+	w.SetHtml(html)
+	return nil
+}
+
 func GuiMain(ops *Options, dm GameDefManager) {
 	debug := true
 	w := webview.New(debug)
@@ -131,12 +159,9 @@ func GuiMain(ops *Options, dm GameDefManager) {
 	w.SetTitle("Steam Custom Cloud Uploads")
 	w.SetSize(800, 600, webview.HintNone)
 	bindFunctions(w)
-	html, err := executeTemplate()
+	err := refreshMainContent(w)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
-
-	w.SetHtml(html)
 	w.Run()
 }

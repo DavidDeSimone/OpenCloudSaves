@@ -5,6 +5,7 @@ function onSyncButtonClicked(element, name) {
 
 function onEditButtonClicked(element, name) {
     log(`Edit ${name}`)
+    refresh();
 }
 
 function onRemoveButtonClicked(element, name) {

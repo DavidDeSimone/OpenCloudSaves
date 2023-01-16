@@ -219,6 +219,29 @@ func unzipFile(f *zip.File, destination string) error {
 	return nil
 }
 
+func SyncFilter(s string, syncDataPath Datapath) bool {
+	for _, ignore := range syncDataPath.Ignore {
+		if s == ignore {
+			return true
+		}
+	}
+
+	if len(syncDataPath.Exts) == 0 {
+		return false
+	}
+
+	anyExtMatches := false
+	fileExt := filepath.Ext(s)
+	for _, ext := range syncDataPath.Exts {
+		if ext == fileExt {
+			anyExtMatches = true
+			break
+		}
+	}
+
+	return !anyExtMatches
+}
+
 func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels *ChannelProvider) error {
 	logs := channels.logs
 	cancel := channels.cancel
@@ -317,27 +340,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 	os.Remove(filePath)
 	fileList, err := zipSource(syncDataPath.Path, filePath,
 		func(s string) bool {
-			for _, ignore := range syncDataPath.Ignore {
-				if s == ignore {
-					return true
-				}
-			}
-
-			if len(syncDataPath.Exts) == 0 {
-				return false
-			}
-
-			anyExtMatches := false
-			fileExt := filepath.Ext(s)
-			for _, ext := range syncDataPath.Exts {
-				if ext == fileExt {
-					anyExtMatches = true
-					break
-				}
-			}
-
-			return !anyExtMatches
-
+			return SyncFilter(s, syncDataPath)
 		})
 	if err != nil {
 		return err
