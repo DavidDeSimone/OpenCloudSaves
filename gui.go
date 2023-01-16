@@ -6,14 +6,20 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/webview/webview"
 )
+
+//go:embed html
+var html embed.FS
 
 //go:embed html/index.html
 var htmlMain embed.FS
@@ -45,20 +51,71 @@ func consoleLog(s string) {
 	fmt.Println(s)
 }
 
+var chanelMutex sync.Mutex
+var channelMap map[string]*ChannelProvider = make(map[string]*ChannelProvider)
+
+func pollLogs(key string) (string, error) {
+	chanelMutex.Lock()
+	channels, ok := channelMap[key]
+	chanelMutex.Unlock()
+	if !ok {
+		return "", fmt.Errorf("failed to find progress event")
+	}
+
+	select {
+	case res := <-channels.logs:
+		if res.Finished {
+			return "finished", nil
+		} else if res.Err != nil {
+			return "", res.Err
+		} else {
+			return res.Message, nil
+		}
+	default:
+		//no-op
+	}
+
+	return "", nil
+}
+
+func pollProgress(key string) (*ProgressEvent, error) {
+	chanelMutex.Lock()
+	channels, ok := channelMap[key]
+	chanelMutex.Unlock()
+
+	if !ok {
+		return nil, fmt.Errorf("failed to find progress event")
+	}
+
+	result := &ProgressEvent{}
+	select {
+	case res := <-channels.progress:
+		result = &res
+	default:
+		//no-op
+	}
+
+	return result, nil
+}
+
 func syncGame(key string) {
 	ops := &Options{
 		Gamenames: []string{key},
 	}
 	dm := MakeGameDefManager("")
 	channels := &ChannelProvider{
-		logs:   make(chan Message, 100),
-		cancel: make(chan Cancellation, 1),
-		input:  make(chan SyncRequest, 10),
-		output: make(chan SyncResponse, 10),
+		logs:     make(chan Message, 100),
+		cancel:   make(chan Cancellation, 1),
+		input:    make(chan SyncRequest, 10),
+		output:   make(chan SyncResponse, 10),
+		progress: make(chan ProgressEvent, 20),
 	}
 
-	go consoleLogger(channels.logs)
 	go CliMain(ops, dm, channels, SyncOp)
+	chanelMutex.Lock()
+	defer chanelMutex.Unlock()
+
+	channelMap[key] = channels
 }
 
 type GuiDatapath struct {
@@ -153,7 +210,15 @@ func commitGamedef(gamedef GuiGamedef) {
 	if gamedef.Windows.Delete {
 		netauth |= CloudOperationDelete
 	}
-	parent := filepath.Dir(gamedef.Windows.Path)
+
+	list := strings.Split(gamedef.Windows.Path, string(os.PathSeparator))
+	parent := ""
+	if len(list) == 0 {
+		parent = gamedef.Windows.Path
+	} else {
+		parent = list[len(list)-1]
+	}
+
 	gamedefMap[gamedef.Name].WinPath = []*Datapath{
 		{
 			Path:    gamedef.Windows.Path,
@@ -174,7 +239,15 @@ func commitGamedef(gamedef GuiGamedef) {
 	if gamedef.MacOS.Delete {
 		netauth |= CloudOperationDelete
 	}
-	parent = filepath.Dir(gamedef.MacOS.Path)
+
+	list = strings.Split(gamedef.MacOS.Path, string(os.PathSeparator))
+	parent = ""
+	if len(list) == 0 {
+		parent = gamedef.MacOS.Path
+	} else {
+		parent = list[len(list)-1]
+	}
+
 	gamedefMap[gamedef.Name].DarwinPath = []*Datapath{
 		{
 			Path:    gamedef.MacOS.Path,
@@ -195,7 +268,15 @@ func commitGamedef(gamedef GuiGamedef) {
 	if gamedef.Linux.Delete {
 		netauth |= CloudOperationDelete
 	}
-	parent = filepath.Dir(gamedef.Linux.Path)
+
+	list = strings.Split(gamedef.Linux.Path, string(os.PathSeparator))
+	parent = ""
+	if len(list) == 0 {
+		parent = gamedef.Linux.Path
+	} else {
+		parent = list[len(list)-1]
+	}
+
 	gamedefMap[gamedef.Name].LinuxPath = []*Datapath{
 		{
 			Path:    gamedef.Linux.Path,
@@ -209,6 +290,16 @@ func commitGamedef(gamedef GuiGamedef) {
 	dm.CommitUserOverrides()
 }
 
+func load(w webview.WebView, path string) error {
+	b, err := fs.ReadFile(html, path)
+	if err != nil {
+		return err
+	}
+
+	w.Eval(string(b))
+	return nil
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -218,6 +309,11 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("commitGamedef", commitGamedef)
 	w.Bind("removeGamedefByKey", removeGamedefByKey)
 	w.Bind("fetchGamedef", fetchGamedef)
+	w.Bind("pollProgress", pollProgress)
+	w.Bind("pollLogs", pollLogs)
+	w.Bind("require", func(path string) {
+		load(w, path)
+	})
 }
 
 func DirSize(path string) (int64, error) {

@@ -1,8 +1,39 @@
+const DEFAULT_SEARCH_SCORE = 150;
 let pendingEdit = null;
 
-function onSyncButtonClicked(element, name) {
+
+async function onSyncButtonClicked(element, name) {
     log(`Sync ${name}`)
-    syncGame(name)
+    await syncGame(name)
+    const interval = setInterval(async () => {
+        const logEl = document.getElementById(`${name}-log`);
+        const progressEl = document.getElementById(`${name}-progress`);
+
+        logEl.style.display = "block";
+        progressEl.style.display = "block";
+
+        const logValue = await pollLogs(name);
+        log(logValue)
+        if (logValue != "") {
+            logEl.textContent = logValue
+        }
+
+
+
+        const res = await pollProgress(name);
+        if (res.Total == 0) {
+            return;
+        }
+
+        progressEl.style.width = `${(res.Current / res.Total) * 100}%`;
+        if (res.Current == res.Total) {
+            clearInterval(interval);
+            setTimeout(() => {
+                logEl.style.display = "none";
+                progressEl.style.display = "none";
+            }, 5000)
+        }
+    }, 1000)
 }
 
 async function onEditButtonClicked(element, name) {
@@ -101,6 +132,28 @@ function submitGamedef() {
     refresh()
 }
 
+async function onChangeSearch(element) {
+    const name = element.value
+
+    var acc = document.getElementsByClassName("accordion");
+    var i;
+    
+    for (i = 0; i < acc.length; i++) {
+        if (name === "") {
+            acc[i].style.display = "block";
+            continue
+        }
+
+        const res = fuzzyMatch(name.toLowerCase(), acc[i].id.replace("-accordion", "").toLowerCase())
+        if (res[0] || res[1] > DEFAULT_SEARCH_SCORE) {
+            acc[i].style.display = "block";
+        } else {
+            acc[i].style.display = "none";
+        }
+    }
+}
+
+
 function setupAccordionHandler() {
     var acc = document.getElementsByClassName("accordion");
     var i;
@@ -118,8 +171,7 @@ function setupAccordionHandler() {
     }
 }
 
-function main() {
+setTimeout(async () => { 
     setupAccordionHandler();
-}
-
-main()
+    await require('html/fuzzy-search.js');
+});

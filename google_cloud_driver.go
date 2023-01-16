@@ -198,7 +198,7 @@ func (d *GoogleCloudDriver) CreateDir(name string, parentId string) (CloudFile, 
 		ModTime: result.ModifiedTime,
 	}, nil
 }
-func (d *GoogleCloudDriver) DownloadFile(fileId string, filePath string, fileName string) (CloudFile, error) {
+func (d *GoogleCloudDriver) DownloadFile(fileId string, filePath string, fileName string, prorgress func(int64, int64)) (CloudFile, error) {
 	fileref, err := d.srv.Files.Get(fileId).Fields("modifiedTime").Do()
 	if err != nil {
 		return nil, err
@@ -233,7 +233,7 @@ func (d *GoogleCloudDriver) DownloadFile(fileId string, filePath string, fileNam
 		ModTime: fileref.ModifiedTime,
 	}, nil
 }
-func (d *GoogleCloudDriver) UploadFile(fileId string, filePath string, fileName string) (CloudFile, error) {
+func (d *GoogleCloudDriver) UploadFile(fileId string, filePath string, fileName string, prorgress func(int64, int64)) (CloudFile, error) {
 	osf, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -249,7 +249,10 @@ func (d *GoogleCloudDriver) UploadFile(fileId string, filePath string, fileName 
 		ModifiedTime: modifiedAtTime,
 	}
 
-	res, err := d.srv.Files.Update(fileId, ff).Media(osf).Do()
+	size := stat.Size()
+	res, err := d.srv.Files.Update(fileId, ff).Media(osf).ProgressUpdater(func(current, total int64) {
+		prorgress(current, size)
+	}).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +262,7 @@ func (d *GoogleCloudDriver) UploadFile(fileId string, filePath string, fileName 
 		ModTime: modifiedAtTime,
 	}, nil
 }
-func (d *GoogleCloudDriver) CreateFile(parentId string, fileName string, filePath string) (CloudFile, error) {
+func (d *GoogleCloudDriver) CreateFile(parentId string, fileName string, filePath string, prorgress func(int64, int64)) (CloudFile, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -278,7 +281,10 @@ func (d *GoogleCloudDriver) CreateFile(parentId string, fileName string, filePat
 		Parents:      []string{parentId},
 	}
 
-	result, err := d.srv.Files.Create(saveUpload).Media(file).Do()
+	size := stat.Size()
+	result, err := d.srv.Files.Create(saveUpload).Media(file).ProgressUpdater(func(current, total int64) {
+		prorgress(current, size)
+	}).Do()
 	if err != nil {
 		return nil, err
 	}
