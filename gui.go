@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"time"
 
@@ -67,6 +68,20 @@ func bindFunctions(w webview.WebView) {
 	})
 }
 
+func DirSize(path string) (int64, error) {
+	var size int64
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size, err
+}
+
 func buildGamelist(dm GameDefManager) []Game {
 	games := []Game{}
 	for k, v := range dm.GetGameDefMap() {
@@ -99,10 +114,19 @@ func buildGamelist(dm GameDefManager) []Game {
 					continue
 				}
 
+				size := info.Size()
+				if info.IsDir() {
+					size, err = DirSize(datapath.Path + string(os.PathSeparator) + info.Name())
+					if err != nil {
+						fmt.Println(err)
+						continue
+					}
+				}
+
 				game.SaveFiles = append(game.SaveFiles, SaveFile{
 					Filename:   info.Name(),
 					ModifiedBy: info.ModTime().Format(time.RFC3339),
-					Size:       fmt.Sprintf("%vMB", info.Size()/(1024*1024)),
+					Size:       fmt.Sprintf("%vMB", size/(1024*1024)),
 				})
 			}
 		}
