@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/webview/webview"
@@ -153,7 +154,15 @@ func commitGamedef(gamedef GuiGamedef) {
 	if gamedef.Windows.Delete {
 		netauth |= CloudOperationDelete
 	}
-	parent := filepath.Dir(gamedef.Windows.Path)
+
+	list := strings.Split(gamedef.Windows.Path, string(os.PathSeparator))
+	parent := ""
+	if len(list) == 0 {
+		parent = gamedef.Windows.Path
+	} else {
+		parent = list[len(list)-1]
+	}
+
 	gamedefMap[gamedef.Name].WinPath = []*Datapath{
 		{
 			Path:    gamedef.Windows.Path,
@@ -174,7 +183,15 @@ func commitGamedef(gamedef GuiGamedef) {
 	if gamedef.MacOS.Delete {
 		netauth |= CloudOperationDelete
 	}
-	parent = filepath.Dir(gamedef.MacOS.Path)
+
+	list = strings.Split(gamedef.MacOS.Path, string(os.PathSeparator))
+	parent = ""
+	if len(list) == 0 {
+		parent = gamedef.MacOS.Path
+	} else {
+		parent = list[len(list)-1]
+	}
+
 	gamedefMap[gamedef.Name].DarwinPath = []*Datapath{
 		{
 			Path:    gamedef.MacOS.Path,
@@ -195,7 +212,15 @@ func commitGamedef(gamedef GuiGamedef) {
 	if gamedef.Linux.Delete {
 		netauth |= CloudOperationDelete
 	}
-	parent = filepath.Dir(gamedef.Linux.Path)
+
+	list = strings.Split(gamedef.Linux.Path, string(os.PathSeparator))
+	parent = ""
+	if len(list) == 0 {
+		parent = gamedef.Linux.Path
+	} else {
+		parent = list[len(list)-1]
+	}
+
 	gamedefMap[gamedef.Name].LinuxPath = []*Datapath{
 		{
 			Path:    gamedef.Linux.Path,
