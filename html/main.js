@@ -2,6 +2,14 @@ function onSyncButtonClicked(_element) {
     log('clicked')
 }
 
+function onEditButtonClicked(_element) {
+
+}
+
+function onRemoveButtonClicked(_element) {
+
+}
+
 function setupModalHandler() {
     // Get the modal
     var modal = document.getElementById('id01');
@@ -36,4 +44,8 @@ function main() {
     setupAccordionHandler();
 }
 
-main()
+try { 
+    main()
+} catch (e) {
+    log("" + e)
+}

@@ -11,84 +11,34 @@
 
       <div class="padding"></div>
 
-<button class="accordion">Game 1</button>
+<div>
+{{range .Games}}
+<button class="accordion">{{.Def.DisplayName}}</button>
 <div class="panel">
-  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-</div>
-
-<button class="accordion">Game 2</button>
-<div class="panel">
-  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-</div>
-
-<button class="accordion">Game 3</button>
-<div class="panel">
-  <div>
-    <button class="btn success" onclick="onSyncButtonClicked(this)">Sync Game</button>
-    <button class="btnaddl neutralbtn">Edit</button>
-    <button class="removebtn">Remove</button>
-  </div>
-  
-  <table id="customers">
-    <tr>
-      <th>Filename</th>
-      <th>Modified</th>
-      <th>Size</th>
-    </tr>
-    <tr>
-      <td>Alfreds Futterkiste</td>
-      <td>Maria Anders</td>
-      <td>Germany</td>
-    </tr>
-    <tr>
-      <td>Berglunds snabbköp</td>
-      <td>Christina Berglund</td>
-      <td>Sweden</td>
-    </tr>
-    <tr>
-      <td>Centro comercial Moctezuma</td>
-      <td>Francisco Chang</td>
-      <td>Mexico</td>
-    </tr>
-    <tr>
-      <td>Ernst Handel</td>
-      <td>Roland Mendel</td>
-      <td>Austria</td>
-    </tr>
-    <tr>
-      <td>Island Trading</td>
-      <td>Helen Bennett</td>
-      <td>UK</td>
-    </tr>
-    <tr>
-      <td>Königlich Essen</td>
-      <td>Philip Cramer</td>
-      <td>Germany</td>
-    </tr>
-    <tr>
-      <td>Laughing Bacchus Winecellars</td>
-      <td>Yoshi Tannamuri</td>
-      <td>Canada</td>
-    </tr>
-    <tr>
-      <td>Magazzini Alimentari Riuniti</td>
-      <td>Giovanni Rovelli</td>
-      <td>Italy</td>
-    </tr>
-    <tr>
-      <td>North/South</td>
-      <td>Simon Crowther</td>
-      <td>UK</td>
-    </tr>
-    <tr>
-      <td>Paris spécialités</td>
-      <td>Marie Bertrand</td>
-      <td>France</td>
-    </tr>
-  </table>
+    <div>
+        <button class="btn success" onclick="onSyncButtonClicked(this)">Sync Game</button>
+        <button class="btnaddl neutralbtn" onclick="onEditButtonClicked(this)">Edit</button>
+        <button class="removebtn" onclick="onRemoveButtonClicked(this)">Remove</button>
+      </div>
+      <table id="customers">
+        <tr>
+          <th>Filename</th>
+          <th>Modified</th>
+          <th>Size</th>
+        </tr>
+        <tr>
+        {{range .SaveFiles}}
+            <td>{{.Filename}}</td>
+            <td>{{.ModifiedBy}}</td>
+            <td>{{.Size}}</td>
+          </tr>
+        {{end}}
+      </table>
+    
 
 </div>
-
+{{end}}
+</div>
 
 
 <div id="id01" class="modal">

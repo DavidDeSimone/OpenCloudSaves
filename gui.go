@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
+	"os"
 	"time"
 
 	"github.com/webview/webview"
@@ -21,7 +22,19 @@ var cssContent string
 //go:embed html/main.js
 var jsContent string
 
+type SaveFile struct {
+	Filename   string
+	ModifiedBy string
+	Size       string
+}
+
+type Game struct {
+	Def       *GameDef
+	SaveFiles []SaveFile
+}
+
 type HtmlInput struct {
+	Games []Game
 }
 
 func consoleLog(s string) {
@@ -32,19 +45,63 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 }
 
-func executeTemplate() string {
-	input := HtmlInput{}
+func executeTemplate() (string, error) {
+	dm := MakeGameDefManager("")
+	games := []Game{}
+	for _, v := range dm.GetGameDefMap() {
+		game := Game{}
+		game.Def = v
+		game.SaveFiles = []SaveFile{}
+		paths, err := v.GetSyncpaths()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		for _, datapath := range paths {
+			dirFiles, err := os.ReadDir(datapath.Path)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+
+			for _, dirFile := range dirFiles {
+				info, err := dirFile.Info()
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+
+				game.SaveFiles = append(game.SaveFiles, SaveFile{
+					Filename:   info.Name(),
+					ModifiedBy: info.ModTime().Format(time.RFC3339),
+					Size:       fmt.Sprintf("%vMB", info.Size()/(1024*1024)),
+				})
+			}
+		}
+
+		games = append(games, game)
+	}
+
+	input := HtmlInput{
+		Games: games,
+	}
 
 	var b bytes.Buffer
-	htmlWriter := bufio.NewWriter(&b)
+	htmlWriter := bufio.NewWriterSize(&b, 2*1024*1024)
 
 	templ := template.Must(template.ParseFS(htmlMain, "html/index.html"))
-	templ.Execute(htmlWriter, input)
+	err := templ.Execute(htmlWriter, input)
+	if err != nil {
+		return "", err
+	}
 
+	htmlWriter.Flush()
 	result := b.String()
 	js := fmt.Sprintf("<script>%v</script>", jsContent)
 	css := fmt.Sprintf("<style>%v</style>", cssContent)
-	return css + result + js
+	finalResult := css + result + js
+	// fmt.Println(result)
+	return finalResult, nil
 }
 
 func GuiMain(ops *Options, dm GameDefManager) {
@@ -53,9 +110,13 @@ func GuiMain(ops *Options, dm GameDefManager) {
 	defer w.Destroy()
 	w.SetTitle("Steam Custom Cloud Uploads")
 	w.SetSize(800, 600, webview.HintNone)
-	fmt.Println(time.Now().UnixMilli())
 	bindFunctions(w)
-	w.SetHtml(executeTemplate())
-	fmt.Println(time.Now().UnixMilli())
+	html, err := executeTemplate()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	w.SetHtml(html)
 	w.Run()
 }
