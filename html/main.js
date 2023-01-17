@@ -9,6 +9,14 @@ async function onSelectClicked(element, name) {
 
 
 async function onSyncButtonClicked(element, name) {
+    const syncbtn = document.getElementById(`${name}-syncbtn`);
+    const editbtn = document.getElementById(`${name}-editbtn`);
+    const removebtn = document.getElementById(`${name}-removebtn`);
+
+    syncbtn.disabled = true;
+    editbtn.disabled = true;
+    removebtn.disabled = true;
+
     log(`Sync ${name}`)
     await syncGame(name)
     const interval = setInterval(async () => {
@@ -34,6 +42,9 @@ async function onSyncButtonClicked(element, name) {
         progressEl.style.width = `${(res.Current / res.Total) * 100}%`;
         if (res.Current == res.Total) {
             clearInterval(interval);
+            syncbtn.disabled = false;
+            editbtn.disabled = false;
+            removebtn.disabled = false;
             setTimeout(() => {
                 logEl.style.display = "none";
                 progressEl.style.display = "none";

@@ -22,9 +22,9 @@
         <span id="{{.Def.DisplayName}}-progress" style="width: 1%; display: none;"></span>
     </div>
     <div>
-        <button class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
-        <button class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>
-        <button class="removebtn" onclick="onRemoveButtonClicked(this, '{{.Name}}')">Remove</button>
+        <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
+        <button id="{{.Def.DisplayName}}-editbtn" class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>
+        <button id="{{.Def.DisplayName}}-removebtn" class="removebtn" onclick="onRemoveButtonClicked(this, '{{.Name}}')">Remove</button>
       </div>
       <table id="customers">
         <tr>

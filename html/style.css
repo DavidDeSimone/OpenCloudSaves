@@ -72,6 +72,11 @@ li div:hover:not(.activeButton) {
   width: 60%;
 }
 
+.btn:disabled {
+    background-color: #444141;
+    opacity: 30%;
+}
+
 .btnaddl {
     border: none;
     color: white;
@@ -81,6 +86,11 @@ li div:hover:not(.activeButton) {
     text-align: center;
     float: left;
     width: 20%;
+}
+
+.btnaddl:disabled {
+    background-color: #444141;
+    opacity: 30%;
 }
 
 .removebtn {
@@ -96,6 +106,11 @@ li div:hover:not(.activeButton) {
 }
 .removebtn:hover {
     background-color: #730c04;
+}
+
+.removebtn:disabled {
+    background-color: #444141;
+    opacity: 30%;
 }
 
 .success {background-color: #04AA6D;} 
