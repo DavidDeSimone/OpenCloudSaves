@@ -260,6 +260,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 		return err
 	}
 
+	LogMessage(logs, "Examining Cloud Record...")
 	record := &CloudRecord{}
 	metaFileName := cacheDir + string(os.PathSeparator) + parentId + ".json"
 	if _, err := os.Stat(metaFileName); !errors.Is(err, os.ErrNotExist) {
@@ -313,10 +314,12 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 			FileId:    exisitingCloudFile.GetId(),
 		}
 
+		LogMessage(logs, "Downloading file %v", fileName)
 		downloadResult := <-outputChannel
 		if downloadResult.Err != nil {
 			return downloadResult.Err
 		}
+		LogMessage(logs, "Download Complete!")
 
 		err = unzipSource(filePath, syncDataPath.Path)
 		if err != nil {
@@ -330,6 +333,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 			// recursive delete, this can fail based on delete
 			// order. Think deleting dir and dir/file.txt
 			// where you delete dir first.
+			LogMessage(logs, "Deleting File %v", file)
 			err = os.RemoveAll(file)
 			if err != nil {
 				fmt.Println(err)
@@ -363,6 +367,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 			syncRequest.FileId = exisitingCloudFile.GetId()
 		}
 
+		LogMessage(logs, "Uploading File %v", fileName)
 		inputChannel <- syncRequest
 
 		result := <-outputChannel

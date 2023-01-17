@@ -40,7 +40,6 @@ async function onSyncButtonClicked(element, name) {
         progressEl.style.display = "block";
 
         const logValue = await pollLogs(name);
-        log(logValue)
         if (logValue != "") {
             logEl.textContent = logValue
         }
