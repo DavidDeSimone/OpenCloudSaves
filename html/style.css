@@ -399,6 +399,9 @@ EDIT ON
   }
   
   @media screen and (max-width: 600px) {
+    .padding {
+      height: 100px;
+    }
     .topnav .search-container {
       float: none;
     }
