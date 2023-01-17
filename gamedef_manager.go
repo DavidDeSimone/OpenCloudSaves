@@ -3,7 +3,6 @@ package main
 import (
 	_ "embed"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -267,7 +266,6 @@ func (d *FsGameDefManager) CommitUserOverrides() error {
 		return err
 	}
 
-	// @TODO keep this a goroutine?
 	go d.CommitCloudUserOverride()
 
 	return nil
@@ -404,10 +402,6 @@ func (dm *FsGameDefManager) CommitCloudUserOverride() error {
 func ApplyCloudUserOverride(userOverride string) error {
 	if userOverride == "" {
 		userOverride = GetDefaultUserOverridePath()
-	}
-
-	if _, err := os.Stat(userOverride); errors.Is(err, os.ErrNotExist) {
-		return nil
 	}
 
 	srv := GetDefaultService()
