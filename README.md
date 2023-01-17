@@ -1,13 +1,17 @@
 # Custom Steam Cloud Uploads
 This project is a cross platform, open source executable to allow cross platform saves across games. 
 
+
+
 ## Build
 
 ### Windows
 
-For windows builds, you will need [MSYS2](https://www.msys2.org/)
+For windows builds, you will need [MSYS2](https://www.msys2.org/) or a stand alone version of GCC. 
 
-I've only tested this on MSYS2 MSYS (purple icon) - I have not gotten this working on MSYS2-URT. 
+You will also need to download Webview 2 - https://developer.microsoft.com/en-us/microsoft-edge/webview2/#download-section
+
+I've only tested this on MSYS2 MSYS (purple icon).
 
 Run
 ```bash
@@ -68,33 +72,3 @@ Debian / Ubuntu:
 ```
 sudo apt-get install golang gcc libgl1-mesa-dev xorg-dev libgtk-3-dev
 ```
-<!-- 
-Fedora: 
-```
-sudo dnf install golang gcc libXcursor-devel libXrandr-devel mesa-libGL-devel libXi-devel libXinerama-devel libXxf86vm-devel 
-```
-
-Arch Linux: 
-```
-sudo pacman -S go xorg-server-devel libxcursor libxrandr libxinerama libxi
-```
-
-Solus: 
-```
-sudo eopkg it -c system.devel golang mesalib-devel libxrandr-devel libxcursor-devel libxi-devel libxinerama-devel
-```
-
-openSUSE: 
-```
-sudo zypper install go gcc libXcursor-devel libXrandr-devel Mesa-libGL-devel libXi-devel libXinerama-devel libXxf86vm-devel
-```
-
-Void Linux: 
-```
-sudo xbps-install -S go base-devel xorg-server-devel libXrandr-devel libXcursor-devel libXinerama-devel
-```
-
-Alpine Linux 
-```
-sudo apk add go gcc libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev linux-headers mesa-dev
-``` -->
