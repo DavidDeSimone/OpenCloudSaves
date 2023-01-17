@@ -196,7 +196,14 @@ func main() {
 	if len(ops.UserOverride) > 0 {
 		userOverrideLocation = ops.UserOverride[0]
 	}
+
+	err = ApplyCloudUserOverride(userOverrideLocation)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	dm := MakeGameDefManager(userOverrideLocation)
+	dm.CommitUserOverrides()
 
 	if noGui {
 		channels := &ChannelProvider{

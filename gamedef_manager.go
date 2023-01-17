@@ -3,12 +3,14 @@ package main
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 //go:embed gamedef_map.json
@@ -217,10 +219,11 @@ type GameDefManager interface {
 	GetGameDefMap() map[string]*GameDef
 	GetFilesForGame(id string, parent string) (map[string]SyncFile, error)
 	GetSyncpathForGame(id string) ([]Datapath, error)
+	GetUserOverrideLocation() string
 }
 
 func (d *FsGameDefManager) ApplyUserOverrides() error {
-	fileName := d.userOverrideLoction
+	fileName := d.GetUserOverrideLocation()
 	content, err := os.ReadFile(fileName)
 	if err != nil {
 		fmt.Println(err)
@@ -244,17 +247,28 @@ func (d *FsGameDefManager) ApplyUserOverrides() error {
 	return nil
 }
 
+func (d *FsGameDefManager) GetUserOverrideLocation() string {
+	if d.userOverrideLoction == "" {
+		d.userOverrideLoction = GetDefaultUserOverridePath()
+	}
+
+	return d.userOverrideLoction
+}
+
 func (d *FsGameDefManager) CommitUserOverrides() error {
 	newResult, err := json.Marshal(d.gamedefs)
 	if err != nil {
 		return err
 	}
 
-	fileName := d.userOverrideLoction
+	fileName := d.GetUserOverrideLocation()
 	err = os.WriteFile(fileName, newResult, os.ModePerm)
 	if err != nil {
 		return err
 	}
+
+	// @TODO keep this a goroutine?
+	go d.CommitCloudUserOverride()
 
 	return nil
 }
@@ -338,4 +352,101 @@ func (d *FsGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
 	}
 
 	return driver.GetSyncpaths()
+}
+
+func (dm *FsGameDefManager) CommitCloudUserOverride() error {
+	userOverride := dm.GetUserOverrideLocation()
+
+	srv := GetDefaultService()
+	saveFolderId, err := ValidateAndCreateParentFolder(srv)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	files, err := srv.ListFiles(saveFolderId)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	for _, file := range files {
+		if file.GetName() == "user_override.json" {
+			info, err := os.Stat(userOverride)
+			if err == nil {
+				remoteTime, err := time.Parse(time.RFC3339, file.GetModTime())
+				if err != nil {
+					fmt.Println(err)
+					return err
+				}
+
+				if info.ModTime().After(remoteTime) {
+					_, err = srv.UploadFile(file.GetId(), userOverride, "user_override.json", func(i1, i2 int64) {})
+					if err != nil {
+						fmt.Println(err)
+					}
+
+					return err
+				}
+			}
+
+		}
+	}
+
+	_, err = srv.CreateFile(saveFolderId, "user_override.json", userOverride, func(i1, i2 int64) {})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return err
+}
+
+func ApplyCloudUserOverride(userOverride string) error {
+	if userOverride == "" {
+		userOverride = GetDefaultUserOverridePath()
+	}
+
+	if _, err := os.Stat(userOverride); errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+
+	srv := GetDefaultService()
+	saveFolderId, err := ValidateAndCreateParentFolder(srv)
+	if err != nil {
+		return err
+	}
+
+	files, err := srv.ListFiles(saveFolderId)
+	if err != nil {
+		return err
+	}
+
+	var overrideFile CloudFile = nil
+	for _, file := range files {
+		if file.GetName() == "user_override.json" {
+			info, err := os.Stat(userOverride)
+			if err == nil {
+				remoteTime, err := time.Parse(time.RFC3339, file.GetModTime())
+				if err != nil {
+					return err
+				}
+
+				if info.ModTime().After(remoteTime) {
+					return nil
+				}
+			}
+
+			overrideFile = file
+			break
+		}
+	}
+
+	if overrideFile != nil {
+		_, err := srv.DownloadFile(overrideFile.GetId(), userOverride, "user_override.json", func(i1, i2 int64) {})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
