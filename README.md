@@ -1,7 +1,7 @@
 # Custom Steam Cloud Uploads
-This project is a cross platform, open source executable to allow cross platform saves across games. 
+This project is a cross platform, open source executable to allow cross platform saves across games. This project is currently in beta and requires a invitation to use.
 
-
+<img width="791" alt="Screenshot 2023-01-16 at 9 30 34 PM" src="https://user-images.githubusercontent.com/7245174/212817944-2f9ff2cc-c03a-4b1f-a50c-309d3e36f3e1.png">
 
 ## Build
 
