@@ -134,9 +134,9 @@ type GuiDatapath struct {
 
 type GuiGamedef struct {
 	Name    string
-	Windows GuiDatapath
-	MacOS   GuiDatapath
-	Linux   GuiDatapath
+	Windows []GuiDatapath
+	MacOS   []GuiDatapath
+	Linux   []GuiDatapath
 }
 
 func removeGamedefByKey(key string) {
@@ -154,47 +154,44 @@ func fetchGamedef(key string) (*GuiGamedef, error) {
 		return nil, fmt.Errorf("gamedef not found")
 	}
 
-	result := &GuiGamedef{
+	resultDef := &GuiGamedef{
 		Name: def.DisplayName,
 	}
 
-	if len(def.WinPath) > 0 {
-		path := def.WinPath[0]
-		result.Windows = GuiDatapath{
+	for _, path := range def.WinPath {
+		resultDef.Windows = append(resultDef.Windows, GuiDatapath{
 			Path:     path.Path,
 			Exts:     path.Exts,
 			Ignore:   path.Ignore,
 			Download: path.NetAuth&CloudOperationDownload != 0,
 			Upload:   path.NetAuth&CloudOperationUpload != 0,
 			Delete:   path.NetAuth&CloudOperationDelete != 0,
-		}
+		})
 	}
 
-	if len(def.DarwinPath) > 0 {
-		path := def.DarwinPath[0]
-		result.MacOS = GuiDatapath{
+	for _, path := range def.DarwinPath {
+		resultDef.MacOS = append(resultDef.MacOS, GuiDatapath{
 			Path:     path.Path,
 			Exts:     path.Exts,
 			Ignore:   path.Ignore,
 			Download: path.NetAuth&CloudOperationDownload != 0,
 			Upload:   path.NetAuth&CloudOperationUpload != 0,
 			Delete:   path.NetAuth&CloudOperationDelete != 0,
-		}
+		})
 	}
 
-	if len(def.LinuxPath) > 0 {
-		path := def.LinuxPath[0]
-		result.Linux = GuiDatapath{
+	for _, path := range def.LinuxPath {
+		resultDef.Linux = append(resultDef.Linux, GuiDatapath{
 			Path:     path.Path,
 			Exts:     path.Exts,
 			Ignore:   path.Ignore,
 			Download: path.NetAuth&CloudOperationDownload != 0,
 			Upload:   path.NetAuth&CloudOperationUpload != 0,
 			Delete:   path.NetAuth&CloudOperationDelete != 0,
-		}
+		})
 	}
 
-	return result, nil
+	return resultDef, nil
 }
 
 func commitGamedef(gamedef GuiGamedef) {
@@ -203,93 +200,96 @@ func commitGamedef(gamedef GuiGamedef) {
 	gamedefMap[gamedef.Name] = &GameDef{
 		DisplayName: gamedef.Name,
 		SteamId:     "0",
+		WinPath:     []*Datapath{},
+		DarwinPath:  []*Datapath{},
+		LinuxPath:   []*Datapath{},
 	}
 
-	netauth := 0
-	if gamedef.Windows.Download {
-		netauth |= CloudOperationDownload
-	}
-	if gamedef.Windows.Upload {
-		netauth |= CloudOperationUpload
-	}
-	if gamedef.Windows.Delete {
-		netauth |= CloudOperationDelete
-	}
+	for _, def := range gamedef.Windows {
+		netauth := 0
+		if def.Download {
+			netauth |= CloudOperationDownload
+		}
+		if def.Upload {
+			netauth |= CloudOperationUpload
+		}
+		if def.Delete {
+			netauth |= CloudOperationDelete
+		}
 
-	list := strings.Split(gamedef.Windows.Path, string(os.PathSeparator))
-	parent := ""
-	if len(list) == 0 {
-		parent = gamedef.Windows.Path
-	} else {
-		parent = list[len(list)-1]
-	}
+		list := strings.Split(def.Path, string(os.PathSeparator))
+		parent := ""
+		if len(list) == 0 {
+			parent = def.Path
+		} else {
+			parent = list[len(list)-1]
+		}
 
-	gamedefMap[gamedef.Name].WinPath = []*Datapath{
-		{
-			Path:    gamedef.Windows.Path,
-			Exts:    gamedef.Windows.Exts,
-			Ignore:  gamedef.Windows.Ignore,
+		gamedefMap[gamedef.Name].WinPath = append(gamedefMap[gamedef.Name].WinPath, &Datapath{
+			Path:    def.Path,
+			Exts:    def.Exts,
+			Ignore:  def.Ignore,
 			Parent:  parent,
 			NetAuth: netauth,
-		},
+		})
 	}
 
-	netauth = 0
-	if gamedef.MacOS.Download {
-		netauth |= CloudOperationDownload
-	}
-	if gamedef.MacOS.Upload {
-		netauth |= CloudOperationUpload
-	}
-	if gamedef.MacOS.Delete {
-		netauth |= CloudOperationDelete
-	}
+	for _, def := range gamedef.MacOS {
+		netauth := 0
+		if def.Download {
+			netauth |= CloudOperationDownload
+		}
+		if def.Upload {
+			netauth |= CloudOperationUpload
+		}
+		if def.Delete {
+			netauth |= CloudOperationDelete
+		}
 
-	list = strings.Split(gamedef.MacOS.Path, string(os.PathSeparator))
-	parent = ""
-	if len(list) == 0 {
-		parent = gamedef.MacOS.Path
-	} else {
-		parent = list[len(list)-1]
-	}
+		list := strings.Split(def.Path, string(os.PathSeparator))
+		parent := ""
+		if len(list) == 0 {
+			parent = def.Path
+		} else {
+			parent = list[len(list)-1]
+		}
 
-	gamedefMap[gamedef.Name].DarwinPath = []*Datapath{
-		{
-			Path:    gamedef.MacOS.Path,
-			Exts:    gamedef.MacOS.Exts,
-			Ignore:  gamedef.MacOS.Ignore,
+		gamedefMap[gamedef.Name].DarwinPath = append(gamedefMap[gamedef.Name].DarwinPath, &Datapath{
+			Path:    def.Path,
+			Exts:    def.Exts,
+			Ignore:  def.Ignore,
 			Parent:  parent,
 			NetAuth: netauth,
-		},
+		})
 	}
 
-	netauth = 0
-	if gamedef.Linux.Download {
-		netauth |= CloudOperationDownload
-	}
-	if gamedef.Linux.Upload {
-		netauth |= CloudOperationUpload
-	}
-	if gamedef.Linux.Delete {
-		netauth |= CloudOperationDelete
-	}
+	for _, def := range gamedef.Linux {
+		netauth := 0
+		if def.Download {
+			netauth |= CloudOperationDownload
+		}
+		if def.Upload {
+			netauth |= CloudOperationUpload
+		}
+		if def.Delete {
+			netauth |= CloudOperationDelete
+		}
 
-	list = strings.Split(gamedef.Linux.Path, string(os.PathSeparator))
-	parent = ""
-	if len(list) == 0 {
-		parent = gamedef.Linux.Path
-	} else {
-		parent = list[len(list)-1]
-	}
+		list := strings.Split(def.Path, string(os.PathSeparator))
+		parent := ""
+		if len(list) == 0 {
+			parent = def.Path
+		} else {
+			parent = list[len(list)-1]
+		}
 
-	gamedefMap[gamedef.Name].LinuxPath = []*Datapath{
-		{
-			Path:    gamedef.Linux.Path,
-			Exts:    gamedef.Linux.Exts,
-			Ignore:  gamedef.Linux.Ignore,
+		gamedefMap[gamedef.Name].LinuxPath = append(gamedefMap[gamedef.Name].LinuxPath, &Datapath{
+			Path:    def.Path,
+			Exts:    def.Exts,
+			Ignore:  def.Ignore,
 			Parent:  parent,
 			NetAuth: netauth,
-		},
+		})
 	}
 
 	dm.CommitUserOverrides()

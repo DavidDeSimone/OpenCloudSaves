@@ -173,6 +173,18 @@ input[type=text]:focus, input[type=password]:focus {
 
 }
 
+.addpathbtn {
+    background-color: #767878;
+    color: white;
+    padding: 14px 20px;
+    margin: 10px 0 20px 0;
+    border: none;
+    cursor: pointer;
+    width: 25%;
+    opacity: 0.9;
+  
+  }
+
 /* Extra styles for the cancel button */
 .cancelbtn {
   padding: 14px 20px;

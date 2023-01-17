@@ -59,16 +59,23 @@
         <hr>
         {{range .Platforms}}
         <label><b>{{.}}</b></label>
-        <input id="{{.}}-path" type="text" placeholder="Gamepath" name="path">
+        <div class="{{.}}-container" id="{{.}}-container">
+        <input class="{{.}}-path" id="{{.}}-path" type="text" placeholder="Gamepath" name="path">
         <button class="selectbtn" onclick="onSelectClicked(this, '{{.}}')">Select</button>
   
-        <input id="{{.}}-ext" type="text" placeholder="Extensions" name="ignorelist">
-        <input id="{{.}}-ignore" type="text" placeholder="Ignore List" name="ignorelist">
+        <input class="{{.}}-ext" id="{{.}}-ext" type="text" placeholder="Extensions" name="ignorelist">
+        <input class="{{.}}-ignore" id="{{.}}-ignore" type="text" placeholder="Ignore List" name="ignorelist">
         <div>
-            <input id="{{.}}-download" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Download
-            <input id="{{.}}-upload" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Upload
-            <input id="{{.}}-delete" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Delete
+            <input class="{{.}}-download" id="{{.}}-download" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Download
+            <input class="{{.}}-upload" id="{{.}}-upload" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Upload
+            <input class="{{.}}-delete" id="{{.}}-delete" type="checkbox" checked="checked" name="remember" style="margin-bottom:15px"> Delete
         </div>
+        <hr>
+        </div>
+        <div>
+            <button class="addpathbtn" onclick="onAddPathClicked('{{.}}')">Add {{.}} Path</button>
+        </div>
+        <hr>
         {{end}}
   
         <div class="clearfix">

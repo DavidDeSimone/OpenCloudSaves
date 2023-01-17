@@ -7,6 +7,19 @@ async function onSelectClicked(element, name) {
     pathEl.value = dir;
 }
 
+async function onAddPathClicked(platform) {
+    log(`Adding a path to ${platform}`);
+    const containerEl = document.getElementById(`${platform}-container`);
+    const copyContainer = containerEl.cloneNode(true);
+    containerEl.appendChild(copyContainer);
+
+    // TEST CODE
+    // const containers = document.getElementsByClassName(`${platform}-path`);
+    // for (let i = 0; i < containers.length; i++) {
+    //     log(`Paths: ${containers[i].value}`);
+    // }
+}
+
 
 async function onSyncButtonClicked(element, name) {
     const syncbtn = document.getElementById(`${name}-syncbtn`);
@@ -89,19 +102,44 @@ function deserGamedef(gamedef) {
 
     ["Windows", "MacOS", "Linux"].forEach(element => {
         const def = gamedef[element];
-        pathEl = document.getElementById(`${element}-path`);
-        extEl = document.getElementById(`${element}-ext`);
-        ignoreEl = document.getElementById(`${element}-ignore`);
-        downloadEl = document.getElementById(`${element}-download`);
-        uploadEl = document.getElementById(`${element}-upload`);
-        deleteEl = document.getElementById(`${element}-delete`);
+        if (!def) {
+            return;
+        }
 
-        extEl.value = def.Exts ? def.Exts.join(',') : "";
-        ignoreEl.value = def.Ignore ? def.Ignore.join(',') : "";
-        pathEl.value = def.Path;
-        downloadEl.checked = def.Download;
-        uploadEl.checked = def.Upload;
-        deleteEl.checked = def.Delete;
+        // The html already has an element, so we will only
+        // add an element starting from index 1
+        for (let i = 1; i < def.length; ++i) {
+            onAddPathClicked(element)
+        }
+
+        pathElems = document.getElementsByClassName(`${element}-path`)
+        extElems = document.getElementsByClassName(`${element}-ext`)
+        ignoreElems = document.getElementsByClassName(`${element}-ignore`)
+        downloadElems = document.getElementsByClassName(`${element}-download`)
+        uploadElems = document.getElementsByClassName(`${element}-upload`)
+        deleteElems = document.getElementsByClassName(`${element}-delete`)
+
+        for (let i = 0; i < pathElems.length; ++i) {
+            const dataPath = def[i];
+            if (!dataPath) {
+                continue;
+            }
+            log(JSON.stringify(dataPath))
+
+            pathEl = pathElems[i];
+            extEl = extElems[i];
+            ignoreEl = ignoreElems[i];
+            downloadEl = downloadElems[i];
+            uploadEl = uploadElems[i];
+            deleteEl = deleteElems[i];
+
+            extEl.value = dataPath.Exts != null && dataPath.Exts.length > 0 ? dataPath.Exts.join(',') : "";
+            ignoreEl.value = dataPath.Ignore != null && dataPath.Ignore.length > 0 ? dataPath.Ignore.join(',') : "";
+            pathEl.value = dataPath.Path;
+            downloadEl.checked = dataPath.Download;
+            uploadEl.checked = dataPath.Upload;
+            deleteEl.checked = dataPath.Delete;
+        }
     });
 }
 
@@ -109,35 +147,47 @@ function submitGamedef() {
     document.getElementById('id01').style.display='none';
     gamenameEl = document.getElementById('gamename');
     let result = {
-        Name: gamenameEl.value
+        Name: gamenameEl.value,
+        Windows: [],
+        MacOS: [],
+        Linux: []
     };
 
     ["Windows", "MacOS", "Linux"].forEach(element => {
-        pathEl = document.getElementById(`${element}-path`)
-        extEl = document.getElementById(`${element}-ext`)
-        ignoreEl = document.getElementById(`${element}-ignore`)
-        downloadEl = document.getElementById(`${element}-download`)
-        uploadEl = document.getElementById(`${element}-upload`)
-        deleteEl = document.getElementById(`${element}-delete`)
+        pathElems = document.getElementsByClassName(`${element}-path`)
+        extElems = document.getElementsByClassName(`${element}-ext`)
+        ignoreElems = document.getElementsByClassName(`${element}-ignore`)
+        downloadElems = document.getElementsByClassName(`${element}-download`)
+        uploadElems = document.getElementsByClassName(`${element}-upload`)
+        deleteElems = document.getElementsByClassName(`${element}-delete`)
 
-        let extensions = [];
-        if (extEl.value) {
-            extensions = extEl.value.split(',') || [extEl.value];
+        for (let i = 0; i < pathElems.length; ++i) {
+            pathEl = pathElems[i];
+            extEl = extElems[i];
+            ignoreEl = ignoreElems[i];
+            downloadEl = downloadElems[i];
+            uploadEl = uploadElems[i];
+            deleteEl = deleteElems[i];
+
+            let extensions = [];
+            if (extEl.value) {
+                extensions = extEl.value.split(',') || [extEl.value];
+            }
+    
+            let ignoreList = [];
+            if (ignoreEl.value) {
+                ignoreList = ignoreEl.value.split(',') || [ignoreEl.value];
+            }
+    
+            result[element].push({
+                Path: pathEl.value || "",
+                Exts: extensions,
+                Ignore: ignoreList,
+                Download: downloadEl.checked,
+                Upload: uploadEl.checked,
+                Delete: deleteEl.checked
+            });
         }
-
-        let ignoreList = [];
-        if (ignoreEl.value) {
-            ignoreList = ignoreEl.value.split(',') || [ignoreEl.value];
-        }
-
-        result[element] = {
-            Path: pathEl.value || "",
-            Exts: extensions,
-            Ignore: ignoreList,
-            Download: downloadEl.checked,
-            Upload: uploadEl.checked,
-            Delete: deleteEl.checked
-        };
     });
 
     if (pendingEdit) {
