@@ -1,8 +1,0 @@
-Website = "https://example.com"
-
-[Details]
-  Icon = "icon.jpg"
-  Name = "Steam Custom Cloud Saves"
-  ID = "com.steamsaves.id"
-  Version = "1.0.0"
-  Build = 2
