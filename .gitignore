@@ -7,3 +7,6 @@ testdata*
 bin/
 libs/webview2
 build/win/WebView2Loader.dll
+*.msi
+*.wixobj
+*.wixpdb
