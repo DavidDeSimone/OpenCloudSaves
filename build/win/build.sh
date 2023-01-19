@@ -10,4 +10,12 @@ fi
 
 export CGO_CXXFLAGS="-I$(pwd)/libs/webview2/build/native/include"
 
-go build -ldflags="-H windowsgui" && cp -a steamcloudupload.exe build/win/
+
+if ! command -v go-winres &> /dev/null
+then
+    go install github.com/tc-hib/go-winres@v0.3.1
+fi
+
+go-winres make
+
+go build -ldflags="-H windowsgui" && mv steamcloudupload.exe build/win/

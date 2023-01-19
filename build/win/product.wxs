@@ -36,6 +36,12 @@
       <ComponentRef Id="WebView2Loader.dll"/>
     </Feature>
 
+    <!-- @TODO revisit this; Also handle case that the program is already installed. -->
+    <!-- @TODO Handle icon -->
+    <!-- @TODO rename this file so the installer is correct -->
+
+
+
     <!-- [Custom UI] Let User choose install location -->
     <!-- <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>
     <UIRef Id="WixUI_InstallDir"/> -->

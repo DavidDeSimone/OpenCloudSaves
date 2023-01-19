@@ -70,5 +70,5 @@ In addition to golang, you will need the following deps depending on your distro
 
 Debian / Ubuntu: 
 ```
-sudo apt-get install golang gcc libgl1-mesa-dev xorg-dev libgtk-3-dev
+sudo apt-get install golang gcc libgl1-mesa-dev xorg-dev libgtk-3-dev webkit2gtk-4.0
 ```
