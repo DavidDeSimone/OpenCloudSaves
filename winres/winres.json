@@ -10,7 +10,7 @@
   "RT_MANIFEST": {
     "#1": {
       "0409": {
-        "description": "",
+        "description": "Cloud uploads for your games",
         "minimum-os": "win7",
         "execution-level": "as invoker",
         "ui-access": false,
@@ -39,7 +39,7 @@
           "0409": {
             "Comments": "",
             "CompanyName": "",
-            "FileDescription": "",
+            "FileDescription": "Custom Cloud Uploads",
             "FileVersion": "",
             "InternalName": "",
             "LegalCopyright": "",
