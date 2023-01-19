@@ -21,8 +21,8 @@
     <DirectoryRef Id="INSTALLFOLDER">
       <!-- Using Project References and Variables: https://wixtoolset.org/documentation/manual/v3/votive/votive_project_references.html -->
       <!-- Include files to your project by listing it one by one. Only showing key component in one project. No need if choose to use harvest. -->
-      <Component Id="steamcloudupload.exe" Guid="2DC56D26-A5CC-40ED-81C5-441042F2C46B" Win64="yes">
-        <File Id="steamcloudupload.exe" Source="steamcloudupload.exe" KeyPath="yes" Checksum="yes"/>
+      <Component Id="opencloudsave.exe" Guid="2DC56D26-A5CC-40ED-81C5-441042F2C46B" Win64="yes">
+        <File Id="opencloudsave.exe" Source="opencloudsave.exe" KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Id="WebView2Loader.dll" Guid="624B4B28-4D7F-49D8-9CAD-279FC2AC8D25" Win64="yes">
         <File Id="WebView2Loader.dll" Source="WebView2Loader.dll" KeyPath="yes"/>
@@ -32,7 +32,7 @@
     <!-- Step 3: Tell WiX to install the files -->
     <Feature Id="MainApplication" Title="Main Application" Level="1" ConfigurableDirectory='INSTALLFOLDER'>
       <!-- Include files to your project by listing it one by one. Only showing key component in one project. -->
-      <ComponentRef Id="steamcloudupload.exe"/>
+      <ComponentRef Id="opencloudsave.exe"/>
       <ComponentRef Id="WebView2Loader.dll"/>
     </Feature>
 

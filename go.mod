@@ -1,4 +1,4 @@
-module steamcloudupload
+module opencloudsave
 
 go 1.19
 

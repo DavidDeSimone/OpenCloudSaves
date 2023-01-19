@@ -18,4 +18,4 @@ fi
 
 go-winres make
 
-go build -ldflags="-H windowsgui" && mv steamcloudupload.exe build/win/
+go build -ldflags="-H windowsgui" && mv opencloudsave.exe build/win/

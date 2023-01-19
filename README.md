@@ -37,7 +37,7 @@ From there, you can run:
 ```bash
 go get
 go build
-./steamcloudupload.exe
+./opencloudsave.exe
 ```
 
 
@@ -56,7 +56,7 @@ go get && go build
 
 From there, you can run 
 ```bash
-steamcloudupload[EXT] <FLAGS>
+opencloudsave[EXT] <FLAGS>
 ```
 
 You can also run 

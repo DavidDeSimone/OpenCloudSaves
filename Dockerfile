@@ -23,6 +23,6 @@ COPY ./ /steamuploads
 
 WORKDIR /steamuploads
 RUN go build
-RUN chmod +x ./steamcloudupload
+RUN chmod +x ./opencloudsave
 
-CMD ["./steamcloudupload", "--no-gui"]
+CMD ["./opencloudsave", "--no-gui"]
