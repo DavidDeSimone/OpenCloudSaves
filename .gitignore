@@ -10,3 +10,4 @@ build/win/WebView2Loader.dll
 *.msi
 *.wixobj
 *.wixpdb
+rsrc_*

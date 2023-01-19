@@ -2,6 +2,9 @@
   "RT_GROUP_ICON": {
     "APP": {
       "0000": "icon.png"
+    },
+    "#32512": {
+      "0000": "icon.ico"
     }
   },
   "RT_MANIFEST": {
@@ -24,11 +27,6 @@
         "use-common-controls-v6": false
       }
     }
-  },
-  "IDI_APPLICATION" : { 
-      "APP": {
-        "0000": "icon.png"
-      } 
   },
   "RT_VERSION": {
     "#1": {
