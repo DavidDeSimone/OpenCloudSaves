@@ -7,11 +7,9 @@ This project is a cross platform, open source executable to allow cross platform
 
 ### Windows
 
-For windows builds, you will need [MSYS2](https://www.msys2.org/) or a stand alone version of GCC. 
+For windows builds, you will need [MSYS2](https://www.msys2.org/). Specifically, you will need MINGW64 
 
-You will also need to download Webview 2 - https://developer.microsoft.com/en-us/microsoft-edge/webview2/#download-section
-
-I've only tested this on MSYS2 MSYS (purple icon).
+You will also need to download Webview 2 - https://developer.microsoft.com/en-us/microsoft-edge/webview2/#download-section. This is a runtime requirement that is usually downloaded by our MSI installer. If you haven't already installed OpenCloudSave, you will need to download WebView2 to run your compiled application. 
 
 Run
 ```bash
@@ -33,13 +31,24 @@ You will also need gcc:
 pacman -S mingw-w64-x86_64-gcc
 ```
 
+
+NOTE: Running our build script will install go-winres. go-winres is a tool that will compile things like our icon into our application. You can inspect the code at https://github.com/tc-hib/
+
 From there, you can run:
 ```bash
-go get
-go build
-./opencloudsave.exe
+./build/win/build.sh
+./build/win/opencloudsave.exe
 ```
 
+To build the MSI, you will need WiX toolset v3.11. https://wixtoolset.org/
+
+Once installed, run:
+
+```bash
+./build/win/package.sh
+```
+
+This will create the MSI in the build/win directory.
 
 ### MacOS
 
@@ -59,10 +68,12 @@ From there, you can run
 opencloudsave[EXT] <FLAGS>
 ```
 
-You can also run 
+To package the finished application, you can run
 ```bash
-go run *.go --verbose
+./build/macos
 ```
+
+This will compile an application.
 
 ### Linux
 
