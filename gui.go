@@ -443,8 +443,8 @@ func GuiMain(ops *Options, dm GameDefManager) {
 	debug := true
 	w := webview.New(debug)
 	defer w.Destroy()
-	w.SetTitle("Steam Custom Cloud Uploads")
-	w.SetSize(800, 600, webview.HintNone)
+	w.SetTitle("Open Cloud Save")
+	w.SetSize(800, 600, 0)
 	bindFunctions(w)
 	err := refreshMainContent(w)
 	if err != nil {
