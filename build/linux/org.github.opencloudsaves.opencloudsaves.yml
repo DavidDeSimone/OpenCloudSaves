@@ -1,7 +1,9 @@
 app-id: org.github.opencloudsaves.opencloudsaves
-runtime: org.gnome.Platform
-runtime-version: '43'
-sdk: org.gnome.Sdk
+runtime: org.freedesktop.Platform
+runtime-version: '22.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+    - org.freedesktop.Sdk.Extension.golang
 command: opencloudsave
 finish-args:
   # Window Manager
@@ -10,14 +12,21 @@ finish-args:
   - '--socket=wayland'
   - '--device=dri'
   - '--share=network'
+build-options:
+  env:
+    - GOBIN=/app/bin
+    - GOROOT=/usr/lib/sdk/golang
 modules:
   - name: opencloudsave
     buildsystem: simple
+    
     build-commands:
+      - $GOROOT/bin/go build
       - install -D opencloudsave /app/bin/opencloudsave
     sources:
-      - type: file
-        path: opencloudsave
+      - type: git
+        path: ../..
+        branch: main
     build-options:
       # I would like to remove this in the future, but I am getting errors
       # stripping /<PATH>/opencloudsave.debug
