@@ -1,0 +1,25 @@
+app-id: org.github.opencloudsaves.opencloudsaves
+runtime: org.gnome.Platform
+runtime-version: '43'
+sdk: org.gnome.Sdk
+command: opencloudsave
+finish-args:
+  # Window Manager
+  - '--share=ipc'
+  - '--socket=fallback-x11'
+  - '--socket=wayland'
+  - '--device=dri'
+  - '--share=network'
+modules:
+  - name: opencloudsave
+    buildsystem: simple
+    build-commands:
+      - install -D opencloudsave /app/bin/opencloudsave
+    sources:
+      - type: file
+        path: opencloudsave
+    build-options:
+      # I would like to remove this in the future, but I am getting errors
+      # stripping /<PATH>/opencloudsave.debug
+      # eu-strip: while creating '/<PATH>/opencloudsave.debug': No such file or directory
+      no-debuginfo: true

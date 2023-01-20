@@ -11,3 +11,7 @@ build/win/WebView2Loader.dll
 *.wixobj
 *.wixpdb
 rsrc_*
+build/linux/repo/*
+build/linux/build-dir/*
+.flatpak-builder/*
+build/linux/.flatpak-builder/*
