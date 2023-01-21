@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -210,6 +211,12 @@ func (d *GoogleCloudDriver) DownloadFile(fileId string, filePath string, fileNam
 	}
 
 	defer res.Body.Close()
+	dirPath := filepath.Dir(filePath)
+	fmt.Println(dirPath)
+	err = os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
 	osf, err := os.Create(filePath)
 	if err != nil {
 		return nil, err
