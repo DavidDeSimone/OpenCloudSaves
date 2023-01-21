@@ -77,9 +77,37 @@ This will compile an application.
 
 ### Linux
 
+We support both a direct golang build, and a flatpak build
+
+#### Local Build
+
 In addition to golang, you will need the following deps depending on your distro:
 
 Debian / Ubuntu: 
 ```
 sudo apt-get install golang gcc libgl1-mesa-dev xorg-dev libgtk-3-dev webkit2gtk-4.0
 ```
+
+From there you can run 
+```bash
+go build
+./opencloudsave
+```
+
+#### Flatpak
+
+For this example, you will need [flatpak](https://flatpak.org/setup/). This assumes you have basic familiarity with flatpak, but if  you do not, you should be up to speed after running flatpak's getting started. 
+
+You can run 
+```bash
+./build/linux/package-local.bash
+```
+
+This will build the flatpak - from there you can install it and run the flatpak version. `package-local` builds off of the current state of the repo, so you can iterate and build the app without needing to install any deps beside flatpak and flatpak-builder.
+
+
+The following command builds the "release" version of the app. This is tied to a specific commit to ensure that the build is reproducable. 
+```bash
+./build/linux/package.bash
+```
+
