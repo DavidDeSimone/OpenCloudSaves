@@ -48,5 +48,6 @@ modules:
       - install -D opencloudsave /app/bin/opencloudsave
     sources:
       - type: git
-        path: ../..
-        branch: main
+        url: https://github.com/DavidDeSimone/OpenCloudSaves
+        tag: v0.10.1-rc1
+        commit: 78da533c5e23287ec4884727f5618d88c880328d
