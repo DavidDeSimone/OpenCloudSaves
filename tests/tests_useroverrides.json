@@ -1,0 +1,10 @@
+{
+    "Game": {
+        "display_name": "Game",
+        "steam_id": "0",
+        "win_path": [{"path": "./tests/data", "parent": "data", "exts": [], "netauth":7}],
+        "linux_path": [{"path": "./tests/data", "parent": "data", "exts": [], "netauth":7}],
+        "darwin_path":  [{"path": "./tests/data", "parent": "data", "exts": [], "netauth":7}],
+        "saves_cross_compatible": true
+    }
+}

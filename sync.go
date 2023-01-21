@@ -28,6 +28,8 @@ func checkIfShouldCancel(cancelChannel chan Cancellation) error {
 	return nil
 }
 
+// @TODO
+// Validate that name is not empty (which implies an empty parent string)
 func CreateRemoteDirIfNotExists(srv CloudDriver, parentId string, name string) (string, error) {
 	resultId := ""
 	res, err := srv.ListFiles(parentId)
@@ -290,7 +292,7 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 	zipExists := false
 
 	fileName := fmt.Sprintf("%v.zip", syncDataPath.Parent)
-	filePath := fmt.Sprintf("%v%v", os.TempDir(), fileName)
+	filePath := fmt.Sprintf("%v/%v", os.TempDir(), fileName)
 	cloudFiles, err := srv.ListFiles(parentId)
 	if err != nil {
 		return err
@@ -380,6 +382,12 @@ func SyncFiles(srv CloudDriver, parentId string, syncDataPath Datapath, channels
 		Files: fileList,
 	}
 	buf, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+
+	metaDir := filepath.Dir(metaFileName)
+	err = os.MkdirAll(metaDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
