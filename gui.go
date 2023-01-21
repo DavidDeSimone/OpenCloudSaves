@@ -41,6 +41,7 @@ type Game struct {
 	Name      string
 	Def       *GameDef
 	SaveFiles []SaveFile
+	SaveFilesFound bool
 }
 
 type HtmlInput struct {
@@ -391,6 +392,10 @@ func buildGamelist(dm GameDefManager) []Game {
 					Size:       fmt.Sprintf("%vMB", size/(1024*1024)),
 				})
 			}
+		}
+
+		if len(game.SaveFiles) > 0 {
+			game.SaveFilesFound = true
 		}
 
 		games = append(games, game)

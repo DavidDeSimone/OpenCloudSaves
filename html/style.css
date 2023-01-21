@@ -259,16 +259,21 @@ hr {
      width: 100%;
   }
 }
+
+.table-padding {
+  height: 30px;
+}
   
   #savefiles {
     font-family: Arial, Helvetica, sans-serif;
     border-collapse: collapse;
     width: 100%;
+    padding: 10px;
   }
   
   #savefiles td, #savefiles th {
     border: 1px solid #ddd;
-    padding: 8px;
+    margin: 20px;
   }
   
   #savefiles tr:nth-child(even){background-color: #f2f2f2;}
@@ -278,7 +283,7 @@ hr {
   #savefiles th {
     padding-top: 12px;
     padding-bottom: 12px;
-    text-align: left;
+    text-align: center;
     background-color: #04AA6D;
     color: white;
   }

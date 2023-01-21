@@ -22,10 +22,17 @@
         <span id="{{.Def.DisplayName}}-progress" style="width: 1%; display: none;"></span>
     </div>
     <div>
+        {{if .SaveFilesFound}}
         <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
+        {{else}}
+        <div>No Save Files found for {{.Def.DisplayName}}</div>
+        {{end}}
+
         <button id="{{.Def.DisplayName}}-editbtn" class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>
         <button id="{{.Def.DisplayName}}-removebtn" class="removebtn" onclick="onRemoveButtonClicked(this, '{{.Name}}')">Remove</button>
       </div>
+
+      {{if .SaveFilesFound}}
       <table id="savefiles">
         <tr>
           <th>Filename</th>
@@ -40,7 +47,9 @@
           </tr>
         {{end}}
       </table>
-    
+      <div class="table-padding"></div>
+      {{end}}
+      
 
 </div>
 {{end}}
