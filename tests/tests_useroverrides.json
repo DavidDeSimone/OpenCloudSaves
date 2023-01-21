@@ -2,9 +2,9 @@
     "TestBasic": {
         "display_name": "TestBasic",
         "steam_id": "0",
-        "win_path": [{"path": "tests/data", "parent": "data", "exts": [], "netauth":7}],
-        "linux_path": [{"path": "tests/data", "parent": "data", "exts": [], "netauth":7}],
-        "darwin_path":  [{"path": "tests/data", "parent": "data", "exts": [], "netauth":7}],
+        "win_path": [{"path": "tests/TestBasic", "parent": "TestBasic", "exts": [], "netauth":7}],
+        "linux_path": [{"path": "tests/TestBasic", "parent": "TestBasic", "exts": [], "netauth":7}],
+        "darwin_path":  [{"path": "tests/TestBasic", "parent": "TestBasic", "exts": [], "netauth":7}],
         "saves_cross_compatible": true
     }
 }

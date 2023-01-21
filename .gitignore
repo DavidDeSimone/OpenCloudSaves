@@ -15,3 +15,4 @@ build/linux/repo/*
 build/linux/build-dir/*
 .flatpak-builder/*
 build/linux/.flatpak-builder/*
+tests/Test*
