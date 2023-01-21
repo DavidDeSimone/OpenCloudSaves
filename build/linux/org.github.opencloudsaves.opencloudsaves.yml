@@ -4,18 +4,14 @@ base-version: juno-21.08
 runtime: org.gnome.Platform
 runtime-version: '42'
 sdk: org.gnome.Sdk
-# sdk-extensions:
-#     - org.freedesktop.Sdk.Extension.golang
 command: opencloudsave
 finish-args:
-  # Window Manager
   - '--share=ipc'
-  - '--socket=x11'
+  - '--socket=fallback-x11'
   - '--filesystem=host'
-  # - '--socket=wayland'
+  - '--socket=wayland'
   - '--device=dri'
   - '--share=network'
-  - '--socket=session-bus'
 build-options:
   env:
     - GOBIN=/app/bin
@@ -29,29 +25,14 @@ modules:
           - aarch64
         url: https://go.dev/dl/go1.19.5.linux-arm64.tar.gz
         sha256: fc0aa29c933cec8d76f5435d859aaf42249aa08c74eb2d154689ae44c08d23b3
-        x-checker-data:
-          type: anitya
-          project-id: 1227
-          stable-only: true
-          url-template: https://go.dev/dl/go$version.linux-arm64.tar.gz
       - type: archive
         only-arches:
           - x86_64
         url: https://go.dev/dl/go1.19.5.linux-amd64.tar.gz
         sha256: 36519702ae2fd573c9869461990ae550c8c0d955cd28d2827a6b159fda81ff95
-        x-checker-data:
-          type: anitya
-          project-id: 1227
-          stable-only: true
-          url-template: https://go.dev/dl/go$version.linux-amd64.tar.gz
     build-commands:
       - install -d /app/lib/sdk/golang
       - cp -rpv * /app/lib/sdk/golang/
-    build-options:
-      # I would like to remove this in the future, but I am getting errors
-      # stripping /<PATH>/opencloudsave.debug
-      # eu-strip: while creating '/<PATH>/opencloudsave.debug': No such file or directory
-      no-debuginfo: true
   - name: libdevhelp
     buildsystem: meson
     config-opts:
@@ -60,27 +41,8 @@ modules:
       - type: archive
         url: https://gitlab.gnome.org/GNOME/devhelp/-/archive/41.2/devhelp-41.2.tar.gz
         sha256: 2798546427a42484b61733f13d8532f31e5aa0bdff4a22aa1dc8e3085358fc87
-    build-options:
-      # I would like to remove this in the future, but I am getting errors
-      # stripping /<PATH>/opencloudsave.debug
-      # eu-strip: while creating '/<PATH>/opencloudsave.debug': No such file or directory
-      no-debuginfo: true
-    modules:
-      - name: amtk-5
-        buildsystem: meson
-        sources:
-          - type: archive
-            url: https://download.gnome.org/sources/amtk/5.5/amtk-5.5.1.tar.xz
-            sha256: ec896dd017e2c1436852e5e60970fcd0830bd12148d57cc1bdc0d93826bddb9c
-        build-options:
-          # I would like to remove this in the future, but I am getting errors
-          # stripping /<PATH>/opencloudsave.debug
-          # eu-strip: while creating '/<PATH>/opencloudsave.debug': No such file or directory
-          no-debuginfo: true
   - name: opencloudsave
-    buildsystem: simple
-    
-    #CGO_LDFLAGS="-L/path/to/the/lib -Wl,-rpath -Wl,\$ORIGIN/../lib"
+    buildsystem: simple    
     build-commands:
       - $GOROOT/bin/go build -trimpath -o opencloudsave
       - install -D opencloudsave /app/bin/opencloudsave
@@ -88,11 +50,3 @@ modules:
       - type: git
         path: ../..
         branch: main
-    # sources:
-    #   - type: file
-    #     path: opencloudsave
-    build-options:
-      # I would like to remove this in the future, but I am getting errors
-      # stripping /<PATH>/opencloudsave.debug
-      # eu-strip: while creating '/<PATH>/opencloudsave.debug': No such file or directory
-      no-debuginfo: true
