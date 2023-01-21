@@ -4,6 +4,9 @@ cloud.google.com/go/compute/internal
 # cloud.google.com/go/compute/metadata v0.2.2
 ## explicit; go 1.19
 cloud.google.com/go/compute/metadata
+# github.com/DavidDeSimone/memfs v0.15.0
+## explicit; go 1.16
+github.com/DavidDeSimone/memfs
 # github.com/TheTitanrain/w32 v0.0.0-20180517000239-4f5cfb03fabf
 ## explicit
 github.com/TheTitanrain/w32

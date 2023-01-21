@@ -7,6 +7,7 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/sqweek/dialog v0.0.0-20220809060634-e981b270ebbf
 	github.com/webview/webview v0.0.0-20230110200822-73aee3dae745
+	github.com/DavidDeSimone/memfs v0.15.0
 	golang.org/x/oauth2 v0.3.0
 	golang.org/x/sys v0.3.0
 	google.golang.org/api v0.105.0

@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	_ "github.com/DavidDeSimone/memfs"
 	"log"
 	"os"
 	"path/filepath"
