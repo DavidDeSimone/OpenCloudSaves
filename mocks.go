@@ -63,6 +63,7 @@ func (d *MockCloudDriver) ListFiles(parentId string) ([]CloudFile, error) {
 }
 
 func (d *MockCloudDriver) CreateDir(name string, parentId string) (CloudFile, error) {
+	fmt.Println("Creating dir " + parentId + ", " + name)
 	name = strings.TrimSuffix(name, "/")
 	err := d.fs.MkdirAll(parentId+"/"+name, os.ModePerm)
 	if err != nil {

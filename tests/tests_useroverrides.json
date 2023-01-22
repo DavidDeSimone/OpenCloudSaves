@@ -6,5 +6,38 @@
         "linux_path": [{"path": "tests/TestBasic", "parent": "TestBasic", "exts": [], "netauth":7}],
         "darwin_path":  [{"path": "tests/TestBasic", "parent": "TestBasic", "exts": [], "netauth":7}],
         "saves_cross_compatible": true
+    },
+    "TestLocalFileChanged": {
+        "display_name": "TestLocalFileChanged",
+        "steam_id": "0",
+        "win_path": [{"path": "tests/TestLocalFileChanged", "parent": "TestLocalFileChanged", "exts": [], "netauth":7}],
+        "linux_path": [{"path": "tests/TestLocalFileChanged", "parent": "TestLocalFileChanged", "exts": [], "netauth":7}],
+        "darwin_path":  [{"path": "tests/TestLocalFileChanged", "parent": "TestLocalFileChanged", "exts": [], "netauth":7}],
+        "saves_cross_compatible": true
+    },
+    "TestLocalFileAdded": {
+        "display_name": "TestLocalFileAdded",
+        "steam_id": "0",
+        "win_path": [{"path": "tests/TestLocalFileAdded", "parent": "TestLocalFileAdded", "exts": [], "netauth":7}],
+        "linux_path": [{"path": "tests/TestLocalFileAdded", "parent": "TestLocalFileAdded", "exts": [], "netauth":7}],
+        "darwin_path":  [{"path": "tests/TestLocalFileAdded", "parent": "TestLocalFileAdded", "exts": [], "netauth":7}],
+        "saves_cross_compatible": true
+    },
+    "TestRemoteFileChanged": {
+        "display_name": "TestRemoteFileChanged",
+        "steam_id": "0",
+        "win_path": [{"path": "tests/TestRemoteFileChanged", "parent": "TestRemoteFileChanged", "exts": [], "netauth":7}],
+        "linux_path": [{"path": "tests/TestRemoteFileChanged", "parent": "TestRemoteFileChanged", "exts": [], "netauth":7}],
+        "darwin_path":  [{"path": "tests/TestRemoteFileChanged", "parent": "TestRemoteFileChanged", "exts": [], "netauth":7}],
+        "saves_cross_compatible": true
+    },
+    "TestLocalFileRemoved": {
+        "display_name": "TestLocalFileRemoved",
+        "steam_id": "0",
+        "win_path": [{"path": "tests/TestLocalFileRemoved", "parent": "TestLocalFileRemoved", "exts": [], "netauth":7}],
+        "linux_path": [{"path": "tests/TestLocalFileRemoved", "parent": "TestLocalFileRemoved", "exts": [], "netauth":7}],
+        "darwin_path":  [{"path": "tests/TestLocalFileRemoved", "parent": "TestLocalFileRemoved", "exts": [], "netauth":7}],
+        "saves_cross_compatible": true
     }
+
 }

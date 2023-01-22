@@ -38,9 +38,9 @@ type SaveFile struct {
 }
 
 type Game struct {
-	Name      string
-	Def       *GameDef
-	SaveFiles []SaveFile
+	Name           string
+	Def            *GameDef
+	SaveFiles      []SaveFile
 	SaveFilesFound bool
 }
 
@@ -117,7 +117,9 @@ func syncGame(key string) {
 		progress: make(chan ProgressEvent, 20),
 	}
 
-	go CliMain(ops, dm, channels, SyncOp)
+	srv := GetDefaultService()
+
+	go CliMain(srv, ops, dm, channels, SyncOp)
 	chanelMutex.Lock()
 	defer chanelMutex.Unlock()
 

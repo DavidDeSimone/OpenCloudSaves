@@ -56,15 +56,9 @@ const STEAM_METAFILE = "steamcloudloadmeta.json"
 const CURRENT_META_VERSION = 1
 const WORKER_POOL_SIZE = 4
 
-var service CloudDriver = nil
-
 func GetDefaultService() CloudDriver {
-	if service == nil {
-		service = &GoogleCloudDriver{}
-		service.InitDriver()
-
-	}
-
+	service := &GoogleCloudDriver{}
+	service.InitDriver()
 	return service
 }
 
@@ -74,7 +68,7 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 	}
 }
 
-func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, syncFunc func(srv CloudDriver, input chan SyncRequest, output chan SyncResponse, progress chan ProgressEvent)) {
+func CliMain(srv CloudDriver, ops *Options, dm GameDefManager, channels *ChannelProvider, syncFunc func(srv CloudDriver, input chan SyncRequest, output chan SyncResponse, progress chan ProgressEvent)) {
 	logs := channels.logs
 
 	if len(ops.PrintGameDefs) > 0 {
@@ -108,8 +102,6 @@ func CliMain(ops *Options, dm GameDefManager, channels *ChannelProvider, syncFun
 	}
 
 	LogMessage(logs, "Starting Upload Process...")
-
-	srv := GetDefaultService()
 	saveFolderId, err := ValidateAndCreateParentFolder(srv)
 	if err != nil {
 		log.Println(err)
@@ -213,9 +205,10 @@ func main() {
 			output:   make(chan SyncResponse, 10),
 			progress: make(chan ProgressEvent, 15),
 		}
+		srv := GetDefaultService()
 
 		go consoleLogger(channels.logs)
-		CliMain(ops, dm, channels, SyncOp)
+		CliMain(srv, ops, dm, channels, SyncOp)
 	} else {
 		GuiMain(ops, dm)
 	}
