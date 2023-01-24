@@ -36,8 +36,6 @@ type ProgressEvent struct {
 type ChannelProvider struct {
 	logs     chan Message
 	cancel   chan Cancellation
-	input    chan SyncRequest
-	output   chan SyncResponse
 	progress chan ProgressEvent
 }
 
@@ -49,18 +47,7 @@ const CloudOperationAll = CloudOperationDownload | CloudOperationDelete | CloudO
 //go:embed credentials.json
 var creds embed.FS
 
-const APP_NAME = "SteamCustomCloudUpload"
-const SAVE_FOLDER = "steamsave"
-const DEFAULT_PORT = ":54438"
-const STEAM_METAFILE = "steamcloudloadmeta.json"
-const CURRENT_META_VERSION = 1
-const WORKER_POOL_SIZE = 4
-
-func GetDefaultService() CloudDriver {
-	service := &GoogleCloudDriver{}
-	service.InitDriver()
-	return service
-}
+const APP_NAME = "OpenCloudSave"
 
 func LogMessage(logs chan Message, format string, msg ...any) {
 	logs <- Message{
@@ -68,7 +55,7 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 	}
 }
 
-func CliMain(srv CloudDriver, ops *Options, dm GameDefManager, channels *ChannelProvider, syncFunc func(srv CloudDriver, input chan SyncRequest, output chan SyncResponse, progress chan ProgressEvent)) {
+func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *ChannelProvider) {
 	logs := channels.logs
 
 	if len(ops.PrintGameDefs) > 0 {
@@ -102,29 +89,9 @@ func CliMain(srv CloudDriver, ops *Options, dm GameDefManager, channels *Channel
 	}
 
 	LogMessage(logs, "Starting Upload Process...")
-	saveFolderId, err := ValidateAndCreateParentFolder(srv)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	for i := 0; i < WORKER_POOL_SIZE; i++ {
-		go syncFunc(srv, channels.input, channels.output, channels.progress)
-	}
-
-	LogMessage(logs, "Cloud Service Initialized...")
-
 	for _, gamename := range ops.Gamenames {
 		gamename = strings.TrimSpace(gamename)
 		LogMessage(logs, "Performing Check on %v", gamename)
-		id, err := CreateRemoteDirIfNotExists(srv, saveFolderId, gamename)
-		if err != nil {
-			fmt.Println(err)
-			logs <- Message{
-				Err: err,
-			}
-			continue
-		}
 
 		syncpaths, err := dm.GetSyncpathForGame(gamename)
 		LogMessage(logs, "Identified Paths for %v: %v", gamename, syncpaths)
@@ -138,15 +105,7 @@ func CliMain(srv CloudDriver, ops *Options, dm GameDefManager, channels *Channel
 
 		for _, syncpath := range syncpaths {
 			LogMessage(logs, "Examining Path %v", syncpath.Path)
-			parentId, err := CreateRemoteDirIfNotExists(srv, id, syncpath.Parent)
-			if err != nil {
-				fmt.Println(err)
-				logs <- Message{
-					Err: err,
-				}
-				continue
-			}
-			err = SyncFiles(srv, parentId, syncpath, channels)
+			err := cm.BisyncDir(GetGoogleDriveStorage(), syncpath.Path, ToplevelCloudFolder+syncpath.Parent+"/")
 			if err != nil {
 				fmt.Println(err)
 				continue
@@ -203,15 +162,10 @@ func main() {
 	if noGui {
 		channels := &ChannelProvider{
 			logs:     make(chan Message, 100),
-			cancel:   make(chan Cancellation, 1),
-			input:    make(chan SyncRequest, 10),
-			output:   make(chan SyncResponse, 10),
 			progress: make(chan ProgressEvent, 15),
 		}
-		srv := GetDefaultService()
-
 		go consoleLogger(channels.logs)
-		CliMain(srv, ops, dm, channels, SyncOp)
+		CliMain(cm, ops, dm, channels)
 	} else {
 
 		GuiMain(ops, dm)

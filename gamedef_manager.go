@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	_ "github.com/DavidDeSimone/memfs"
 )
 
 //go:embed gamedef_map.json

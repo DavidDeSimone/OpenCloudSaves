@@ -108,18 +108,17 @@ func syncGame(key string) {
 	ops := &Options{
 		Gamenames: []string{key},
 	}
+	cm := MakeCloudManager()
+
 	dm := MakeGameDefManager("")
+	dm.SetCloudManager(cm)
 	channels := &ChannelProvider{
 		logs:     make(chan Message, 100),
 		cancel:   make(chan Cancellation, 1),
-		input:    make(chan SyncRequest, 10),
-		output:   make(chan SyncResponse, 10),
 		progress: make(chan ProgressEvent, 20),
 	}
 
-	srv := GetDefaultService()
-
-	go CliMain(srv, ops, dm, channels, SyncOp)
+	go CliMain(cm, ops, dm, channels)
 	chanelMutex.Lock()
 	defer chanelMutex.Unlock()
 
