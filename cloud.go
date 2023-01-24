@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"runtime"
 )
@@ -31,6 +32,12 @@ func getCloudApp() string {
 	return "Unsupported Platform"
 }
 
+func makeCommand(cmd_string string, arg ...string) *exec.Cmd {
+	cmd := exec.Command(cmd_string, arg...)
+	StripWindow(cmd)
+	return cmd
+}
+
 type Storage interface {
 	GetName() string
 	GetCreationCommand() *exec.Cmd
@@ -44,7 +51,7 @@ func (gs *GoogleStorage) GetName() string {
 }
 
 func (gs *GoogleStorage) GetCreationCommand() *exec.Cmd {
-	return exec.Command(getCloudApp(), "config", "create", gs.GetName(), "scope=drive.file")
+	return makeCommand(getCloudApp(), "config", "create", gs.GetName(), "scope=drive.file")
 }
 
 var gdrive *GoogleStorage
@@ -65,7 +72,7 @@ func (gs *OneDriveStorage) GetName() string {
 }
 
 func (gs *OneDriveStorage) GetCreationCommand() *exec.Cmd {
-	return exec.Command(getCloudApp(), "config", "create", gs.GetName(), "onedrive")
+	return makeCommand(getCloudApp(), "config", "create", gs.GetName(), "onedrive")
 }
 
 var onedrive *OneDriveStorage
@@ -96,7 +103,7 @@ func (cm *CloudManager) CreateDriveIfNotExists(storage Storage) error {
 }
 
 func (cm *CloudManager) ContainsStorageDrive(storage Storage) bool {
-	cmd := exec.Command(getCloudApp(), "config", "dump")
+	cmd := makeCommand(getCloudApp(), "config", "dump")
 	stdout, err := cmd.Output()
 
 	if err != nil {
@@ -124,7 +131,7 @@ func (cm *CloudManager) MakeStorageDrive(storage Storage) error {
 func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (bool, error) {
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
 	fmt.Println("Examining path " + path)
-	cmd := exec.Command(getCloudApp(), "lsjon", path+"/")
+	cmd := makeCommand(getCloudApp(), "lsjon", path+"/")
 	err := cmd.Run()
 	if err != nil {
 		return false, nil
@@ -136,11 +143,16 @@ func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (
 
 func (cm *CloudManager) MakeRemoteDir(storage Storage, remotePath string) error {
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	cmd := exec.Command(getCloudApp(), "mkdir", path)
+	cmd := makeCommand(getCloudApp(), "mkdir", path)
 	return cmd.Run()
 }
 
 func (cm *CloudManager) BisyncDir(storage Storage, localPath string, remotePath string) error {
+	_, err := os.Stat(localPath)
+	if err != nil {
+		return err
+	}
+
 	exists, err := cm.DoesRemoteDirExist(storage, remotePath)
 	if err != nil {
 		return err
@@ -153,11 +165,22 @@ func (cm *CloudManager) BisyncDir(storage Storage, localPath string, remotePath 
 
 		path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
 		fmt.Println("Bisyncing on " + path)
-		cmd := exec.Command(getCloudApp(), "bisync", "--resync", localPath, path)
+		cmd := makeCommand(getCloudApp(), "bisync", "--resync", localPath, path)
 		return cmd.Run()
 	} else {
 		path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-		cmd := exec.Command(getCloudApp(), "bisync", localPath, path)
-		return cmd.Run()
+		cmd := makeCommand(getCloudApp(), "bisync", localPath, path)
+		err = cmd.Run()
+		if err != nil {
+			exiterr := err.(*exec.ExitError)
+			if exiterr.ExitCode() == 3 {
+				cmd := makeCommand(getCloudApp(), "bisync", "--resync", localPath, path)
+				return cmd.Run()
+			}
+
+			return err
+		}
+
+		return nil
 	}
 }

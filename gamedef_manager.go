@@ -299,6 +299,8 @@ func GetDefaultUserOverridePath() string {
 	}
 	separator := string(os.PathSeparator)
 
+	fmt.Println("Getting User Override Path " + cacheDir + separator + APP_NAME + separator + "user_overrides.json")
+	os.Stdout.WriteString("Getting User Override Path " + cacheDir + separator + APP_NAME + separator + "user_overrides.json")
 	return cacheDir + separator + APP_NAME + separator + "user_overrides.json"
 }
 

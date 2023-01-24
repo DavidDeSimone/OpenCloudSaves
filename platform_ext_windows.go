@@ -7,11 +7,17 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"github.com/andygrunwald/vdf"
 	"golang.org/x/sys/windows/registry"
 )
+
+func StripWindow(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+}
 
 func (d *GameDef) GetInstallLocationFromSteamId() string {
 	key, err := registry.OpenKey(registry.CURRENT_USER, `SOFTWARE\Valve\Steam`, registry.QUERY_VALUE)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"runtime"
 	"strings"
 
 	"github.com/jessevdk/go-flags"
@@ -141,6 +142,10 @@ func consoleLogger(input chan Message) {
 }
 
 func main() {
+	if runtime.GOOS == "windows" {
+		SetupWindowsConsole()
+	}
+
 	cm := MakeCloudManager()
 	err := cm.CreateDriveIfNotExists(GetOneDriveStorage())
 	if err != nil {
@@ -161,7 +166,8 @@ func main() {
 
 	err = ApplyCloudUserOverride(cm, userOverrideLocation)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		// log.Fatal(err)
 	}
 
 	dm := MakeGameDefManager(userOverrideLocation)

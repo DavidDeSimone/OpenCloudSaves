@@ -2,6 +2,8 @@
 
 set -e
 
+echo 'Building....'
+
 cd rclone
 go build
 cd ../
@@ -25,3 +27,5 @@ fi
 go-winres make
 
 go build -ldflags="-H windowsgui" && mv opencloudsave.exe build/win/
+
+echo 'Build Complete....'
