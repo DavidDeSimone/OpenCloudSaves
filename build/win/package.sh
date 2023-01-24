@@ -2,6 +2,8 @@
 
 set -e
 
+## TODO update to include rclone.exe
+
 CURR=$(pwd)
 cd build/win/
 

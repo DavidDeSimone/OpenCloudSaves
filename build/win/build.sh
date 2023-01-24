@@ -2,6 +2,12 @@
 
 set -e
 
+cd rclone
+go build
+cd ../
+mkdir -p ./bin/
+mv ./rclone/rclone.exe ./bin/
+
 if [ ! -d "libs/webview2" ]; then
     mkdir -p libs/webview2
     curl -sSL "https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2" | /c/Windows/System32/tar.exe -xf - -C libs/webview2

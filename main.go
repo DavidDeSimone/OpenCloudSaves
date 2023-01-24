@@ -107,6 +107,10 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 			LogMessage(logs, "Examining Path %v", syncpath.Path)
 			remotePath := fmt.Sprintf("%v%v/%v/", ToplevelCloudFolder, gamename, syncpath.Parent)
 			LogMessage(logs, "Performing BiDirectional Sync: "+remotePath)
+
+			//@TODO
+			// This needs a way to respect ignore/exts
+			// This should be as simple as --include/--exclude flags
 			err := cm.BisyncDir(GetOneDriveStorage(), syncpath.Path, remotePath)
 			if err != nil {
 				fmt.Println(err)
