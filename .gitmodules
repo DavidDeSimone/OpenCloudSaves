@@ -1,0 +1,3 @@
+[submodule "rclone"]
+	path = rclone
+	url = https://github.com/DavidDeSimone/rclone
