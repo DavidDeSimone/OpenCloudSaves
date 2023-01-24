@@ -10,6 +10,12 @@ This project is a cross platform, open source executable to allow cross platform
 
 ## Build
 
+On all platforms, you will need to initalize the rclone submodule:
+
+```
+git submodule update --init
+```
+
 ### Windows
 
 For windows builds, you will need [MSYS2](https://www.msys2.org/). Specifically, you will need MINGW64 
