@@ -368,5 +368,5 @@ func ApplyCloudUserOverride(cm *CloudManager, userOverride string) error {
 	}
 
 	path := filepath.Dir(userOverride)
-	return cm.BisyncDir(GetGoogleDriveStorage(), path, ToplevelCloudFolder+"user_settings/")
+	return cm.BisyncDir(GetOneDriveStorage(), path, ToplevelCloudFolder+"user_settings/")
 }

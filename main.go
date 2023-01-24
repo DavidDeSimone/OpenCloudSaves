@@ -105,7 +105,9 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 
 		for _, syncpath := range syncpaths {
 			LogMessage(logs, "Examining Path %v", syncpath.Path)
-			err := cm.BisyncDir(GetGoogleDriveStorage(), syncpath.Path, ToplevelCloudFolder+syncpath.Parent+"/")
+			remotePath := fmt.Sprintf("%v%v/%v/", ToplevelCloudFolder, gamename, syncpath.Parent)
+			LogMessage(logs, "Performing BiDirectional Sync: "+remotePath)
+			err := cm.BisyncDir(GetOneDriveStorage(), syncpath.Path, remotePath)
 			if err != nil {
 				fmt.Println(err)
 				continue
@@ -136,9 +138,12 @@ func consoleLogger(input chan Message) {
 
 func main() {
 	cm := MakeCloudManager()
-	cm.CreateDriveIfNotExists(GetGoogleDriveStorage())
+	err := cm.CreateDriveIfNotExists(GetOneDriveStorage())
+	if err != nil {
+		log.Fatal(err)
+	}
 	ops := &Options{}
-	_, err := flags.Parse(ops)
+	_, err = flags.Parse(ops)
 
 	if err != nil {
 		log.Fatal(err)
