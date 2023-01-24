@@ -4,13 +4,13 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	_ "github.com/DavidDeSimone/memfs"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
+
+	_ "github.com/DavidDeSimone/memfs"
 )
 
 //go:embed gamedef_map.json
@@ -210,6 +210,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 type FsGameDefManager struct {
 	gamedefs            map[string]*GameDef
 	userOverrideLoction string
+	cm                  *CloudManager
 }
 
 type GameDefManager interface {
@@ -220,6 +221,11 @@ type GameDefManager interface {
 	GetFilesForGame(id string, parent string) (map[string]SyncFile, error)
 	GetSyncpathForGame(id string) ([]Datapath, error)
 	GetUserOverrideLocation() string
+	SetCloudManager(cm *CloudManager)
+}
+
+func (d *FsGameDefManager) SetCloudManager(cm *CloudManager) {
+	d.cm = cm
 }
 
 func (d *FsGameDefManager) ApplyUserOverrides() error {
@@ -355,93 +361,14 @@ func (d *FsGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
 
 func (dm *FsGameDefManager) CommitCloudUserOverride() error {
 	userOverride := dm.GetUserOverrideLocation()
-
-	srv := GetDefaultService()
-	saveFolderId, err := ValidateAndCreateParentFolder(srv)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	files, err := srv.ListFiles(saveFolderId)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	for _, file := range files {
-		if file.GetName() == "user_override.json" {
-			info, err := os.Stat(userOverride)
-			if err == nil {
-				remoteTime, err := time.Parse(time.RFC3339, file.GetModTime())
-				if err != nil {
-					fmt.Println(err)
-					return err
-				}
-
-				if info.ModTime().After(remoteTime) {
-					_, err = srv.UploadFile(file.GetId(), userOverride, "user_override.json", func(i1, i2 int64) {})
-					if err != nil {
-						fmt.Println(err)
-					}
-
-					return err
-				}
-			}
-
-		}
-	}
-
-	_, err = srv.CreateFile(saveFolderId, "user_override.json", userOverride, func(i1, i2 int64) {})
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return err
+	return ApplyCloudUserOverride(dm.cm, userOverride)
 }
 
-func ApplyCloudUserOverride(userOverride string) error {
+func ApplyCloudUserOverride(cm *CloudManager, userOverride string) error {
 	if userOverride == "" {
 		userOverride = GetDefaultUserOverridePath()
 	}
 
-	srv := GetDefaultService()
-	saveFolderId, err := ValidateAndCreateParentFolder(srv)
-	if err != nil {
-		return err
-	}
-
-	files, err := srv.ListFiles(saveFolderId)
-	if err != nil {
-		return err
-	}
-
-	var overrideFile CloudFile = nil
-	for _, file := range files {
-		if file.GetName() == "user_override.json" {
-			info, err := os.Stat(userOverride)
-			if err == nil {
-				remoteTime, err := time.Parse(time.RFC3339, file.GetModTime())
-				if err != nil {
-					return err
-				}
-
-				if info.ModTime().After(remoteTime) {
-					return nil
-				}
-			}
-
-			overrideFile = file
-			break
-		}
-	}
-
-	if overrideFile != nil {
-		_, err := srv.DownloadFile(overrideFile.GetId(), userOverride, "user_override.json", func(i1, i2 int64) {})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	path := filepath.Dir(userOverride)
+	return cm.BisyncDir(GetGoogleDriveStorage(), path, ToplevelCloudFolder+"user_settings/")
 }

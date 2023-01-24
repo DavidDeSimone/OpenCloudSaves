@@ -176,6 +176,8 @@ func consoleLogger(input chan Message) {
 }
 
 func main() {
+	cm := MakeCloudManager()
+	cm.CreateDriveIfNotExists(GetGoogleDriveStorage())
 	ops := &Options{}
 	_, err := flags.Parse(ops)
 
@@ -189,12 +191,13 @@ func main() {
 		userOverrideLocation = ops.UserOverride[0]
 	}
 
-	err = ApplyCloudUserOverride(userOverrideLocation)
+	err = ApplyCloudUserOverride(cm, userOverrideLocation)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	dm := MakeGameDefManager(userOverrideLocation)
+	dm.SetCloudManager(cm)
 	dm.CommitUserOverrides()
 
 	if noGui {
@@ -210,6 +213,7 @@ func main() {
 		go consoleLogger(channels.logs)
 		CliMain(srv, ops, dm, channels, SyncOp)
 	} else {
+
 		GuiMain(ops, dm)
 	}
 }
