@@ -51,6 +51,12 @@ From there, you can run:
 ./build/win/opencloudsave.exe
 ```
 
+If you would like to view the console logs of the application, you can build via:
+
+```bash
+./build/win/build.sh debug
+```
+
 To build the MSI, you will need WiX toolset v3.11. https://wixtoolset.org/
 
 Once installed, run:

@@ -43,48 +43,6 @@ type Storage interface {
 	GetCreationCommand() *exec.Cmd
 }
 
-type GoogleStorage struct {
-}
-
-func (gs *GoogleStorage) GetName() string {
-	return "opencloudsave-googledrive"
-}
-
-func (gs *GoogleStorage) GetCreationCommand() *exec.Cmd {
-	return makeCommand(getCloudApp(), "config", "create", gs.GetName(), "scope=drive.file")
-}
-
-var gdrive *GoogleStorage
-
-func GetGoogleDriveStorage() Storage {
-	if gdrive == nil {
-		gdrive = &GoogleStorage{}
-	}
-
-	return gdrive
-}
-
-type OneDriveStorage struct {
-}
-
-func (gs *OneDriveStorage) GetName() string {
-	return "opencloudsave-onedrive"
-}
-
-func (gs *OneDriveStorage) GetCreationCommand() *exec.Cmd {
-	return makeCommand(getCloudApp(), "config", "create", gs.GetName(), "onedrive")
-}
-
-var onedrive *OneDriveStorage
-
-func GetOneDriveStorage() Storage {
-	if onedrive == nil {
-		onedrive = &OneDriveStorage{}
-	}
-
-	return onedrive
-}
-
 type CloudManager struct {
 }
 
@@ -142,7 +100,7 @@ func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (
 }
 
 func (cm *CloudManager) MakeRemoteDir(storage Storage, remotePath string) error {
-	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
+	path := fmt.Sprintf("%v:%v/", storage.GetName(), remotePath)
 	cmd := makeCommand(getCloudApp(), "mkdir", path)
 	return cmd.Run()
 }
@@ -162,25 +120,21 @@ func (cm *CloudManager) BisyncDir(storage Storage, localPath string, remotePath 
 		if err != nil {
 			return err
 		}
+	}
 
-		path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-		fmt.Println("Bisyncing on " + path)
-		cmd := makeCommand(getCloudApp(), "bisync", "--resync", localPath, path)
-		return cmd.Run()
-	} else {
-		path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-		cmd := makeCommand(getCloudApp(), "bisync", localPath, path)
-		err = cmd.Run()
-		if err != nil {
-			exiterr := err.(*exec.ExitError)
-			if exiterr.ExitCode() == 3 {
-				cmd := makeCommand(getCloudApp(), "bisync", "--resync", localPath, path)
-				return cmd.Run()
-			}
-
-			return err
+	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
+	cmd := makeCommand(getCloudApp(), "-v", "bisync", localPath, path)
+	err = cmd.Run()
+	if err != nil {
+		exiterr := err.(*exec.ExitError)
+		if exiterr.ExitCode() == 2 {
+			cmd := makeCommand(getCloudApp(), "-v", "bisync", "--resync", localPath, path)
+			return cmd.Run()
 		}
 
-		return nil
+		return err
 	}
+
+	return nil
+
 }

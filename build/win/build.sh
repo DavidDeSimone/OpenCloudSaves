@@ -26,6 +26,6 @@ fi
 
 go-winres make
 
-go build -ldflags="-H windowsgui" && mv opencloudsave.exe build/win/
+go build -ldflags="-H windowsgui" -tags=$1 && mv opencloudsave.exe build/win/
 
 echo 'Build Complete....'

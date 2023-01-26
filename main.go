@@ -50,6 +50,10 @@ var creds embed.FS
 
 const APP_NAME = "OpenCloudSave"
 
+func GetCurrentStorageProvider() Storage {
+	return GetDropBoxStorage()
+}
+
 func LogMessage(logs chan Message, format string, msg ...any) {
 	logs <- Message{
 		Message: fmt.Sprintf(format, msg...),
@@ -112,7 +116,7 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 			//@TODO
 			// This needs a way to respect ignore/exts
 			// This should be as simple as --include/--exclude flags
-			err := cm.BisyncDir(GetOneDriveStorage(), syncpath.Path, remotePath)
+			err := cm.BisyncDir(GetCurrentStorageProvider(), syncpath.Path, remotePath)
 			if err != nil {
 				fmt.Println(err)
 				continue
@@ -147,7 +151,7 @@ func main() {
 	}
 
 	cm := MakeCloudManager()
-	err := cm.CreateDriveIfNotExists(GetOneDriveStorage())
+	err := cm.CreateDriveIfNotExists(GetCurrentStorageProvider())
 	if err != nil {
 		log.Fatal(err)
 	}
