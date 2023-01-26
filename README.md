@@ -127,12 +127,3 @@ The following command builds the "release" version of the app. This is tied to a
 ```bash
 ./build/linux/package.bash
 ```
-
-## Tests
-
-You can run integration tests with 
-```bash
-go test
-```
-
-Note: These tests modify your local file system in the same way that OpenCloudSave modifies your system. It will write to your tempdir and cache dir.
