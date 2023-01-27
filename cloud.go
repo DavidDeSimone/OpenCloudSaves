@@ -18,13 +18,7 @@ func getCloudApp() string {
 	case "windows":
 		return "./bin/rclone.exe"
 	case "darwin":
-		// @TODO in production macOS, we need to do this:
-		// exe, _ := os.Executable()
-		// dir := filepath.Dir(exe)
-		// parent := filepath.Dir(dir)
-
-		// return parent + "/Resources/rclone"
-		return "./bin/rclone"
+		return GetMacOsPath()
 	default:
 		log.Fatal("Unsupported Platform")
 	}
