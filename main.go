@@ -1,7 +1,6 @@
 package main
 
 import (
-	"embed"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -45,13 +44,14 @@ const CloudOperationUpload = 1 << 1
 const CloudOperationDelete = 1 << 2
 const CloudOperationAll = CloudOperationDownload | CloudOperationDelete | CloudOperationUpload
 
-//go:embed credentials.json
-var creds embed.FS
-
 const APP_NAME = "OpenCloudSave"
 
 func GetCurrentStorageProvider() Storage {
-	return GetDropBoxStorage()
+	storage, err := GetCurrentCloudStorage()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return storage
 }
 
 func LogMessage(logs chan Message, format string, msg ...any) {
@@ -150,8 +150,16 @@ func main() {
 		SetupWindowsConsole()
 	}
 
+	storage, err := GetCurrentCloudStorage()
+	if err != nil {
+		fmt.Println(err)
+		// @TODO If gui, show user the GUI flow for picking a cloud
+		// provider
+		// if no gui, query user for input for cloud provider
+	}
+
 	cm := MakeCloudManager()
-	err := cm.CreateDriveIfNotExists(GetCurrentStorageProvider())
+	err = cm.CreateDriveIfNotExists(storage)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -168,6 +176,9 @@ func main() {
 		userOverrideLocation = ops.UserOverride[0]
 	}
 
+	// @TODO this can be really slow and blocks start up.
+	// We should do this on a go thread, shwo the UI with an
+	// updating widget.
 	err = ApplyCloudUserOverride(cm, userOverrideLocation)
 	if err != nil {
 		fmt.Println(err)
