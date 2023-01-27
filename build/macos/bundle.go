@@ -415,8 +415,6 @@ const infoPlistTpl = `<?xml version="1.0" encoding="UTF-8"?>
 	<string>{{.BundleIdentifier}}</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
-	<key>LSUIElement</key>
-	<true/>
 	<key>CFBundlePackageType</key>
     <string>APPL</string>
 </dict>
