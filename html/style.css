@@ -139,6 +139,10 @@ input[type=text], input[type=password] {
   background: #f1f1f1;
 }
 
+.nosavefoundcont {
+  text-align: center;
+}
+
 /* Add a background color when the inputs get focus */
 input[type=text]:focus, input[type=password]:focus {
   background-color: #ddd;
