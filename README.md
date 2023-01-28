@@ -77,20 +77,20 @@ You may need to install xcode command line tools if you haven't already:
 
 To build, you will need to run 
 ```bash
-go get && go build
+go build
 ```
 
 From there, you can run 
 ```bash
-opencloudsave[EXT] <FLAGS>
+./opencloudsave
 ```
 
 To package the finished application, you can run
 ```bash
-./build/macos
+./build/macos/build.sh
 ```
 
-This will compile an application.
+This will compile a macOS application (as opencloudsave.app) and a DMG for distribution.
 
 ### Linux
 
