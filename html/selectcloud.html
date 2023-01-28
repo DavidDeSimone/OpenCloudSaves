@@ -4,7 +4,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-    <div style="text-align: center;">Open Cloud Saves</div>
-    <button onclick="onClose()">Close</button>
+    <div class="topheader"><p>Open Cloud Saves</p></div>
+    <div class="center"><p>Select your cloud provider</p></div>
+    <div class="cloudbtncont">
+    <div class="cloudproviderbtn" onclick="cloudSelected(0)"><p>Google Cloud</p></div>
+    </div>
+    <div class="cloudbtncont">
+    <div class="cloudproviderbtn" onclick="cloudSelected(1)"><p>One Drive</p></div>
+    </div>
+    <div class="cloudbtncont">
+    <div class="cloudproviderbtn" onclick="cloudSelected(2)"><p>Dropbox</p></div>
+    </div>
+    <div class="cloudbtncont">
+    <div class="cloudproviderbtn" onclick="cloudSelected(3)"><p>Box</p></div>
+    </div>
+    <div class="cloudbtncont">
+    <div class="cloudproviderbtn" onclick="cloudSelected(4)"><p>NextCloud</p></div>
+    </div>
 </body>
 </html>

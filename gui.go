@@ -309,6 +309,12 @@ func load(w webview.WebView, path string) error {
 	return nil
 }
 
+func commitCloudService(service int) error {
+	cloudperfs := GetCurrentCloudPerfsOrDefault()
+	cloudperfs.Cloud = service
+	return CommitCloudPerfs(cloudperfs)
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -324,6 +330,7 @@ func bindFunctions(w webview.WebView) {
 		load(w, path)
 	})
 	w.Bind("openDirDialog", openDirDialog)
+	w.Bind("commitCloudService", commitCloudService)
 }
 
 func DirSize(path string) (int64, error) {
