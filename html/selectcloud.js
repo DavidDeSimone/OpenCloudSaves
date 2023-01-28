@@ -1,3 +1,7 @@
+async function closeSelectCloud(element) {
+    refresh();
+}
+
 async function cloudSelected(cloudService) {
     await log("Selected " + cloudService);
     await commitCloudService(cloudService);
@@ -6,6 +10,7 @@ async function cloudSelected(cloudService) {
 
 async function setCurrentCloud() {
     const currentCloudEl = document.getElementById("currentcloudcont");
+    const closeModal = document.getElementById("closemodal");
     const service = await getCloudService();
     const prefix = "Current Cloud Storage: ";
     let value = "";
@@ -13,6 +18,7 @@ async function setCurrentCloud() {
     switch (service) {
         case -1: 
             currentCloudEl.style.display = 'none';
+            closeModal.style.display = 'none';
             break;
         case 0:
             value = "Google Cloud";
@@ -31,6 +37,7 @@ async function setCurrentCloud() {
             break;
         default:
             currentCloudEl.style.display = 'none';
+            closeModal.style.display = 'none';
             break;
     }
 
