@@ -448,11 +448,17 @@ func executeTemplate() (string, error) {
 		return "", err
 	}
 
+	syncgamejsbytes, err := fs.ReadFile(html, "html/syncgame.js")
+	if err != nil {
+		return "", err
+	}
+
 	htmlWriter.Flush()
 	result := b.String()
 	js := fmt.Sprintf("<script>%v</script>", jsContent)
 	css := fmt.Sprintf("<style>%v</style>", cssContent)
-	finalResult := css + result + js
+	syncgamejs := fmt.Sprintf("\n<script>%v</script>\n", string(syncgamejsbytes))
+	finalResult := css + result + js + syncgamejs
 	// fmt.Println(result)
 	return finalResult, nil
 }

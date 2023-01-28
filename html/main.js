@@ -16,6 +16,11 @@ async function onAddPathClicked(platform) {
 
 
 async function onSyncButtonClicked(element, name) {
+    const confirmEl = document.getElementById('bisync-confirm');
+    confirmEl.style.display = 'block';
+    window.pendingSyncGame = name;
+
+    return;
     const syncbtn = document.getElementById(`${name}-syncbtn`);
     const editbtn = document.getElementById(`${name}-editbtn`);
     const removebtn = document.getElementById(`${name}-removebtn`);

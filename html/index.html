@@ -45,8 +45,8 @@
         <tr>
         {{range .SaveFiles}}
             <td>{{.Filename}}</td>
-            <td>{{.ModifiedBy}}</td>
-            <td>{{.Size}}</td>
+            <td class="table-right-align">{{.ModifiedBy}}</td>
+            <td class="table-right-align">{{.Size}}</td>
           </tr>
         {{end}}
       </table>
@@ -96,7 +96,29 @@
         </div>
       </div>
     </div>
+</div>
+
+<div id="bisync-confirm" class="bisync-modal">
+  <span class="close" onclick="onSyncGameModalClosed(this)" title="Close Modal">&times;</span>
+  <div class="bisync-title"><p>Pending Sync Summary</p></div>
+  <div class="bisync-subtitle"><p>Your data is not sync'd yet, please read the summary and conduct the sync if everything looks good.</p></div>
+  <div id="sync-game-modal-loader" class="loader-cont"><span class="loader"></span></div>
+  <div class="bisync-modal-content">
+    <div class="bisync-line-cont">
+    <div class="bisync-line">Synching Path1 "/Users/daviddesimone/Library/Caches/OpenCloudSave/" with Path2 "opencloudsave-googledrive:opencloudsaves/user_settings/"</div>
+    <div class="bisync-line">- Path1    File is newer                       - user_overrides.json</div>
+    <div class="bisync-line">Path1:    1 changes:    0 new,    1 newer,    0 older,    0 deleted</div>
+    <div class="bisync-line">Path2 checking for diffs</div>
+    <div class="bisync-line">- Path1    Queue copy to Path2                 - opencloudsave-googledrive:opencloudsaves/user_settings/user_overrides.json</div>
+    <div class="bisync-line">- Path1    Do queued copies to                 - Path2</div>
+    </div>
+    <div class="signupbtn contentbutton" onclick="onSyncGameConfirm(this)">Confirm</div>
+    <div class="cancelbtn contentbutton" onclick="onSyncGameModalClosed(this)">Cancel</div>
   </div>
+
+
+
+</div>
 
 
 </body>
