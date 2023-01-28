@@ -8,6 +8,13 @@ body {
   border: 3px solid white;
 }
 
+.currentcloudcont {
+  text-align: center;
+  border: 3px solid white;
+  font-size: 22;
+}
+
+
 .topheader {
   text-align: center;
   border: 3px solid #04AA6D;

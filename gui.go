@@ -315,6 +315,15 @@ func commitCloudService(service int) error {
 	return CommitCloudPerfs(cloudperfs)
 }
 
+func getCloudService() (int, error) {
+	cloudperfs, err := GetCurrentCloudPerfs()
+	if err != nil {
+		return -1, nil
+	}
+
+	return cloudperfs.Cloud, nil
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -331,6 +340,10 @@ func bindFunctions(w webview.WebView) {
 	})
 	w.Bind("openDirDialog", openDirDialog)
 	w.Bind("commitCloudService", commitCloudService)
+	w.Bind("setCloudSelectScreen", func() error {
+		return setCloudSelectScreen(w)
+	})
+	w.Bind("getCloudService", getCloudService)
 }
 
 func DirSize(path string) (int64, error) {
