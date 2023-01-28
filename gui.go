@@ -19,6 +19,8 @@ import (
 	"github.com/webview/webview"
 )
 
+// @TODO merge everything to the embedded html synthetic fs
+
 //go:embed html
 var html embed.FS
 
