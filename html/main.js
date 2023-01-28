@@ -12,12 +12,6 @@ async function onAddPathClicked(platform) {
     const containerEl = document.getElementById(`${platform}-container`);
     const copyContainer = containerEl.cloneNode(true);
     containerEl.appendChild(copyContainer);
-
-    // TEST CODE
-    // const containers = document.getElementsByClassName(`${platform}-path`);
-    // for (let i = 0; i < containers.length; i++) {
-    //     log(`Paths: ${containers[i].value}`);
-    // }
 }
 
 
@@ -217,6 +211,15 @@ async function onChangeSearch(element) {
             acc[i].style.display = "none";
         }
     }
+}
+
+async function onSetCloudClicked(element) {
+    setCloudSelectScreen();
+}
+
+// @TODO
+async function onSyncSettingsClicked(element) {
+    await log("Not Implemented...")
 }
 
 

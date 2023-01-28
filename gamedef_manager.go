@@ -360,15 +360,25 @@ func (d *FsGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
 }
 
 func (dm *FsGameDefManager) CommitCloudUserOverride() error {
+	if dm.cm == nil {
+		fmt.Println("No cloud driver present")
+		return nil
+	}
+
 	userOverride := dm.GetUserOverrideLocation()
 	return ApplyCloudUserOverride(dm.cm, userOverride)
 }
 
 func ApplyCloudUserOverride(cm *CloudManager, userOverride string) error {
+	storage := GetCurrentStorageProvider()
+	if storage == nil {
+		return fmt.Errorf("no cloud storage set")
+	}
+
 	if userOverride == "" {
 		userOverride = GetDefaultUserOverridePath()
 	}
 
 	path := filepath.Dir(userOverride)
-	return cm.BisyncDir(GetOneDriveStorage(), path, ToplevelCloudFolder+"user_settings/")
+	return cm.BisyncDir(storage, path, ToplevelCloudFolder+"user_settings/")
 }

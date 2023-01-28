@@ -1,22 +1,24 @@
 package main
 
 import (
-	"embed"
 	"encoding/json"
 	"fmt"
 	"log"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/jessevdk/go-flags"
 )
 
 type Options struct {
-	Gamenames      []string          `short:"g" long:"gamenames" description:"The name of the game(s) you will attempt to sync"`
-	NoGUI          []bool            `short:"u" long:"no-gui" description:"Run in CLI mode with no GUI"`
-	AddCustomGames map[string]string `short:"a" long:"add-custom-games" description:"<KEY>:<JSON_VALUE> Adds a custom game description to user_overrides.json. This accepts a JSON blobs in the format defined in gamedef_map.json"`
-	UserOverride   []string          `short:"o" long:"user-override" description:"--user-override <FILE> Provide location for custom user override JSON file for game definitions"`
-	PrintGameDefs  []bool            `short:"p" long:"print-gamedefs" description:"Print current gamedef map as JSON"`
+	Gamenames        []string          `short:"g" long:"gamenames" description:"The name of the game(s) you will attempt to sync"`
+	NoGUI            []bool            `short:"u" long:"no-gui" description:"Run in CLI mode with no GUI"`
+	AddCustomGames   map[string]string `short:"a" long:"add-custom-games" description:"<KEY>:<JSON_VALUE> Adds a custom game description to user_overrides.json. This accepts a JSON blobs in the format defined in gamedef_map.json"`
+	UserOverride     []string          `short:"o" long:"user-override" description:"--user-override <FILE> Provide location for custom user override JSON file for game definitions"`
+	PrintGameDefs    []bool            `short:"p" long:"print-gamedefs" description:"Print current gamedef map as JSON"`
+	SyncUserSettings []bool            `short:"s" long:"--sync-user-settings" description:"Attempt to sync user settings from the current cloud provider. If no cloud provider is set, will be a NO-OP."`
+	SetCloud         []string          `short:"c" long:"--set-cloud" description:"Sets the current cloud. 0 - GOOGLE, 1 - ONEDRIVE, 2 - DROPBOX, 3 - BOX, 4 - NEXTCLOUD"`
 }
 
 type Message struct {
@@ -45,13 +47,15 @@ const CloudOperationUpload = 1 << 1
 const CloudOperationDelete = 1 << 2
 const CloudOperationAll = CloudOperationDownload | CloudOperationDelete | CloudOperationUpload
 
-//go:embed credentials.json
-var creds embed.FS
-
 const APP_NAME = "OpenCloudSave"
 
 func GetCurrentStorageProvider() Storage {
-	return GetDropBoxStorage()
+	storage, err := GetCurrentCloudStorage()
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return storage
 }
 
 func LogMessage(logs chan Message, format string, msg ...any) {
@@ -93,7 +97,18 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 		return
 	}
 
+	storage := GetCurrentStorageProvider()
+	if storage == nil {
+		logs <- Message{
+			Finished: true,
+			Err:      fmt.Errorf("no cloud provider set."),
+		}
+
+		return
+	}
+
 	LogMessage(logs, "Starting Upload Process...")
+
 	for _, gamename := range ops.Gamenames {
 		gamename = strings.TrimSpace(gamename)
 		LogMessage(logs, "Performing Check on %v", gamename)
@@ -116,7 +131,7 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 			//@TODO
 			// This needs a way to respect ignore/exts
 			// This should be as simple as --include/--exclude flags
-			err := cm.BisyncDir(GetCurrentStorageProvider(), syncpath.Path, remotePath)
+			err := cm.BisyncDir(storage, syncpath.Path, remotePath)
 			if err != nil {
 				fmt.Println(err)
 				continue
@@ -150,28 +165,60 @@ func main() {
 		SetupWindowsConsole()
 	}
 
-	cm := MakeCloudManager()
-	err := cm.CreateDriveIfNotExists(GetCurrentStorageProvider())
-	if err != nil {
-		log.Fatal(err)
-	}
 	ops := &Options{}
-	_, err = flags.Parse(ops)
+	_, err := flags.Parse(ops)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	if len(ops.SetCloud) > 0 {
+		cloud, err := strconv.Atoi(ops.SetCloud[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if cloud < GOOGLE || cloud > NEXT {
+			log.Fatal("Invalid cloud")
+		}
+
+		cloudperfs := GetCurrentCloudPerfsOrDefault()
+		cloudperfs.Cloud = cloud
+		err = CommitCloudPerfs(cloudperfs)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("Cloud Set!")
+		return
+	}
+
+	storage, _ := GetCurrentCloudStorage()
 	noGui := len(ops.NoGUI) == 1 && ops.NoGUI[0]
 	userOverrideLocation := ""
 	if len(ops.UserOverride) > 0 {
 		userOverrideLocation = ops.UserOverride[0]
 	}
 
-	err = ApplyCloudUserOverride(cm, userOverrideLocation)
-	if err != nil {
-		fmt.Println(err)
-		// log.Fatal(err)
+	cm := MakeCloudManager()
+	if len(ops.SyncUserSettings) > 0 && ops.SyncUserSettings[0] {
+		if storage == nil {
+			log.Fatal("Attempting to sync cloud data with no cloud provider set. Please set a cloud provider via --set-cloud <CLOUD_PROVIDER>")
+		}
+
+		err = cm.CreateDriveIfNotExists(storage)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = ApplyCloudUserOverride(cm, userOverrideLocation)
+		if err != nil {
+			fmt.Println(err)
+			log.Fatal(err)
+		}
+
+		fmt.Println("Cloud Settings In Sync")
+		return
 	}
 
 	dm := MakeGameDefManager(userOverrideLocation)

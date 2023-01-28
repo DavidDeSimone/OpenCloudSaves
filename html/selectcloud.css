@@ -1,0 +1,46 @@
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.center {
+  text-align: center;
+  border: 3px solid white;
+}
+
+.currentcloudcont {
+  text-align: center;
+  border: 3px solid white;
+  font-size: 22;
+}
+
+
+.topheader {
+  text-align: center;
+  border: 3px solid #04AA6D;
+  font-size: 28;
+  height: 80px;
+  width: 100%;
+  background-color: #04AA6D;
+  color: white;
+  margin: 0 0 10px;
+}
+
+.cloudbtncont {
+  margin: 20px;
+}
+
+.cloudproviderbtn {
+  background-color: #282e2cfd;
+  color: white;
+  text-align: center;
+  border: 3px solid #282e2cfd;
+  border-radius: 25px;
+  height: 50px;
+  width: 50%;
+  margin: auto;
+}
+
+.cloudproviderbtn:hover {
+  background-color: #626e6afd;;
+}

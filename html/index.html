@@ -6,6 +6,8 @@
 <body>
     <ul class="topnav">
         <li><div class="activeButton" onclick="openAddGamesMenu()" style="width:auto;">Add Games</div></li>
+        <li><div onclick="onSetCloudClicked(this)">Select Cloud</div></li>
+        <li><div onclick="onSyncSettingsClicked(this)">Sync Settings</div></li>
         <div class="search-container">
               <input type="text" placeholder="Search.." name="search" onchange="onChangeSearch(this)" onkeypress="onChangeSearch(this)" onpaste = "onChangeSearch(this)" oninput = "onChangeSearch(this)">
           </div>  
@@ -25,7 +27,8 @@
         {{if .SaveFilesFound}}
         <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{else}}
-        <div>No Save Files found for {{.Def.DisplayName}}</div>
+        <div class="nosavefoundcont"><p>No Save Files found for {{.Def.DisplayName}}</p></div>
+        <button id="{{.Def.DisplayName}}-syncbtn" disabled class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{end}}
 
         <button id="{{.Def.DisplayName}}-editbtn" class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>

@@ -19,6 +19,8 @@ import (
 	"github.com/webview/webview"
 )
 
+// @TODO merge everything to the embedded html synthetic fs
+
 //go:embed html
 var html embed.FS
 
@@ -307,6 +309,21 @@ func load(w webview.WebView, path string) error {
 	return nil
 }
 
+func commitCloudService(service int) error {
+	cloudperfs := GetCurrentCloudPerfsOrDefault()
+	cloudperfs.Cloud = service
+	return CommitCloudPerfs(cloudperfs)
+}
+
+func getCloudService() (int, error) {
+	cloudperfs, err := GetCurrentCloudPerfs()
+	if err != nil {
+		return -1, nil
+	}
+
+	return cloudperfs.Cloud, nil
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -322,6 +339,11 @@ func bindFunctions(w webview.WebView) {
 		load(w, path)
 	})
 	w.Bind("openDirDialog", openDirDialog)
+	w.Bind("commitCloudService", commitCloudService)
+	w.Bind("setCloudSelectScreen", func() error {
+		return setCloudSelectScreen(w)
+	})
+	w.Bind("getCloudService", getCloudService)
 }
 
 func DirSize(path string) (int64, error) {
@@ -445,6 +467,27 @@ func refreshMainContent(w webview.WebView) error {
 	return nil
 }
 
+func setCloudSelectScreen(w webview.WebView) error {
+	htmlbytes, err := fs.ReadFile(html, "html/selectcloud.html")
+	if err != nil {
+		return err
+	}
+
+	jsbytes, err := fs.ReadFile(html, "html/selectcloud.js")
+	if err != nil {
+		return err
+	}
+
+	cssbytes, err := fs.ReadFile(html, "html/selectcloud.css")
+	if err != nil {
+		return err
+	}
+
+	htmlcontent := fmt.Sprintf("<style>%v</style>", string(cssbytes)) + string(htmlbytes) + fmt.Sprintf("<script>%v</script>", string(jsbytes))
+	w.SetHtml(htmlcontent)
+	return nil
+}
+
 func GuiMain(ops *Options, dm GameDefManager) {
 	debug := true
 	w := webview.New(debug)
@@ -452,9 +495,19 @@ func GuiMain(ops *Options, dm GameDefManager) {
 	w.SetTitle("Open Cloud Save")
 	w.SetSize(800, 600, 0)
 	bindFunctions(w)
-	err := refreshMainContent(w)
-	if err != nil {
-		log.Fatal(err)
+
+	storage := GetCurrentStorageProvider()
+	if storage == nil {
+		err := setCloudSelectScreen(w)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		err := refreshMainContent(w)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
+
 	w.Run()
 }
