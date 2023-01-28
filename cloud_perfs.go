@@ -86,6 +86,17 @@ func GetCurrentCloudPerfs() (*CloudPerfs, error) {
 	return cloudperfs, nil
 }
 
+func GetCurrentCloudPerfsOrDefault() *CloudPerfs {
+	cloudperfs, err := GetCurrentCloudPerfs()
+	if err != nil {
+		cloudperfs = &CloudPerfs{
+			Cloud: GOOGLE,
+		}
+	}
+
+	return cloudperfs
+}
+
 func GetCurrentCloudStorage() (Storage, error) {
 	cloudperfs, err := GetCurrentCloudPerfs()
 	if err != nil {

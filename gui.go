@@ -445,6 +445,27 @@ func refreshMainContent(w webview.WebView) error {
 	return nil
 }
 
+func setCloudSelectScreen(w webview.WebView) error {
+	htmlbytes, err := fs.ReadFile(html, "html/selectcloud.html")
+	if err != nil {
+		return err
+	}
+
+	jsbytes, err := fs.ReadFile(html, "html/selectcloud.js")
+	if err != nil {
+		return err
+	}
+
+	cssbytes, err := fs.ReadFile(html, "html/selectcloud.css")
+	if err != nil {
+		return err
+	}
+
+	htmlcontent := fmt.Sprintf("<style>%v</style>", string(cssbytes)) + string(htmlbytes) + fmt.Sprintf("<script>%v</script>", string(jsbytes))
+	w.SetHtml(htmlcontent)
+	return nil
+}
+
 func GuiMain(ops *Options, dm GameDefManager) {
 	debug := true
 	w := webview.New(debug)
@@ -452,9 +473,19 @@ func GuiMain(ops *Options, dm GameDefManager) {
 	w.SetTitle("Open Cloud Save")
 	w.SetSize(800, 600, 0)
 	bindFunctions(w)
-	err := refreshMainContent(w)
-	if err != nil {
-		log.Fatal(err)
+
+	storage := GetCurrentStorageProvider()
+	if storage == nil {
+		err := setCloudSelectScreen(w)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		err := refreshMainContent(w)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
+
 	w.Run()
 }
