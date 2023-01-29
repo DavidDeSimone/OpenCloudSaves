@@ -19,6 +19,8 @@ type Options struct {
 	PrintGameDefs    []bool            `short:"p" long:"print-gamedefs" description:"Print current gamedef map as JSON"`
 	SyncUserSettings []bool            `short:"s" long:"--sync-user-settings" description:"Attempt to sync user settings from the current cloud provider. If no cloud provider is set, will be a NO-OP."`
 	SetCloud         []string          `short:"c" long:"--set-cloud" description:"Sets the current cloud. 0 - GOOGLE, 1 - ONEDRIVE, 2 - DROPBOX, 3 - BOX, 4 - NEXTCLOUD"`
+	DryRun           []bool            `short:"d" long:"--dry-run" description:"Does not actually perform any network operations."`
+	Verbose          []bool            `short:"v" long:"--verbose" description:"Enable verbose logging"`
 }
 
 type Message struct {
@@ -101,7 +103,7 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 	if storage == nil {
 		logs <- Message{
 			Finished: true,
-			Err:      fmt.Errorf("no cloud provider set."),
+			Err:      fmt.Errorf("no cloud provider set"),
 		}
 
 		return
@@ -131,7 +133,16 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 			//@TODO
 			// This needs a way to respect ignore/exts
 			// This should be as simple as --include/--exclude flags
-			err := cm.BisyncDir(storage, syncpath.Path, remotePath)
+			syncops := GetDefaultCloudOptions()
+			if len(ops.DryRun) > 0 && ops.DryRun[0] {
+				syncops.DryRun = true
+			}
+
+			if len(ops.Verbose) > 0 && ops.Verbose[0] {
+				syncops.Verbose = true
+			}
+
+			result, err := cm.BisyncDir(storage, syncops, syncpath.Path, remotePath)
 			if err != nil {
 				fmt.Println(err)
 				continue
@@ -139,6 +150,7 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 
 			LogMessage(logs, "All Operations Complete, files in sync")
 			logs <- Message{
+				Message:  result,
 				Finished: true,
 			}
 		}

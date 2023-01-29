@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -72,13 +73,16 @@ func pollLogs(key string) (string, error) {
 
 	select {
 	case res := <-channels.logs:
-		if res.Finished {
-			return "finished", nil
-		} else if res.Err != nil {
+		if res.Err != nil {
 			return "", res.Err
-		} else {
-			return res.Message, nil
 		}
+
+		resultJson, err := json.Marshal(res)
+		if err != nil {
+			return "", err
+		}
+
+		return string(resultJson), nil
 	default:
 		//no-op
 	}
@@ -109,6 +113,7 @@ func pollProgress(key string) (*ProgressEvent, error) {
 func syncGame(key string) {
 	ops := &Options{
 		Gamenames: []string{key},
+		Verbose:   []bool{true},
 	}
 	cm := MakeCloudManager()
 
@@ -324,6 +329,34 @@ func getCloudService() (int, error) {
 	return cloudperfs.Cloud, nil
 }
 
+func getSyncDryRun(name string) error {
+	ops := &Options{
+		DryRun:    []bool{true},
+		Gamenames: []string{name},
+		Verbose:   []bool{true},
+	}
+	channels := &ChannelProvider{
+		logs:     make(chan Message, 100),
+		progress: make(chan ProgressEvent, 15),
+	}
+
+	chanelMutex.Lock()
+	channelMap[name] = channels
+	chanelMutex.Unlock()
+
+	cm := MakeCloudManager()
+	dm := MakeGameDefManager("")
+	dm.SetCloudManager(cm)
+
+	go CliMain(cm, ops, dm, channels)
+	return nil
+}
+
+func getShouldPerformDryRun() (bool, error) {
+	cloudperfs := GetCurrentCloudPerfsOrDefault()
+	return cloudperfs.PerformDryRun, nil
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -344,6 +377,8 @@ func bindFunctions(w webview.WebView) {
 		return setCloudSelectScreen(w)
 	})
 	w.Bind("getCloudService", getCloudService)
+	w.Bind("getSyncDryRun", getSyncDryRun)
+	w.Bind("getShouldPerformDryRun", getShouldPerformDryRun)
 }
 
 func DirSize(path string) (int64, error) {
@@ -389,7 +424,6 @@ func buildGamelist(dm GameDefManager) []Game {
 			}
 
 			for _, dirFile := range dirFiles {
-				fmt.Println("Examining " + dirFile.Name())
 				if SyncFilter(dirFile.Name(), datapath) {
 					continue
 				}
@@ -448,11 +482,17 @@ func executeTemplate() (string, error) {
 		return "", err
 	}
 
+	syncgamejsbytes, err := fs.ReadFile(html, "html/syncgame.js")
+	if err != nil {
+		return "", err
+	}
+
 	htmlWriter.Flush()
 	result := b.String()
 	js := fmt.Sprintf("<script>%v</script>", jsContent)
 	css := fmt.Sprintf("<style>%v</style>", cssContent)
-	finalResult := css + result + js
+	syncgamejs := fmt.Sprintf("\n<script>%v</script>\n", string(syncgamejsbytes))
+	finalResult := css + result + js + syncgamejs
 	// fmt.Println(result)
 	return finalResult, nil
 }

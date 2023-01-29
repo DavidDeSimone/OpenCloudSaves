@@ -139,6 +139,10 @@ input[type=text], input[type=password] {
   background: #f1f1f1;
 }
 
+.table-right-align {
+  text-align: right;
+}
+
 .nosavefoundcont {
   text-align: center;
 }
@@ -201,6 +205,14 @@ input[type=text]:focus, input[type=password]:focus {
   width: 50%;
 }
 
+.signupbtn:disabled {
+  opacity: 30%;
+}
+
+.cancelbtn:disabled {
+  opacity: 30%;
+}
+
 /* Add padding to container elements */
 .container {
   padding: 16px;
@@ -226,6 +238,54 @@ input[type=text]:focus, input[type=password]:focus {
   margin: 5% auto 15% auto; /* 5% from the top, 15% from the bottom and centered */
   border: 1px solid #888;
   width: 80%; /* Could be more or less, depending on screen size */
+}
+
+.bisync-modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: #474e5d;
+  padding-top: 50px;
+}
+
+/* Modal Content/Box */
+.bisync-modal-content {
+  background-color: #fefefe;
+  margin: 5% auto 15% auto; /* 5% from the top, 15% from the bottom and centered */
+  border: 1px solid #888;
+  font-family: monospace;
+  /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
+  width: 95%; /* Could be more or less, depending on screen size */
+}
+
+.bisync-line-cont {
+  font-size: 12;
+  color: #111;
+  display: none;
+}
+
+.bisync-line {
+  margin-left: 5px;
+  margin-bottom: 10px;
+}
+
+.bisync-title {
+  font-size: 24;
+  color: white;
+  text-align: center;
+  outline: 3px;
+}
+
+.bisync-subtitle {
+  font-size: 16;
+  color: white;
+  text-align: center;
+  outline: 3px;
 }
 
 /* Style the horizontal ruler */
@@ -256,6 +316,67 @@ hr {
   clear: both;
   display: table;
 }
+
+.loader-cont {
+  margin-left: 47%;
+  margin-top: 5%;
+  display: block;
+}
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  border: 3px solid;
+  border-color: #FFF #FFF transparent transparent;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+.loader::after,
+.loader::before {
+  content: '';  
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  border: 3px solid;
+  border-color: transparent transparent #04ff00 #04ff00;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  animation: rotationBack 0.5s linear infinite;
+  transform-origin: center center;
+}
+.loader::before {
+  width: 32px;
+  height: 32px;
+  border-color: #FFF #FFF transparent transparent;
+  animation: rotation 1.5s linear infinite;
+}
+    
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+} 
+@keyframes rotationBack {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
 
 /* Change styles for cancel button and signup button on extra small screens */
 @media screen and (max-width: 300px) {
@@ -288,7 +409,7 @@ hr {
     padding-top: 12px;
     padding-bottom: 12px;
     text-align: center;
-    background-color: #04AA6D;
+    background-color: #585a59;
     color: white;
   }
 

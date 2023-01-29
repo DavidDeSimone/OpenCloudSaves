@@ -40,6 +40,18 @@ type Storage interface {
 type CloudManager struct {
 }
 
+type CloudOperationOptions struct {
+	Verbose bool
+	DryRun  bool
+}
+
+func GetDefaultCloudOptions() *CloudOperationOptions {
+	return &CloudOperationOptions{
+		Verbose: false,
+		DryRun:  false,
+	}
+}
+
 func MakeCloudManager() *CloudManager {
 	return &CloudManager{}
 }
@@ -82,14 +94,12 @@ func (cm *CloudManager) MakeStorageDrive(storage Storage) error {
 
 func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (bool, error) {
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	fmt.Println("Examining path " + path)
 	cmd := makeCommand(getCloudApp(), "lsjon", path+"/")
 	err := cmd.Run()
 	if err != nil {
 		return false, nil
 	}
 
-	fmt.Println("Found Path " + path)
 	return true, nil
 }
 
@@ -99,36 +109,55 @@ func (cm *CloudManager) MakeRemoteDir(storage Storage, remotePath string) error 
 	return cmd.Run()
 }
 
-func (cm *CloudManager) BisyncDir(storage Storage, localPath string, remotePath string) error {
+func (cm *CloudManager) BisyncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+	fmt.Println("Performing BiSync....")
 	_, err := os.Stat(localPath)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	exists, err := cm.DoesRemoteDirExist(storage, remotePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if !exists {
 		err = cm.MakeRemoteDir(storage, remotePath)
 		if err != nil {
-			return err
+			return "", err
 		}
+	}
+
+	defaultFlag := "--use-json-log"
+
+	verboseString := defaultFlag
+	if ops.Verbose {
+		verboseString = "-v"
+	}
+
+	dryRunString := defaultFlag
+	if ops.DryRun {
+		dryRunString = "--dry-run"
 	}
 
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	cmd := makeCommand(getCloudApp(), "-v", "bisync", localPath, path)
-	err = cmd.Run()
+	fmt.Println("Running Command ", getCloudApp(), defaultFlag, verboseString, dryRunString, "bisync", localPath, path)
+	cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, "bisync", localPath, path)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		exiterr := err.(*exec.ExitError)
 		if exiterr.ExitCode() == 2 {
-			cmd := makeCommand(getCloudApp(), "-v", "bisync", "--resync", localPath, path)
-			return cmd.Run()
+			fmt.Println("Need to run resync")
+			cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, "bisync", "--resync", localPath, path)
+			output, err = cmd.CombinedOutput()
+			if err != nil {
+				return "", err
+			}
+			fmt.Println("Output: " + string(output))
+			return string(output), nil
 		}
 
-		return err
+		return "", err
 	}
 
-	return nil
-
+	return string(output), nil
 }

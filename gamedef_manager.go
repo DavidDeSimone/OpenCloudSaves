@@ -380,5 +380,7 @@ func ApplyCloudUserOverride(cm *CloudManager, userOverride string) error {
 	}
 
 	path := filepath.Dir(userOverride)
-	return cm.BisyncDir(storage, path, ToplevelCloudFolder+"user_settings/")
+	ops := GetDefaultCloudOptions()
+	_, err := cm.BisyncDir(storage, ops, path, ToplevelCloudFolder+"user_settings/")
+	return err
 }
