@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -72,13 +73,16 @@ func pollLogs(key string) (string, error) {
 
 	select {
 	case res := <-channels.logs:
-		if res.Finished {
-			return "finished", nil
-		} else if res.Err != nil {
+		if res.Err != nil {
 			return "", res.Err
-		} else {
-			return res.Message, nil
 		}
+
+		resultJson, err := json.Marshal(res)
+		if err != nil {
+			return "", err
+		}
+
+		return string(resultJson), nil
 	default:
 		//no-op
 	}
@@ -324,6 +328,29 @@ func getCloudService() (int, error) {
 	return cloudperfs.Cloud, nil
 }
 
+func getSyncDryRun(name string) error {
+	ops := &Options{
+		DryRun:    []bool{true},
+		Gamenames: []string{name},
+		Verbose:   []bool{true},
+	}
+	channels := &ChannelProvider{
+		logs:     make(chan Message, 100),
+		progress: make(chan ProgressEvent, 15),
+	}
+
+	chanelMutex.Lock()
+	channelMap[name] = channels
+	chanelMutex.Unlock()
+
+	cm := MakeCloudManager()
+	dm := MakeGameDefManager("")
+	dm.SetCloudManager(cm)
+
+	go CliMain(cm, ops, dm, channels)
+	return nil
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -344,6 +371,7 @@ func bindFunctions(w webview.WebView) {
 		return setCloudSelectScreen(w)
 	})
 	w.Bind("getCloudService", getCloudService)
+	w.Bind("getSyncDryRun", getSyncDryRun)
 }
 
 func DirSize(path string) (int64, error) {
