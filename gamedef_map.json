@@ -2,25 +2,651 @@
     "Factorio": {
         "display_name": "Factorio",
         "steam_id": "427520",
-        "win_path": [{"path": "%AppData%\\Factorio\\saves", "parent": "saves", "inc":"", "ex":""}],
-        "linux_path": [{"path": "~/.factorio/saves", "parent": "saves", "inc":"", "ex":""}],
-        "darwin_path":  [{"path": "~/Library/Application Support/factorio/saves", "parent": "saves", "inc":"", "ex":""}],
+        "win_path": [
+            {
+                "path": "%AppData%\\Factorio\\saves",
+                "parent": "saves",
+                "inc": ""
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "~/.factorio/saves",
+                "parent": "saves",
+                "inc": ""
+            }
+        ],
+        "darwin_path": [
+            {
+                "path": "~/Library/Application Support/factorio/saves",
+                "parent": "saves",
+                "inc": ""
+            }
+        ],
         "saves_cross_compatible": true
     },
     "Dwarf Fortress": {
         "display_name": "Dwarf Fortress",
         "steam_id": "975370",
-        "win_path": [{"path": "%STEAM%\\steamapps\\common\\Dwarf Fortress\\save", "parent": "save"}],
-        "linux_path": [{"path": "%STEAM%/steamapps/common/Dwarf Fortress/save", "parent": "save"}],
+        "win_path": [
+            {
+                "path": "%STEAM%\\steamapps\\common\\Dwarf Fortress\\save",
+                "parent": "save"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/common/Dwarf Fortress/save",
+                "parent": "save"
+            }
+        ],
         "darwin_path": [],
         "saves_cross_compatible": true
     },
     "City Skylines": {
         "display_name": "City Skylines",
         "steam_id": "255710",
-        "win_path": [{"path": "%LocalAppData%\\Colossal Order\\Cities_Skylines\\Saves", "parent": "saves", "inc":"", "ex":""}],
-        "linux_path": [{"path": "~/.local/share/Colossal Order/Cities_Skylines/Saves", "parent": "saves", "inc":"", "ex":""}],
-        "darwin_path": [{"path": "~/Library/Application Support/Colossal Order/Cities_Skylines/Saves", "parent": "saves", "inc":"", "ex":""}],
+        "win_path": [
+            {
+                "path": "%LocalAppData%\\Colossal Order\\Cities_Skylines\\Saves",
+                "parent": "saves",
+                "inc": ""
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "~/.local/share/Colossal Order/Cities_Skylines/Saves",
+                "parent": "saves",
+                "inc": ""
+            }
+        ],
+        "darwin_path": [
+            {
+                "path": "~/Library/Application Support/Colossal Order/Cities_Skylines/Saves",
+                "parent": "saves",
+                "inc": ""
+            }
+        ],
         "saves_cross_compatible": true
+    },
+    "Baldur's Gate 3": {
+        "display_name": "Baldur's Gate 3",
+        "win_path": [
+            {
+                "path": "%LOCALAPPDATA%\\Larian Studios\\Baldur's Gate 3\\PlayerProfiles\\",
+                "inc": "",
+                "parent": "PlayerProfiles"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1086940/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": [
+            {
+                "path": "~/Documents/Larian Studios/Baldur's Gate 3/PlayerProfiles/",
+                "inc": "",
+                "parent": "PlayerProfiles"
+            }
+        ]
+    },
+    "Batman: Arkham Asylum": {
+        "display_name": "Batman: Arkham Asylum",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\Square Enix\\Batman Arkham Asylum GOTY\\SaveData\\",
+                "inc": "",
+                "parent": "SaveData"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/35140/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": [
+            {
+                "path": "~/Library/Application Support/Feral Interactive/Batman Arkham City GOTY/Save Data/",
+                "inc": "",
+                "parent": "Save Data"
+            }
+        ]
+    },
+    "Batman: Arkham City": {
+        "display_name": "Batman: Arkham City",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\WB Games\\Batman Arkham City GOTY\\SaveData\\",
+                "inc": "",
+                "parent": "SaveData"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/200260/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Batman: Arkham Knight": {
+        "display_name": "Batman: Arkham Knight",
+        "win_path": [],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/208650/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Cyberpunk 2077": {
+        "display_name": "Cyberpunk 2077",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Saved Games\\CD Projekt Red\\Cyberpunk 2077",
+                "inc": "",
+                "parent": "Cyberpunk 2077"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1091500/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Deep Rock Galactic": {
+        "display_name": "Deep Rock Galactic",
+        "win_path": [],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/548430/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Deltarune": {
+        "display_name": "Deltarune",
+        "win_path": [
+            {
+                "path": "%LOCALAPPDATA%\\DELTARUNE\\",
+                "inc": "",
+                "parent": "DELTARUNE"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1671210/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": [
+            {
+                "path": "~/Library/Application Support/com.tobyfox.deltarune/",
+                "inc": "",
+                "parent": "com.tobyfox.deltarune"
+            }
+        ]
+    },
+    "Elden Ring": {
+        "display_name": "Elden Ring",
+        "win_path": [
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1245620/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "FIFA 23": {
+        "display_name": "FIFA 23",
+        "win_path": [],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1811260/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Forza Horizon 5": {
+        "display_name": "Forza Horizon 5",
+        "win_path": [
+            {
+                "path": "%LOCALAPPDATA%\\Packages\\Microsoft.624F8B84B80_8wekyb3d8bbwe\\SystemAppData\\wgs\\",
+                "inc": "",
+                "parent": "wgs"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1551360/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "God of War": {
+        "display_name": "God of War",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Saved Games\\God of War\\",
+                "inc": "",
+                "parent": "God of War"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1593500/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Hollow Knight": {
+        "display_name": "Hollow Knight",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\AppData\\LocalLow\\Team Cherry\\Hollow Knight\\*.dat",
+                "inc": "",
+                "parent": "*.dat"
+            },
+            {
+                "path": "%USERPROFILE%\\AppData\\LocalLow\\Team Cherry\\Hollow Knight\\*.bak",
+                "inc": "",
+                "parent": "*.bak"
+            },
+            {
+                "path": "%USERPROFILE%\\AppData\\LocalLow\\Team Cherry\\Hollow Knight\\",
+                "inc": "",
+                "parent": "Hollow Knight"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "$XDG_CONFIG_HOME/unity3d/Team Cherry/Hollow Knight/*.dat",
+                "inc": "",
+                "parent": "*.dat"
+            }
+        ],
+        "darwin_path": [
+            {
+                "path": "~/Library/Application Support/unity.Team Cherry.Hollow Knight/",
+                "inc": "",
+                "parent": "unity.Team Cherry.Hollow Knight"
+            }
+        ]
+    },
+    "Horizon Zero Dawn": {
+        "display_name": "Horizon Zero Dawn",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\Horizon Zero Dawn\\Saved Game\\",
+                "inc": "",
+                "parent": "Saved Game"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1151640/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "It Takes Two": {
+        "display_name": "It Takes Two",
+        "win_path": [
+            {
+                "path": "%LOCALAPPDATA%\\ItTakesTwo\\",
+                "inc": "",
+                "parent": "ItTakesTwo"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1426210/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Kena: Bridge of Spirits": {
+        "display_name": "Kena: Bridge of Spirits",
+        "win_path": [
+            {
+                "path": "%LOCALAPPDATA%\\Kena\\Saved\\SaveGames\\",
+                "inc": "",
+                "parent": "SaveGames"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1954200/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Minecraft: Java Edition": {
+        "display_name": "Minecraft: Java Edition",
+        "win_path": [
+            {
+                "path": "%APPDATA%\\.minecraft\\saves",
+                "inc": "",
+                "parent": "saves"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "~/.minecraft/saves",
+                "inc": "",
+                "parent": "saves"
+            }
+        ],
+        "darwin_path": [
+            {
+                "path": "~/Library/Application Support/minecraft/saves",
+                "inc": "",
+                "parent": "saves"
+            }
+        ]
+    },
+    "Mount And Blade II: Bannerlord": {
+        "display_name": "Mount And Blade II: Bannerlord",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\Mount and Blade II Bannerlord\\Game Saves\\",
+                "inc": "",
+                "parent": "Game Saves"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/261550/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Naraka: Bladepoint": {
+        "display_name": "Naraka: Bladepoint",
+        "win_path": [],
+        "linux_path": [],
+        "darwin_path": []
+    },
+    "No Man's Sky": {
+        "display_name": "No Man's Sky",
+        "win_path": [
+            {
+                "path": "%APPDATA%\\HelloGames\\NMS\\",
+                "inc": "",
+                "parent": "NMS"
+            },
+            {
+                "path": "%LOCALAPPDATA%\\Packages\\HelloGames.NoMansSky_bs190hzg1sesy\\SystemAppData\\wgs",
+                "inc": "",
+                "parent": "wgs"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/275850/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Pathfinder: Wrath of the Righteous": {
+        "display_name": "Pathfinder: Wrath of the Righteous",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\AppData\\LocalLow\\Owlcat Games\\Pathfinder Wrath Of The Righteous\\Saved Games",
+                "inc": "",
+                "parent": "Saved Games"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1184370/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": [
+            {
+                "path": "~/Library/Application Support/unity.Owlcat Games.Pathfinder Wrath Of The Righteous/Saved Games",
+                "inc": "",
+                "parent": "Saved Games"
+            }
+        ]
+    },
+    "Persona 5 Royal": {
+        "display_name": "Persona 5 Royal",
+        "win_path": [
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1687950/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Project Zomboid": {
+        "display_name": "Project Zomboid",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Zomboid\\",
+                "inc": "",
+                "parent": "Zomboid"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "$HOME/Zomboid/Saves/",
+                "inc": "",
+                "parent": "Saves"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Red Dead Redemption 2": {
+        "display_name": "Red Dead Redemption 2",
+        "win_path": [
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1174180/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "RimWorld": {
+        "display_name": "RimWorld",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\AppData\\LocalLow\\Ludeon Studios\\RimWorld\\",
+                "inc": "",
+                "parent": "RimWorld"
+            },
+            {
+                "path": "%USERPROFILE%\\AppData\\LocalLow\\Ludeon Studios\\RimWorld by Ludeon Studios\\Saves\\",
+                "inc": "",
+                "parent": "Saves"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "$HOME/.config/unity3d/Ludeon Studios/RimWorld/Saves",
+                "inc": "",
+                "parent": "Saves"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Stardew Valley": {
+        "display_name": "Stardew Valley",
+        "win_path": [
+            {
+                "path": "%APPDATA%\\StardewValley\\Saves\\",
+                "inc": "",
+                "parent": "Saves"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "$XDG_CONFIG_HOME/StardewValley/Saves/",
+                "inc": "",
+                "parent": "Saves"
+            }
+        ],
+        "darwin_path": [
+            {
+                "path": "$HOME/.config/StardewValley/Saves/",
+                "inc": "",
+                "parent": "Saves"
+            }
+        ]
+    },
+    "Stellaris": {
+        "display_name": "Stellaris",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\Paradox Interactive\\Stellaris\\",
+                "inc": "",
+                "parent": "Stellaris"
+            },
+            {
+                "path": "%USERPROFILE%\\Documents\\Paradox Interactive\\Stellaris GamePass\\save games",
+                "inc": "",
+                "parent": "save games"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "$XDG_DATA_HOME/Paradox Interactive/Stellaris/",
+                "inc": "",
+                "parent": "Stellaris"
+            }
+        ],
+        "darwin_path": [
+            {
+                "path": "~/Documents/Paradox Interactive/Stellaris/",
+                "inc": "",
+                "parent": "Stellaris"
+            }
+        ]
+    },
+    "Temtem": {
+        "display_name": "Temtem",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\AppData\\LocalLow\\Crema\\Temtem\\savegame.dat",
+                "inc": "",
+                "parent": "savegame.dat"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/745920/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "The Witcher 3: Wild Hunt": {
+        "display_name": "The Witcher 3: Wild Hunt",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\The Witcher 3\\gamesaves\\",
+                "inc": "",
+                "parent": "gamesaves"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/292030/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Titanfall 2": {
+        "display_name": "Titanfall 2",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\Respawn\\Titanfall2\\profile\\savegames\\",
+                "inc": "",
+                "parent": "savegames"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1237970/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Train Simulator": {
+        "display_name": "Train Simulator",
+        "win_path": [],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/24010/pfx/",
+                "inc": "",
+                "parent": "pfx"
+            }
+        ],
+        "darwin_path": []
+    },
+    "Valheim": {
+        "display_name": "Valheim",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\AppData\\LocalLow\\IronGate\\Valheim\\",
+                "inc": "",
+                "parent": "Valheim"
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "$XDG_CONFIG_HOME/unity3d/IronGate/Valheim/",
+                "inc": "",
+                "parent": "Valheim"
+            }
+        ],
+        "darwin_path": []
     }
 }

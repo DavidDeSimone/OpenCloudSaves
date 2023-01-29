@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/sqweek/dialog"
 	"github.com/webview/webview"
@@ -239,7 +240,18 @@ func load(w webview.WebView, path string) error {
 func commitCloudService(service int) error {
 	cloudperfs := GetCurrentCloudPerfsOrDefault()
 	cloudperfs.Cloud = service
-	return CommitCloudPerfs(cloudperfs)
+	err := CommitCloudPerfs(cloudperfs)
+	if err != nil {
+		return err
+	}
+
+	storage, err := GetCurrentCloudStorage()
+	if err != nil {
+		return err
+	}
+
+	cm := MakeCloudManager()
+	return cm.CreateDriveIfNotExists(storage)
 }
 
 func getCloudService() (int, error) {
@@ -342,7 +354,6 @@ func DirSize(path string) (int64, error) {
 
 func buildGamelist(dm GameDefManager) []Game {
 	games := []Game{}
-	cm := MakeCloudManager()
 	for k, v := range dm.GetGameDefMap() {
 		game := Game{
 			Name: k,
@@ -363,25 +374,40 @@ func buildGamelist(dm GameDefManager) []Game {
 				continue
 			}
 
-			cloudops := GetDefaultCloudOptions()
-			cloudops.Include = datapath.Include
-			files, err := cm.ListFiles(cloudops, datapath.Path)
+			dirFiles, err := os.ReadDir(datapath.Path)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
 
-			for _, file := range files {
-				if file.IsDir {
+			for _, dirFile := range dirFiles {
+				if datapath.Include != "" {
+					match, err := filepath.Match(datapath.Include, dirFile.Name())
+					if !match || err != nil {
+						continue
+					}
+				}
+
+				info, err := dirFile.Info()
+				if err != nil {
+					fmt.Println(err)
 					continue
 				}
 
-				game.SaveFiles = append(game.SaveFiles,
-					SaveFile{
-						Filename:   file.Path,
-						ModifiedBy: file.ModTime,
-						Size:       fmt.Sprintf("%vMB", file.Size/(1024*1024)),
-					})
+				size := info.Size()
+				if info.IsDir() {
+					size, err = DirSize(datapath.Path + string(os.PathSeparator) + info.Name())
+					if err != nil {
+						fmt.Println(err)
+						continue
+					}
+				}
+
+				game.SaveFiles = append(game.SaveFiles, SaveFile{
+					Filename:   info.Name(),
+					ModifiedBy: info.ModTime().Format(time.RFC3339),
+					Size:       fmt.Sprintf("%vMB", size/(1024*1024)),
+				})
 			}
 		}
 

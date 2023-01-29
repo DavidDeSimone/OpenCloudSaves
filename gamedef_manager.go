@@ -16,19 +16,17 @@ var gamedefMap []byte
 
 type Datapath struct {
 	Path    string `json:"path"`
-	Exclude string `json:"ex"`
 	Include string `json:"inc"`
 	Parent  string `json:"parent"`
 }
 
 // @TODO better utilize saves_cross_compatible to split saves between platforms
 type GameDef struct {
-	DisplayName          string      `json:"display_name"`
-	SteamId              string      `json:"steam_id"`
-	WinPath              []*Datapath `json:"win_path"`
-	LinuxPath            []*Datapath `json:"linux_path"`
-	DarwinPath           []*Datapath `json:"darwin_path"`
-	SavesCrossCompatible bool        `json:"saves_cross_compatible"`
+	DisplayName string      `json:"display_name"`
+	SteamId     string      `json:"steam_id"`
+	WinPath     []*Datapath `json:"win_path"`
+	LinuxPath   []*Datapath `json:"linux_path"`
+	DarwinPath  []*Datapath `json:"darwin_path"`
 }
 
 type SyncFile struct {
@@ -116,12 +114,12 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 
 		for _, datapath := range d.WinPath {
 			path := datapath.Path
-			winpath := strings.Replace(path, "%AppData%", os.Getenv("APPDATA"), 1)
-			winpath = strings.Replace(winpath, "%LocalAppData%", os.Getenv("LOCALAPPDATA"), 1)
+			winpath := strings.Replace(path, "%APPDATA%", os.Getenv("APPDATA"), 1)
+			winpath = strings.Replace(winpath, "%LOCALAPPDATA%", os.Getenv("LOCALAPPDATA"), 1)
+			winpath = strings.Replace(winpath, "%USERPROFILE%", os.Getenv("USERPROFILE"), 1)
 			winpath = strings.Replace(winpath, "%STEAM%", steamLocation, 1)
 			result = append(result, Datapath{
 				Path:    prefix + winpath + separator,
-				Exclude: datapath.Exclude,
 				Parent:  datapath.Parent,
 				Include: datapath.Include,
 			})
@@ -143,7 +141,6 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 
 			result = append(result, Datapath{
 				Path:    prefix + darwinPath + separator,
-				Exclude: datapath.Exclude,
 				Parent:  datapath.Parent,
 				Include: datapath.Include,
 			})
@@ -162,10 +159,15 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			linuxPath := strings.Replace(path, "%STEAM%", steamLocation, 1)
 			linuxPath = strings.Replace(linuxPath, "~", homedir, 1)
 			linuxPath = strings.Replace(linuxPath, "$HOME", os.Getenv("HOME"), 1)
+			xdr := os.Getenv("XDG_CONFIG_HOME")
+			if xdr != "" {
+				linuxPath = strings.Replace(linuxPath, "$XDG_CONFIG_HOME", xdr, 1)
+			} else {
+				linuxPath = strings.Replace(linuxPath, "$XDG_CONFIG_HOME", homedir, 1)
+			}
 
 			result = append(result, Datapath{
 				Path:    prefix + linuxPath + separator,
-				Exclude: datapath.Exclude,
 				Parent:  datapath.Parent,
 				Include: datapath.Include,
 			})
