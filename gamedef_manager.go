@@ -15,11 +15,10 @@ import (
 var gamedefMap []byte
 
 type Datapath struct {
-	Path    string   `json:"path"`
-	Exts    []string `json:"exts"`
-	Ignore  []string `json:"ignore"`
-	Parent  string   `json:"parent"`
-	NetAuth int      `json:"netauth"`
+	Path    string `json:"path"`
+	Exclude string `json:"ex"`
+	Include string `json:"inc"`
+	Parent  string `json:"parent"`
 }
 
 // @TODO better utilize saves_cross_compatible to split saves between platforms
@@ -59,11 +58,6 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 
 	result := make(map[string]map[string]SyncFile)
 	for _, syncpath := range syncpaths {
-		ignoreMap := make(map[string]bool)
-		for _, ignore := range syncpath.Ignore {
-			ignoreMap[ignore] = true
-		}
-
 		result[syncpath.Parent] = make(map[string]SyncFile)
 		f, err := os.Open(syncpath.Path)
 		if err != nil {
@@ -87,11 +81,6 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 		}
 
 		for _, file := range files {
-			_, ok := ignoreMap[file.Name()]
-			if ok {
-				continue
-			}
-
 			if file.IsDir() {
 				fmt.Printf("Logging Directory %v\n", file.Name())
 				result[syncpath.Parent][file.Name()] = SyncFile{
@@ -101,24 +90,10 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 				continue
 			}
 
-			if len(syncpath.Exts) == 0 {
-				result[syncpath.Parent][file.Name()] = SyncFile{
-					Name:  syncpath.Path + file.Name(),
-					IsDir: false,
-				}
-				continue
+			result[syncpath.Parent][file.Name()] = SyncFile{
+				Name:  syncpath.Path + file.Name(),
+				IsDir: false,
 			}
-
-			for _, ext := range syncpath.Exts {
-				if filepath.Ext(file.Name()) == ext {
-					result[syncpath.Parent][file.Name()] = SyncFile{
-						Name:  syncpath.Path + file.Name(),
-						IsDir: false,
-					}
-					break
-				}
-			}
-
 		}
 	}
 
@@ -146,10 +121,9 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			winpath = strings.Replace(winpath, "%STEAM%", steamLocation, 1)
 			result = append(result, Datapath{
 				Path:    prefix + winpath + separator,
-				Exts:    datapath.Exts,
+				Exclude: datapath.Exclude,
 				Parent:  datapath.Parent,
-				Ignore:  datapath.Ignore,
-				NetAuth: datapath.NetAuth,
+				Include: datapath.Include,
 			})
 		}
 	} else if platform == "darwin" {
@@ -169,10 +143,9 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 
 			result = append(result, Datapath{
 				Path:    prefix + darwinPath + separator,
-				Exts:    datapath.Exts,
+				Exclude: datapath.Exclude,
 				Parent:  datapath.Parent,
-				Ignore:  datapath.Ignore,
-				NetAuth: datapath.NetAuth,
+				Include: datapath.Include,
 			})
 		}
 	} else if platform == "linux" {
@@ -192,10 +165,9 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 
 			result = append(result, Datapath{
 				Path:    prefix + linuxPath + separator,
-				Exts:    datapath.Exts,
+				Exclude: datapath.Exclude,
 				Parent:  datapath.Parent,
-				Ignore:  datapath.Ignore,
-				NetAuth: datapath.NetAuth,
+				Include: datapath.Include,
 			})
 		}
 	} else {

@@ -14,7 +14,7 @@ const NEXT = 4
 
 type CloudPerfs struct {
 	Cloud         int  `json:"cloud"`
-	PerformDryRun bool `json:performDryRun`
+	PerformDryRun bool `json:"performDryRun"`
 }
 
 func getCloudPerfDir() (string, error) {

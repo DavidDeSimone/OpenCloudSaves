@@ -19,59 +19,16 @@ async function onSyncButtonClicked(element, name) {
     await setupSyncModal(name);
     const confirmEl = document.getElementById('bisync-confirm');
     confirmEl.style.display = 'block';
-    // window.pendingSyncGame = name;
-
-
-    return;
-    const syncbtn = document.getElementById(`${name}-syncbtn`);
-    const editbtn = document.getElementById(`${name}-editbtn`);
-    const removebtn = document.getElementById(`${name}-removebtn`);
-
-    syncbtn.disabled = true;
-    editbtn.disabled = true;
-    removebtn.disabled = true;
-
-    log(`Sync ${name}`)
-    await syncGame(name)
-    const interval = setInterval(async () => {
-        const logEl = document.getElementById(`${name}-log`);
-        const progressEl = document.getElementById(`${name}-progress`);
-
-        logEl.style.display = "block";
-        progressEl.style.display = "block";
-
-        const logValue = await pollLogs(name);
-        if (logValue != "") {
-            logEl.textContent = logValue
-        }
-
-
-
-        const res = await pollProgress(name);
-        if (res.Total == 0) {
-            return;
-        }
-
-        progressEl.style.width = `${(res.Current / res.Total) * 100}%`;
-        if (res.Current == res.Total) {
-            clearInterval(interval);
-            syncbtn.disabled = false;
-            editbtn.disabled = false;
-            removebtn.disabled = false;
-            setTimeout(() => {
-                logEl.style.display = "none";
-                progressEl.style.display = "none";
-            }, 5000)
-        }
-    }, 1000)
 }
 
 async function onEditButtonClicked(element, name) {
-    log(`Edit ${name}`);
+    await log(`Edit ${name}`);
     pendingEdit = name;
 
     const def = await fetchGamedef(name);
+    await log(JSON.stringify(def));
     deserGamedef(def);
+    await log("Deser Gamedef....");
     openAddGamesMenu(false);
 }
 
@@ -113,11 +70,7 @@ function deserGamedef(gamedef) {
         }
 
         pathElems = document.getElementsByClassName(`${element}-path`)
-        extElems = document.getElementsByClassName(`${element}-ext`)
-        ignoreElems = document.getElementsByClassName(`${element}-ignore`)
-        downloadElems = document.getElementsByClassName(`${element}-download`)
-        uploadElems = document.getElementsByClassName(`${element}-upload`)
-        deleteElems = document.getElementsByClassName(`${element}-delete`)
+        includeElms = document.getElementsByClassName(`${element}-include`)
 
         for (let i = 0; i < pathElems.length; ++i) {
             const dataPath = def[i];
@@ -127,18 +80,11 @@ function deserGamedef(gamedef) {
             log(JSON.stringify(dataPath))
 
             pathEl = pathElems[i];
-            extEl = extElems[i];
-            ignoreEl = ignoreElems[i];
-            downloadEl = downloadElems[i];
-            uploadEl = uploadElems[i];
-            deleteEl = deleteElems[i];
+            includeEl = includeElms[i];
 
-            extEl.value = dataPath.Exts != null && dataPath.Exts.length > 0 ? dataPath.Exts.join(',') : "";
-            ignoreEl.value = dataPath.Ignore != null && dataPath.Ignore.length > 0 ? dataPath.Ignore.join(',') : "";
+            includeEl.value = dataPath.Include || "";
             pathEl.value = dataPath.Path;
-            downloadEl.checked = dataPath.Download;
-            uploadEl.checked = dataPath.Upload;
-            deleteEl.checked = dataPath.Delete;
+
         }
     });
 }
@@ -155,37 +101,15 @@ function submitGamedef() {
 
     ["Windows", "MacOS", "Linux"].forEach(element => {
         pathElems = document.getElementsByClassName(`${element}-path`)
-        extElems = document.getElementsByClassName(`${element}-ext`)
-        ignoreElems = document.getElementsByClassName(`${element}-ignore`)
-        downloadElems = document.getElementsByClassName(`${element}-download`)
-        uploadElems = document.getElementsByClassName(`${element}-upload`)
-        deleteElems = document.getElementsByClassName(`${element}-delete`)
+        includeElms = document.getElementsByClassName(`${element}-include`)
 
         for (let i = 0; i < pathElems.length; ++i) {
             pathEl = pathElems[i];
-            extEl = extElems[i];
-            ignoreEl = ignoreElems[i];
-            downloadEl = downloadElems[i];
-            uploadEl = uploadElems[i];
-            deleteEl = deleteElems[i];
-
-            let extensions = [];
-            if (extEl.value) {
-                extensions = extEl.value.split(',') || [extEl.value];
-            }
-    
-            let ignoreList = [];
-            if (ignoreEl.value) {
-                ignoreList = ignoreEl.value.split(',') || [ignoreEl.value];
-            }
+            includeEl = includeElms[i];
     
             result[element].push({
                 Path: pathEl.value || "",
-                Exts: extensions,
-                Ignore: ignoreList,
-                Download: downloadEl.checked,
-                Upload: uploadEl.checked,
-                Delete: deleteEl.checked
+                Include: includeEl.value || "",
             });
         }
     });

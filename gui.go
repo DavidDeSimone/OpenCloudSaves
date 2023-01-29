@@ -14,7 +14,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/sqweek/dialog"
 	"github.com/webview/webview"
@@ -133,12 +132,8 @@ func syncGame(key string) {
 }
 
 type GuiDatapath struct {
-	Path     string
-	Exts     []string
-	Ignore   []string
-	Download bool
-	Upload   bool
-	Delete   bool
+	Path    string
+	Include string
 }
 
 type GuiGamedef struct {
@@ -169,34 +164,22 @@ func fetchGamedef(key string) (*GuiGamedef, error) {
 
 	for _, path := range def.WinPath {
 		resultDef.Windows = append(resultDef.Windows, GuiDatapath{
-			Path:     path.Path,
-			Exts:     path.Exts,
-			Ignore:   path.Ignore,
-			Download: path.NetAuth&CloudOperationDownload != 0,
-			Upload:   path.NetAuth&CloudOperationUpload != 0,
-			Delete:   path.NetAuth&CloudOperationDelete != 0,
+			Path:    path.Path,
+			Include: path.Include,
 		})
 	}
 
 	for _, path := range def.DarwinPath {
 		resultDef.MacOS = append(resultDef.MacOS, GuiDatapath{
-			Path:     path.Path,
-			Exts:     path.Exts,
-			Ignore:   path.Ignore,
-			Download: path.NetAuth&CloudOperationDownload != 0,
-			Upload:   path.NetAuth&CloudOperationUpload != 0,
-			Delete:   path.NetAuth&CloudOperationDelete != 0,
+			Path:    path.Path,
+			Include: path.Include,
 		})
 	}
 
 	for _, path := range def.LinuxPath {
 		resultDef.Linux = append(resultDef.Linux, GuiDatapath{
-			Path:     path.Path,
-			Exts:     path.Exts,
-			Ignore:   path.Ignore,
-			Download: path.NetAuth&CloudOperationDownload != 0,
-			Upload:   path.NetAuth&CloudOperationUpload != 0,
-			Delete:   path.NetAuth&CloudOperationDelete != 0,
+			Path:    path.Path,
+			Include: path.Include,
 		})
 	}
 
@@ -215,17 +198,6 @@ func commitGamedef(gamedef GuiGamedef) {
 	}
 
 	for _, def := range gamedef.Windows {
-		netauth := 0
-		if def.Download {
-			netauth |= CloudOperationDownload
-		}
-		if def.Upload {
-			netauth |= CloudOperationUpload
-		}
-		if def.Delete {
-			netauth |= CloudOperationDelete
-		}
-
 		list := strings.Split(def.Path, string(os.PathSeparator))
 		parent := ""
 		if len(list) == 0 {
@@ -236,25 +208,12 @@ func commitGamedef(gamedef GuiGamedef) {
 
 		gamedefMap[gamedef.Name].WinPath = append(gamedefMap[gamedef.Name].WinPath, &Datapath{
 			Path:    def.Path,
-			Exts:    def.Exts,
-			Ignore:  def.Ignore,
+			Include: def.Include,
 			Parent:  parent,
-			NetAuth: netauth,
 		})
 	}
 
 	for _, def := range gamedef.MacOS {
-		netauth := 0
-		if def.Download {
-			netauth |= CloudOperationDownload
-		}
-		if def.Upload {
-			netauth |= CloudOperationUpload
-		}
-		if def.Delete {
-			netauth |= CloudOperationDelete
-		}
-
 		list := strings.Split(def.Path, string(os.PathSeparator))
 		parent := ""
 		if len(list) == 0 {
@@ -265,25 +224,12 @@ func commitGamedef(gamedef GuiGamedef) {
 
 		gamedefMap[gamedef.Name].DarwinPath = append(gamedefMap[gamedef.Name].DarwinPath, &Datapath{
 			Path:    def.Path,
-			Exts:    def.Exts,
-			Ignore:  def.Ignore,
+			Include: def.Include,
 			Parent:  parent,
-			NetAuth: netauth,
 		})
 	}
 
 	for _, def := range gamedef.Linux {
-		netauth := 0
-		if def.Download {
-			netauth |= CloudOperationDownload
-		}
-		if def.Upload {
-			netauth |= CloudOperationUpload
-		}
-		if def.Delete {
-			netauth |= CloudOperationDelete
-		}
-
 		list := strings.Split(def.Path, string(os.PathSeparator))
 		parent := ""
 		if len(list) == 0 {
@@ -294,10 +240,8 @@ func commitGamedef(gamedef GuiGamedef) {
 
 		gamedefMap[gamedef.Name].LinuxPath = append(gamedefMap[gamedef.Name].LinuxPath, &Datapath{
 			Path:    def.Path,
-			Exts:    def.Exts,
-			Ignore:  def.Ignore,
+			Include: def.Include,
 			Parent:  parent,
-			NetAuth: netauth,
 		})
 	}
 
@@ -397,6 +341,7 @@ func DirSize(path string) (int64, error) {
 
 func buildGamelist(dm GameDefManager) []Game {
 	games := []Game{}
+	cm := MakeCloudManager()
 	for k, v := range dm.GetGameDefMap() {
 		game := Game{
 			Name: k,
@@ -417,37 +362,25 @@ func buildGamelist(dm GameDefManager) []Game {
 				continue
 			}
 
-			dirFiles, err := os.ReadDir(datapath.Path)
+			cloudops := GetDefaultCloudOptions()
+			cloudops.Include = datapath.Include
+			files, err := cm.ListFiles(cloudops, datapath.Path)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
 
-			for _, dirFile := range dirFiles {
-				if SyncFilter(dirFile.Name(), datapath) {
+			for _, file := range files {
+				if file.IsDir {
 					continue
 				}
 
-				info, err := dirFile.Info()
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
-
-				size := info.Size()
-				if info.IsDir() {
-					size, err = DirSize(datapath.Path + string(os.PathSeparator) + info.Name())
-					if err != nil {
-						fmt.Println(err)
-						continue
-					}
-				}
-
-				game.SaveFiles = append(game.SaveFiles, SaveFile{
-					Filename:   info.Name(),
-					ModifiedBy: info.ModTime().Format(time.RFC3339),
-					Size:       fmt.Sprintf("%vMB", size/(1024*1024)),
-				})
+				game.SaveFiles = append(game.SaveFiles,
+					SaveFile{
+						Filename:   file.Name,
+						ModifiedBy: file.ModTime,
+						Size:       fmt.Sprintf("%vMB", file.Size/(1024*1024)),
+					})
 			}
 		}
 

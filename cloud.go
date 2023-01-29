@@ -43,6 +43,7 @@ type CloudManager struct {
 type CloudOperationOptions struct {
 	Verbose bool
 	DryRun  bool
+	Include string
 }
 
 func GetDefaultCloudOptions() *CloudOperationOptions {
@@ -109,6 +110,38 @@ func (cm *CloudManager) MakeRemoteDir(storage Storage, remotePath string) error 
 	return cmd.Run()
 }
 
+type CloudFile struct {
+	Path     string
+	Name     string
+	Size     int64
+	MimeType string
+	ModTime  string
+	IsDir    bool
+}
+
+func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) ([]CloudFile, error) {
+	defaultFlag := "--use-json-log"
+	include := defaultFlag
+	if ops.Include != "" {
+		include = fmt.Sprintf("--include=%v", ops.Include)
+	}
+
+	fmt.Println("Running Command ", getCloudApp(), defaultFlag, include, "lsjson", localPath)
+	cmd := makeCommand(getCloudApp(), defaultFlag, include, "lsjson", localPath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+
+	arr := []CloudFile{}
+	err = json.Unmarshal(output, &arr)
+	if err != nil {
+		return nil, err
+	}
+
+	return arr, nil
+}
+
 func (cm *CloudManager) BisyncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	fmt.Println("Performing BiSync....")
 	_, err := os.Stat(localPath)
@@ -127,6 +160,10 @@ func (cm *CloudManager) BisyncDir(storage Storage, ops *CloudOperationOptions, l
 		}
 	}
 
+	// We can't pass an empty string as a flag to the rclone command, but we
+	// can pass the same flag multiple times. We use this as a hack to enable
+	// conditional commands with a varargs function. There is likely a better way to
+	// do this, but this should be generally low cost.
 	defaultFlag := "--use-json-log"
 
 	verboseString := defaultFlag
@@ -139,20 +176,25 @@ func (cm *CloudManager) BisyncDir(storage Storage, ops *CloudOperationOptions, l
 		dryRunString = "--dry-run"
 	}
 
+	include := defaultFlag
+	if ops.Include != "" {
+		include = fmt.Sprintf("--include=%v", ops.Include)
+	}
+
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	fmt.Println("Running Command ", getCloudApp(), defaultFlag, verboseString, dryRunString, "bisync", localPath, path)
-	cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, "bisync", localPath, path)
+	fmt.Println("Running Command ", getCloudApp(), defaultFlag, verboseString, dryRunString, include, "bisync", localPath, path)
+	cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, include, "bisync", localPath, path)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		exiterr := err.(*exec.ExitError)
 		if exiterr.ExitCode() == 2 {
 			fmt.Println("Need to run resync")
-			cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, "bisync", "--resync", localPath, path)
+			fmt.Println("Running Command ", getCloudApp(), defaultFlag, verboseString, dryRunString, include, "--resync", "bisync", localPath, path)
+			cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, include, "bisync", "--resync", localPath, path)
 			output, err = cmd.CombinedOutput()
 			if err != nil {
 				return "", err
 			}
-			fmt.Println("Output: " + string(output))
 			return string(output), nil
 		}
 

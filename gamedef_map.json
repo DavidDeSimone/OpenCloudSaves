@@ -2,25 +2,25 @@
     "Factorio": {
         "display_name": "Factorio",
         "steam_id": "427520",
-        "win_path": [{"path": "%AppData%\\Factorio\\saves", "parent": "saves", "exts": [".zip"], "netauth":7}],
-        "linux_path": [{"path": "~/.factorio/saves", "parent": "saves", "exts": [".zip"], "netauth":7}],
-        "darwin_path":  [{"path": "~/Library/Application Support/factorio/saves", "parent": "saves", "exts": [".zip"], "netauth":7}],
+        "win_path": [{"path": "%AppData%\\Factorio\\saves", "parent": "saves", "inc":"", "ex":""}],
+        "linux_path": [{"path": "~/.factorio/saves", "parent": "saves", "inc":"", "ex":""}],
+        "darwin_path":  [{"path": "~/Library/Application Support/factorio/saves", "parent": "saves", "inc":"", "ex":""}],
         "saves_cross_compatible": true
     },
     "Dwarf Fortress": {
         "display_name": "Dwarf Fortress",
         "steam_id": "975370",
-        "win_path": [{"path": "%STEAM%\\steamapps\\common\\Dwarf Fortress\\save", "parent": "save", "netauth":7}],
-        "linux_path": [{"path": "%STEAM%/steamapps/common/Dwarf Fortress/save", "parent": "save", "netauth":7}],
+        "win_path": [{"path": "%STEAM%\\steamapps\\common\\Dwarf Fortress\\save", "parent": "save"}],
+        "linux_path": [{"path": "%STEAM%/steamapps/common/Dwarf Fortress/save", "parent": "save"}],
         "darwin_path": [],
         "saves_cross_compatible": true
     },
     "City Skylines": {
         "display_name": "City Skylines",
         "steam_id": "255710",
-        "win_path": [{"path": "%LocalAppData%\\Colossal Order\\Cities_Skylines\\Saves", "parent": "saves", "exts": [".crp"], "netauth":7}],
-        "linux_path": [{"path": "~/.local/share/Colossal Order/Cities_Skylines/Saves", "parent": "saves", "exts": [".crp"], "netauth":7}],
-        "darwin_path": [{"path": "~/Library/Application Support/Colossal Order/Cities_Skylines/Saves", "parent": "saves", "exts": [".crp"], "netauth":7}],
+        "win_path": [{"path": "%LocalAppData%\\Colossal Order\\Cities_Skylines\\Saves", "parent": "saves", "inc":"", "ex":""}],
+        "linux_path": [{"path": "~/.local/share/Colossal Order/Cities_Skylines/Saves", "parent": "saves", "inc":"", "ex":""}],
+        "darwin_path": [{"path": "~/Library/Application Support/Colossal Order/Cities_Skylines/Saves", "parent": "saves", "inc":"", "ex":""}],
         "saves_cross_compatible": true
     }
 }
