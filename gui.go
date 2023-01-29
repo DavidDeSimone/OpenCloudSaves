@@ -278,6 +278,29 @@ func getShouldPerformDryRun() (bool, error) {
 	return cloudperfs.PerformDryRun, nil
 }
 
+func getCloudPerfs() (string, error) {
+	cloudperfs := GetCurrentCloudPerfsOrDefault()
+	json, err := json.Marshal(cloudperfs)
+	return string(json), err
+}
+
+func commitCloudPerfs(cloudJson string) error {
+	fmt.Println("Commiting Cloud Perfs " + cloudJson)
+	cloudperfs := &CloudPerfs{}
+	err := json.Unmarshal([]byte(cloudJson), cloudperfs)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Writing cloud perfs")
+	err = CommitCloudPerfs(cloudperfs)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -299,6 +322,8 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("getCloudService", getCloudService)
 	w.Bind("getSyncDryRun", getSyncDryRun)
 	w.Bind("getShouldPerformDryRun", getShouldPerformDryRun)
+	w.Bind("getCloudPerfs", getCloudPerfs)
+	w.Bind("commitCloudPerfs", commitCloudPerfs)
 }
 
 func DirSize(path string) (int64, error) {

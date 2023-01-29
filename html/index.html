@@ -103,7 +103,19 @@
 <div id="settings-modal" class="settings-modal">
   <span class="close" onclick="onSettingsModalClosed(this)" title="Close Modal">&times;</span>
   <div class="settings-modal-content">
-    <p>Hello World!</p>
+    <div class="settings-title">Settings</div>
+    <hr>
+    <div class="settings-switch-cont">
+      <label class="switch switch-float">
+        <input id="settings-dry-run" type="checkbox" onclick="onSettingsToggle(this)">
+        <span class="slider round"></span>
+      </label>
+      <div class="setting-text">
+        <p>Perform a Dry Run prior to sync.</p>
+      </div>
+    </div>
+    <div class="clearfix">
+    </div>
   </div>
 
 </div>
