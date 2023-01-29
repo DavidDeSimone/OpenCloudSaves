@@ -89,26 +89,6 @@ func pollLogs(key string) (string, error) {
 	return "", nil
 }
 
-func pollProgress(key string) (*ProgressEvent, error) {
-	chanelMutex.Lock()
-	channels, ok := channelMap[key]
-	chanelMutex.Unlock()
-
-	if !ok {
-		return nil, fmt.Errorf("failed to find progress event")
-	}
-
-	result := &ProgressEvent{}
-	select {
-	case res := <-channels.progress:
-		result = &res
-	default:
-		//no-op
-	}
-
-	return result, nil
-}
-
 func syncGame(key string) {
 	ops := &Options{
 		Gamenames: []string{key},
@@ -119,9 +99,7 @@ func syncGame(key string) {
 	dm := MakeGameDefManager("")
 	dm.SetCloudManager(cm)
 	channels := &ChannelProvider{
-		logs:     make(chan Message, 100),
-		cancel:   make(chan Cancellation, 1),
-		progress: make(chan ProgressEvent, 20),
+		logs: make(chan Message, 100),
 	}
 
 	go CliMain(cm, ops, dm, channels)
@@ -280,8 +258,7 @@ func getSyncDryRun(name string) error {
 		Verbose:   []bool{true},
 	}
 	channels := &ChannelProvider{
-		logs:     make(chan Message, 100),
-		progress: make(chan ProgressEvent, 15),
+		logs: make(chan Message, 100),
 	}
 
 	chanelMutex.Lock()
@@ -310,7 +287,6 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("commitGamedef", commitGamedef)
 	w.Bind("removeGamedefByKey", removeGamedefByKey)
 	w.Bind("fetchGamedef", fetchGamedef)
-	w.Bind("pollProgress", pollProgress)
 	w.Bind("pollLogs", pollLogs)
 	w.Bind("require", func(path string) {
 		load(w, path)
@@ -377,7 +353,7 @@ func buildGamelist(dm GameDefManager) []Game {
 
 				game.SaveFiles = append(game.SaveFiles,
 					SaveFile{
-						Filename:   file.Name,
+						Filename:   file.Path,
 						ModifiedBy: file.ModTime,
 						Size:       fmt.Sprintf("%vMB", file.Size/(1024*1024)),
 					})
@@ -420,13 +396,18 @@ func executeTemplate() (string, error) {
 		return "", err
 	}
 
+	settingsjsbytes, err := fs.ReadFile(html, "html/settings.js")
+	if err != nil {
+		return "", err
+	}
+
 	htmlWriter.Flush()
 	result := b.String()
 	js := fmt.Sprintf("<script>%v</script>", jsContent)
 	css := fmt.Sprintf("<style>%v</style>", cssContent)
 	syncgamejs := fmt.Sprintf("\n<script>%v</script>\n", string(syncgamejsbytes))
-	finalResult := css + result + js + syncgamejs
-	// fmt.Println(result)
+	settingsjs := fmt.Sprintf("<script>%v</script>\n", string(settingsjsbytes))
+	finalResult := css + result + js + syncgamejs + settingsjs
 	return finalResult, nil
 }
 

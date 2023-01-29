@@ -19,10 +19,6 @@
 {{range .Games}}
 <button class="accordion" id="{{.Def.DisplayName}}-accordion">{{.Def.DisplayName}}</button>
 <div class="panel" id="{{.Def.DisplayName}}-panel">
-    <div id="{{.Def.DisplayName}}-log" style="display: none;">This will be the log message</div>
-    <div class="meter" style="height: 30px;">
-        <span id="{{.Def.DisplayName}}-progress" style="width: 1%; display: none;"></span>
-    </div>
     <div>
         {{if .SaveFilesFound}}
         <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
@@ -102,8 +98,13 @@
     <button id="sync-modal-confirm" class="signupbtn contentbutton" disabled onclick="onSyncGameConfirm(this)">Confirm</button>
     <button id="sync-modal-cancel" class="cancelbtn contentbutton" disabled onclick="onSyncGameModalClosed(this)">Cancel</button>
   </div>
+</div>
 
-
+<div id="settings-modal" class="settings-modal">
+  <span class="close" onclick="onSettingsModalClosed(this)" title="Close Modal">&times;</span>
+  <div class="settings-modal-content">
+    <p>Hello World!</p>
+  </div>
 
 </div>
 

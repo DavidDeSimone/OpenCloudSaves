@@ -148,11 +148,9 @@ async function onSetCloudClicked(element) {
     setCloudSelectScreen();
 }
 
-// @TODO
 async function onSyncSettingsClicked(element) {
-    await log("Not Implemented...")
+    onSettingsModalOpen()
 }
-
 
 function setupAccordionHandler() {
     var acc = document.getElementsByClassName("accordion");

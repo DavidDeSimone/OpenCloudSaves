@@ -29,25 +29,9 @@ type Message struct {
 	Err      error
 }
 
-type Cancellation struct {
-	ShouldCancel bool
-}
-
-type ProgressEvent struct {
-	Current int64
-	Total   int64
-}
-
 type ChannelProvider struct {
-	logs     chan Message
-	cancel   chan Cancellation
-	progress chan ProgressEvent
+	logs chan Message
 }
-
-const CloudOperationDownload = 1 << 0
-const CloudOperationUpload = 1 << 1
-const CloudOperationDelete = 1 << 2
-const CloudOperationAll = CloudOperationDownload | CloudOperationDelete | CloudOperationUpload
 
 const APP_NAME = "OpenCloudSave"
 
@@ -241,8 +225,7 @@ func main() {
 
 	if noGui {
 		channels := &ChannelProvider{
-			logs:     make(chan Message, 100),
-			progress: make(chan ProgressEvent, 15),
+			logs: make(chan Message, 100),
 		}
 		go consoleLogger(channels.logs)
 		CliMain(cm, ops, dm, channels)
