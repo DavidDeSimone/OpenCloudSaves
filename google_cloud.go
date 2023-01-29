@@ -10,7 +10,7 @@ func (gs *GoogleStorage) GetName() string {
 }
 
 func (gs *GoogleStorage) GetCreationCommand() *exec.Cmd {
-	return makeCommand(getCloudApp(), "config", "create", gs.GetName(), "scope=drive.file")
+	return makeCommand(getCloudApp(), "config", "create", gs.GetName(), "drive", "scope=drive.file")
 }
 
 var gdrive *GoogleStorage

@@ -24,7 +24,7 @@
         <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{else}}
         <div class="nosavefoundcont"><p>No Save Files found for {{.Def.DisplayName}}</p></div>
-        <button id="{{.Def.DisplayName}}-syncbtn" disabled class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
+        <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{end}}
 
         <button id="{{.Def.DisplayName}}-editbtn" class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>
@@ -89,7 +89,7 @@
 </div>
 
 <div id="bisync-confirm" class="bisync-modal">
-  <span class="close" onclick="onSyncGameModalClosed(this)" title="Close Modal">&times;</span>
+  <span id="close-sync-window" class="close" onclick="onSyncGameModalClosed(this)" title="Close">&times;</span>
   <div class="bisync-title"><p>Sync Summary</p></div>
   <div id="bisync-subtitle" class="bisync-subtitle"><p>Your data is not sync'd yet, please read the summary and conduct the sync if everything looks good.</p></div>
   <div id="sync-game-modal-loader" class="loader-cont"><span class="loader"></span></div>

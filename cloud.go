@@ -58,13 +58,20 @@ func MakeCloudManager() *CloudManager {
 }
 
 func (cm *CloudManager) CreateDriveIfNotExists(storage Storage) error {
+	fmt.Println("Checking if drive exists...")
 	if cm.ContainsStorageDrive(storage) {
 		fmt.Println("Not creating drive...")
 		return nil
 	}
 
 	fmt.Println("Creating new drive for storage....")
-	return cm.MakeStorageDrive(storage)
+	err := cm.MakeStorageDrive(storage)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
 }
 
 func (cm *CloudManager) ContainsStorageDrive(storage Storage) bool {
@@ -89,7 +96,9 @@ func (cm *CloudManager) ContainsStorageDrive(storage Storage) bool {
 }
 
 func (cm *CloudManager) MakeStorageDrive(storage Storage) error {
+	fmt.Println("Getting creation command...")
 	cmd := storage.GetCreationCommand()
+	fmt.Println("Running creation command", cmd)
 	return cmd.Run()
 }
 
@@ -144,10 +153,11 @@ func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) 
 
 func (cm *CloudManager) BisyncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	fmt.Println("Performing BiSync....")
-	_, err := os.Stat(localPath)
-	if err != nil {
-		return "", err
-	}
+	os.MkdirAll(localPath, os.ModePerm)
+	// _, err := os.Stat(localPath)
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	exists, err := cm.DoesRemoteDirExist(storage, remotePath)
 	if err != nil {

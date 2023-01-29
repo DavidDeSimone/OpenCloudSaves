@@ -61,6 +61,9 @@ async function onFinished(result, dryRun) {
 
         lineContEl.appendChild(lineDiv);
     }
+
+    const closeSyncButtonEl = document.getElementById('close-sync-window');
+    closeSyncButtonEl.style.display = 'block';
 }
 
 function resetSyncModal() {
@@ -77,9 +80,13 @@ function resetSyncModal() {
     syncConfirm.style.display = 'block';
     loaderEl.style.display = 'block';
     pendingSyncGame = null;
+    const closeSyncButtonEl = document.getElementById('close-sync-window');
+    closeSyncButtonEl.style.display = 'block';
 }
 
 async function sync(gameName, dryRun) {
+    const closeSyncButtonEl = document.getElementById('close-sync-window');
+    closeSyncButtonEl.style.display = 'none';
     log(`Checking If should perform dry run - ${dryRun}`);
     const bisyncSubtitle = document.getElementById('bisync-subtitle');
     if (dryRun) {
@@ -123,6 +130,7 @@ async function setupSyncModal(gameName) {
 async function onSyncGameModalClosed(element) {
     const model = document.getElementById("bisync-confirm");
     model.style.display = 'none';
+    refresh();
 }
 
 async function onSyncGameConfirm(element) {
