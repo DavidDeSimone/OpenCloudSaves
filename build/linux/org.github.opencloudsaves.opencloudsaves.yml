@@ -51,3 +51,13 @@ modules:
         url: https://github.com/DavidDeSimone/OpenCloudSaves
         tag: v0.10.1-rc1
         commit: 78da533c5e23287ec4884727f5618d88c880328d
+  - name: rclone
+    buildsystem: simple
+    build-commands:
+      - $GOROOT/bin/go build -trimpath -o rclone
+      - install -D rclone /app/bin/bin/rclone
+    sources:
+      - type: git
+        url: https://github.com/DavidDeSimone/rclone
+        tag: v1.0.0
+        commit: 4cb2ddcb95dd053674e710bde5e97f8be06d3944
