@@ -11,10 +11,30 @@ import (
 
 var ToplevelCloudFolder = "opencloudsaves/"
 
+// This is a real hack, but we fallback to $PATH if we can't
+// find rclone locally in linux. This is really only for the
+// flatpak - we control what version of rclone will be on $PATH
+// within the flatpak
+var checkedLinuxPath = false
+var relativeLinuxPath = true
+
 func getCloudApp() string {
 	switch runtime.GOOS {
 	case "linux":
-		return "./bin/rclone"
+		if !checkedLinuxPath {
+			_, err := os.Stat("./bin/rclone")
+			if err != nil {
+				relativeLinuxPath = false
+			}
+			checkedLinuxPath = true
+		}
+
+		if relativeLinuxPath {
+			return "./bin/rclone"
+		} else {
+			return "rclone"
+		}
+
 	case "windows":
 		return "./bin/rclone.exe"
 	case "darwin":

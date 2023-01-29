@@ -50,3 +50,13 @@ modules:
       - type: git
         path: ../..
         branch: main
+  - name: rclone
+    buildsystem: simple
+    build-commands:
+      - $GOROOT/bin/go build
+      - install -D rclone /app/bin/rclone
+    sources:
+      - type: git
+        url: https://github.com/DavidDeSimone/rclone
+        tag: v1.0.2
+        commit: 8d620b4c48a7e493290167397af779cb65d069c7
