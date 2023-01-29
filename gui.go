@@ -113,6 +113,7 @@ func pollProgress(key string) (*ProgressEvent, error) {
 func syncGame(key string) {
 	ops := &Options{
 		Gamenames: []string{key},
+		Verbose:   []bool{true},
 	}
 	cm := MakeCloudManager()
 
@@ -351,6 +352,11 @@ func getSyncDryRun(name string) error {
 	return nil
 }
 
+func getShouldPerformDryRun() (bool, error) {
+	cloudperfs := GetCurrentCloudPerfsOrDefault()
+	return cloudperfs.PerformDryRun, nil
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -372,6 +378,7 @@ func bindFunctions(w webview.WebView) {
 	})
 	w.Bind("getCloudService", getCloudService)
 	w.Bind("getSyncDryRun", getSyncDryRun)
+	w.Bind("getShouldPerformDryRun", getShouldPerformDryRun)
 }
 
 func DirSize(path string) (int64, error) {
@@ -417,7 +424,6 @@ func buildGamelist(dm GameDefManager) []Game {
 			}
 
 			for _, dirFile := range dirFiles {
-				fmt.Println("Examining " + dirFile.Name())
 				if SyncFilter(dirFile.Name(), datapath) {
 					continue
 				}

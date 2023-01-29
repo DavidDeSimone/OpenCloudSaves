@@ -94,14 +94,12 @@ func (cm *CloudManager) MakeStorageDrive(storage Storage) error {
 
 func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (bool, error) {
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	fmt.Println("Examining path " + path)
 	cmd := makeCommand(getCloudApp(), "lsjon", path+"/")
 	err := cmd.Run()
 	if err != nil {
 		return false, nil
 	}
 
-	fmt.Println("Found Path " + path)
 	return true, nil
 }
 

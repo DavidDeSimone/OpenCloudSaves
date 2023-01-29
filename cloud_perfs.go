@@ -13,7 +13,8 @@ const BOX = 3
 const NEXT = 4
 
 type CloudPerfs struct {
-	Cloud int `json:"cloud"`
+	Cloud         int  `json:"cloud"`
+	PerformDryRun bool `json:performDryRun`
 }
 
 func getCloudPerfDir() (string, error) {
@@ -90,7 +91,8 @@ func GetCurrentCloudPerfsOrDefault() *CloudPerfs {
 	cloudperfs, err := GetCurrentCloudPerfs()
 	if err != nil {
 		cloudperfs = &CloudPerfs{
-			Cloud: GOOGLE,
+			Cloud:         GOOGLE,
+			PerformDryRun: true,
 		}
 	}
 

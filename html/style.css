@@ -205,6 +205,14 @@ input[type=text]:focus, input[type=password]:focus {
   width: 50%;
 }
 
+.signupbtn:disabled {
+  opacity: 30%;
+}
+
+.cancelbtn:disabled {
+  opacity: 30%;
+}
+
 /* Add padding to container elements */
 .container {
   padding: 16px;
@@ -257,7 +265,8 @@ input[type=text]:focus, input[type=password]:focus {
 
 .bisync-line-cont {
   font-size: 12;
-  color: #111
+  color: #111;
+  display: none;
 }
 
 .bisync-line {
@@ -309,8 +318,9 @@ hr {
 }
 
 .loader-cont {
-  margin-left: 45%;
-  display: none;
+  margin-left: 47%;
+  margin-top: 5%;
+  display: block;
 }
 
 .loader {
