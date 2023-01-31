@@ -41,10 +41,12 @@ function onRemoveButtonClicked(element, name) {
 function onAddGameClosed() {
     pendingEdit = null;
     document.getElementById('id01').style.display='none';
+    document.getElementById('accordion-cont').style.display='block';
     refresh();
 }
 
 function openAddGamesMenu(deser = true) {
+    document.getElementById('accordion-cont').style.display='none';
     document.getElementById('id01').style.display='block';
     if (deser) {
         deserGamedef({
@@ -89,7 +91,7 @@ function deserGamedef(gamedef) {
     });
 }
 
-function submitGamedef() {
+async function submitGamedef() {
     document.getElementById('id01').style.display='none';
     gamenameEl = document.getElementById('gamename');
     let result = {
@@ -115,11 +117,11 @@ function submitGamedef() {
     });
 
     if (pendingEdit) {
-        removeGamedefByKey(pendingEdit);
+        await removeGamedefByKey(pendingEdit);
         pendingEdit = null;
     }
 
-    commitGamedef(result)
+    await commitGamedef(result)
     refresh()
 }
 
