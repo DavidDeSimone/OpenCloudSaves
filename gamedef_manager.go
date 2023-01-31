@@ -267,7 +267,7 @@ func (d *FsGameDefManager) GetGameDefMap() map[string]*GameDef {
 }
 
 func GetDefaultUserOverridePath() string {
-	cacheDir, err := os.UserCacheDir()
+	cacheDir, err := os.UserConfigDir()
 	if err != nil {
 		log.Fatal(err)
 	}
