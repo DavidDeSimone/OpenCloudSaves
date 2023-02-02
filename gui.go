@@ -313,6 +313,11 @@ func commitCloudPerfs(cloudJson string) error {
 	return nil
 }
 
+func clearUserSettings() error {
+	path := GetDefaultUserOverridePath()
+	return os.Remove(path)
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -336,6 +341,7 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("getShouldPerformDryRun", getShouldPerformDryRun)
 	w.Bind("getCloudPerfs", getCloudPerfs)
 	w.Bind("commitCloudPerfs", commitCloudPerfs)
+	w.Bind("clearUserSettings", clearUserSettings)
 }
 
 func DirSize(path string) (int64, error) {

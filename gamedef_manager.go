@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -20,7 +21,6 @@ type Datapath struct {
 	Parent  string `json:"parent"`
 }
 
-// @TODO better utilize saves_cross_compatible to split saves between platforms
 type GameDef struct {
 	DisplayName string      `json:"display_name"`
 	SteamId     string      `json:"steam_id"`
@@ -118,6 +118,12 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			winpath = strings.Replace(winpath, "%LOCALAPPDATA%", os.Getenv("LOCALAPPDATA"), 1)
 			winpath = strings.Replace(winpath, "%USERPROFILE%", os.Getenv("USERPROFILE"), 1)
 			winpath = strings.Replace(winpath, "%STEAM%", steamLocation, 1)
+
+			current, err := user.Current()
+			if err != nil {
+				winpath = strings.ReplaceAll(winpath, "%USERID%", current.Username)
+			}
+
 			result = append(result, Datapath{
 				Path:    prefix + winpath + separator,
 				Parent:  datapath.Parent,
@@ -164,6 +170,24 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				linuxPath = strings.Replace(linuxPath, "$XDG_CONFIG_HOME", xdr, 1)
 			} else {
 				linuxPath = strings.Replace(linuxPath, "$XDG_CONFIG_HOME", homedir, 1)
+			}
+
+			fmt.Println(datapath.Parent)
+			if datapath.Parent == "pfx" {
+				if len(d.WinPath) == 0 {
+					fmt.Println("Unable to resolve " + datapath.Path)
+					continue
+				}
+
+				winpath := d.WinPath[0].Path
+				winpath = strings.Replace(winpath, "%APPDATA%", "users/steamuser/AppData/Roaming/", 1)
+				winpath = strings.Replace(winpath, "%LOCALAPPDATA%", "users/steamuser/AppData/Local/", 1)
+				winpath = strings.Replace(winpath, "%USERPROFILE%", "users/steamuser/", 1)
+				winpath = strings.ReplaceAll(winpath, "%USERID", "steamuser")
+				winpath = strings.ReplaceAll(winpath, "\\", "/")
+
+				datapath.Path = datapath.Path + "drive_c/" + winpath
+				fmt.Println("Datapath " + datapath.Path)
 			}
 
 			result = append(result, Datapath{

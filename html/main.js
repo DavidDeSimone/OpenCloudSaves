@@ -55,6 +55,11 @@ function openAddGamesMenu(deser = true) {
     }
 }
 
+function onClearUserSettings() {
+    clearUserSettings();
+    refresh();
+}
+
 function deserGamedef(gamedef) {
     const gamenameEl = document.getElementById('gamename');
     gamenameEl.value = gamedef.Name;

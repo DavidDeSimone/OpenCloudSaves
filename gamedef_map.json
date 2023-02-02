@@ -135,18 +135,6 @@
         ],
         "darwin_path": []
     },
-    "Batman: Arkham Knight": {
-        "display_name": "Batman: Arkham Knight",
-        "win_path": [],
-        "linux_path": [
-            {
-                "path": "%STEAM%/steamapps/compatdata/208650/pfx/",
-                "inc": "",
-                "parent": "pfx"
-            }
-        ],
-        "darwin_path": []
-    },
     "Cyberpunk 2077": {
         "display_name": "Cyberpunk 2077",
         "win_path": [
@@ -159,18 +147,6 @@
         "linux_path": [
             {
                 "path": "%STEAM%/steamapps/compatdata/1091500/pfx/",
-                "inc": "",
-                "parent": "pfx"
-            }
-        ],
-        "darwin_path": []
-    },
-    "Deep Rock Galactic": {
-        "display_name": "Deep Rock Galactic",
-        "win_path": [],
-        "linux_path": [
-            {
-                "path": "%STEAM%/steamapps/compatdata/548430/pfx/",
                 "inc": "",
                 "parent": "pfx"
             }
@@ -204,6 +180,11 @@
     "Elden Ring": {
         "display_name": "Elden Ring",
         "win_path": [
+            {
+                "path": "%USERPROFILE%\\AppData\\Roaming\\EldenRing\\",
+                "inc": "",
+                "parent": "EldenRing"
+            }
         ],
         "linux_path": [
             {
@@ -392,12 +373,6 @@
         ],
         "darwin_path": []
     },
-    "Naraka: Bladepoint": {
-        "display_name": "Naraka: Bladepoint",
-        "win_path": [],
-        "linux_path": [],
-        "darwin_path": []
-    },
     "No Man's Sky": {
         "display_name": "No Man's Sky",
         "win_path": [
@@ -448,6 +423,9 @@
     "Persona 5 Royal": {
         "display_name": "Persona 5 Royal",
         "win_path": [
+            {
+                "path": "%LOCALAPPDATA%\\Packages\\SEGAofAmericaInc.F0cb6b3aer_s751p9cej88mt\\SystemAppData\\wgs\\%USERID%\\"
+            }
         ],
         "linux_path": [
             {
@@ -479,6 +457,11 @@
     "Red Dead Redemption 2": {
         "display_name": "Red Dead Redemption 2",
         "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\Rockstar Games\\Red Dead Redemption 2\\Profiles\\%USERID%\\",
+                "parent": "pfx",
+                "inc": ""
+            }
         ],
         "linux_path": [
             {
