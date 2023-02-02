@@ -111,7 +111,7 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 
 		for _, syncpath := range syncpaths {
 			LogMessage(logs, "Examining Path %v", syncpath.Path)
-			remotePath := fmt.Sprintf("%v%v/%v/", ToplevelCloudFolder, gamename, syncpath.Parent)
+			remotePath := fmt.Sprintf("%v%v/", ToplevelCloudFolder, gamename)
 			LogMessage(logs, "Performing BiDirectional Sync: "+remotePath)
 
 			//@TODO

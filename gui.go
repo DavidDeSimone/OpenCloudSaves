@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -177,50 +176,23 @@ func commitGamedef(gamedef GuiGamedef) {
 	}
 
 	for _, def := range gamedef.Windows {
-		list := strings.Split(def.Path, string(os.PathSeparator))
-		parent := ""
-		if len(list) == 0 {
-			parent = def.Path
-		} else {
-			parent = list[len(list)-1]
-		}
-
 		gamedefMap[gamedef.Name].WinPath = append(gamedefMap[gamedef.Name].WinPath, &Datapath{
 			Path:    def.Path,
 			Include: def.Include,
-			Parent:  parent,
 		})
 	}
 
 	for _, def := range gamedef.MacOS {
-		list := strings.Split(def.Path, string(os.PathSeparator))
-		parent := ""
-		if len(list) == 0 {
-			parent = def.Path
-		} else {
-			parent = list[len(list)-1]
-		}
-
 		gamedefMap[gamedef.Name].DarwinPath = append(gamedefMap[gamedef.Name].DarwinPath, &Datapath{
 			Path:    def.Path,
 			Include: def.Include,
-			Parent:  parent,
 		})
 	}
 
 	for _, def := range gamedef.Linux {
-		list := strings.Split(def.Path, string(os.PathSeparator))
-		parent := ""
-		if len(list) == 0 {
-			parent = def.Path
-		} else {
-			parent = list[len(list)-1]
-		}
-
 		gamedefMap[gamedef.Name].LinuxPath = append(gamedefMap[gamedef.Name].LinuxPath, &Datapath{
 			Path:    def.Path,
 			Include: def.Include,
-			Parent:  parent,
 		})
 	}
 

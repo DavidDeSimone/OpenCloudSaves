@@ -18,7 +18,6 @@ var gamedefMap []byte
 type Datapath struct {
 	Path    string `json:"path"`
 	Include string `json:"inc"`
-	Parent  string `json:"parent"`
 }
 
 type GameDef struct {
@@ -34,7 +33,6 @@ type SyncFile struct {
 	IsDir bool
 }
 
-// @TODO on the steam deck, we may have saves on the SD card - this needs to be accounted for
 func (d *GameDef) GetSteamLocation() string {
 	switch runtime.GOOS {
 	case "windows":
@@ -56,12 +54,12 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 
 	result := make(map[string]map[string]SyncFile)
 	for _, syncpath := range syncpaths {
-		result[syncpath.Parent] = make(map[string]SyncFile)
+		result[syncpath.Path] = make(map[string]SyncFile)
 		f, err := os.Open(syncpath.Path)
 		if err != nil {
 			// @TODO This is kind of a hack, but I need to think of a better way to handle this.
 			// The goal is to capture games installed on the SD card as well.
-			if runtime.GOOS == "linux" && strings.Index(syncpath.Parent, "~/.local/share/Steam") == 0 {
+			if runtime.GOOS == "linux" && strings.Index(syncpath.Path, "~/.local/share/Steam") == 0 {
 				syncpath.Path = strings.Replace(syncpath.Path, "~/.local/share/Steam", "/run/media/mmcblk0p1", 1)
 				f, err = os.Open(syncpath.Path)
 				if err != nil {
@@ -81,14 +79,14 @@ func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
 		for _, file := range files {
 			if file.IsDir() {
 				fmt.Printf("Logging Directory %v\n", file.Name())
-				result[syncpath.Parent][file.Name()] = SyncFile{
+				result[syncpath.Path][file.Name()] = SyncFile{
 					Name:  syncpath.Path + file.Name(),
 					IsDir: true,
 				}
 				continue
 			}
 
-			result[syncpath.Parent][file.Name()] = SyncFile{
+			result[syncpath.Path][file.Name()] = SyncFile{
 				Name:  syncpath.Path + file.Name(),
 				IsDir: false,
 			}
@@ -126,7 +124,6 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 
 			result = append(result, Datapath{
 				Path:    prefix + winpath + separator,
-				Parent:  datapath.Parent,
 				Include: datapath.Include,
 			})
 		}
@@ -147,7 +144,6 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 
 			result = append(result, Datapath{
 				Path:    prefix + darwinPath + separator,
-				Parent:  datapath.Parent,
 				Include: datapath.Include,
 			})
 		}
@@ -172,8 +168,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				linuxPath = strings.Replace(linuxPath, "$XDG_CONFIG_HOME", homedir, 1)
 			}
 
-			fmt.Println(datapath.Parent)
-			if datapath.Parent == "pfx" {
+			if strings.Contains(datapath.Path, "/pfx/") {
 				if len(d.WinPath) == 0 {
 					fmt.Println("Unable to resolve " + datapath.Path)
 					continue
@@ -192,7 +187,6 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 
 			result = append(result, Datapath{
 				Path:    prefix + linuxPath + separator,
-				Parent:  datapath.Parent,
 				Include: datapath.Include,
 			})
 		}
@@ -214,7 +208,6 @@ type GameDefManager interface {
 	CommitUserOverrides() error
 	AddUserOverride(key string, jsonOverride string) error
 	GetGameDefMap() map[string]*GameDef
-	GetFilesForGame(id string, parent string) (map[string]SyncFile, error)
 	GetSyncpathForGame(id string) ([]Datapath, error)
 	GetUserOverrideLocation() string
 	SetCloudManager(cm *CloudManager)
@@ -330,22 +323,6 @@ func MakeGameDefManager(userOverride string) GameDefManager {
 	dm.ApplyUserOverrides()
 
 	return dm
-}
-
-func (d *FsGameDefManager) GetFilesForGame(id string, parent string) (map[string]SyncFile, error) {
-	driver, ok := d.gamedefs[id]
-	if !ok {
-		return nil, fmt.Errorf("failed to find game (%v)", id)
-	}
-	result, err := driver.GetFilenames()
-	if err != nil {
-		return nil, err
-	}
-	files, ok := result[parent]
-	if !ok {
-		return nil, fmt.Errorf("failed to find parent (%v) for game (%v)", parent, id)
-	}
-	return files, nil
 }
 
 func (d *FsGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
