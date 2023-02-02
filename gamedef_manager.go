@@ -186,7 +186,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				winpath = strings.ReplaceAll(winpath, "%USERID", "steamuser")
 				winpath = strings.ReplaceAll(winpath, "\\", "/")
 
-				datapath.Path = datapath.Path + "drive_c/" + winpath
+				linuxPath = linuxPath + "drive_c/" + winpath
 				fmt.Println("Datapath " + datapath.Path)
 			}
 
