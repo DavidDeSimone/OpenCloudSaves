@@ -17,6 +17,7 @@
 
 <div id="accordion-cont">
 {{range .Games}}
+{{if not .Def.Hidden}}
 <button class="accordion" id="{{.Def.DisplayName}}-accordion">{{.Def.DisplayName}}</button>
 <div class="panel" id="{{.Def.DisplayName}}-panel">
     <div>
@@ -51,7 +52,8 @@
       
 
 </div>
-{{end}}
+{{end}} <!-- if not .Def.Hidden -->
+{{end}} <!-- range .Games -->
 </div>
 
 

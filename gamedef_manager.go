@@ -26,6 +26,7 @@ type GameDef struct {
 	WinPath     []*Datapath `json:"win_path"`
 	LinuxPath   []*Datapath `json:"linux_path"`
 	DarwinPath  []*Datapath `json:"darwin_path"`
+	Hidden      bool        `json:"hidden"`
 }
 
 type SyncFile struct {
@@ -44,56 +45,6 @@ func (d *GameDef) GetSteamLocation() string {
 	default:
 		return ""
 	}
-}
-
-func (d *GameDef) GetFilenames() (map[string]map[string]SyncFile, error) {
-	syncpaths, err := d.GetSyncpaths()
-	if err != nil {
-		return nil, err
-	}
-
-	result := make(map[string]map[string]SyncFile)
-	for _, syncpath := range syncpaths {
-		result[syncpath.Path] = make(map[string]SyncFile)
-		f, err := os.Open(syncpath.Path)
-		if err != nil {
-			// @TODO This is kind of a hack, but I need to think of a better way to handle this.
-			// The goal is to capture games installed on the SD card as well.
-			if runtime.GOOS == "linux" && strings.Index(syncpath.Path, "~/.local/share/Steam") == 0 {
-				syncpath.Path = strings.Replace(syncpath.Path, "~/.local/share/Steam", "/run/media/mmcblk0p1", 1)
-				f, err = os.Open(syncpath.Path)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				return nil, err
-			}
-		}
-
-		defer f.Close()
-		files, err := f.Readdir(0)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, file := range files {
-			if file.IsDir() {
-				fmt.Printf("Logging Directory %v\n", file.Name())
-				result[syncpath.Path][file.Name()] = SyncFile{
-					Name:  syncpath.Path + file.Name(),
-					IsDir: true,
-				}
-				continue
-			}
-
-			result[syncpath.Path][file.Name()] = SyncFile{
-				Name:  syncpath.Path + file.Name(),
-				IsDir: false,
-			}
-		}
-	}
-
-	return result, nil
 }
 
 func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
@@ -178,11 +129,10 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				winpath = strings.Replace(winpath, "%APPDATA%", "users/steamuser/AppData/Roaming/", 1)
 				winpath = strings.Replace(winpath, "%LOCALAPPDATA%", "users/steamuser/AppData/Local/", 1)
 				winpath = strings.Replace(winpath, "%USERPROFILE%", "users/steamuser/", 1)
-				winpath = strings.ReplaceAll(winpath, "%USERID", "steamuser")
+				winpath = strings.ReplaceAll(winpath, "%USERID%", "steamuser")
 				winpath = strings.ReplaceAll(winpath, "\\", "/")
 
 				linuxPath = linuxPath + "drive_c/" + winpath
-				fmt.Println("Datapath " + datapath.Path)
 			}
 
 			result = append(result, Datapath{
@@ -208,6 +158,7 @@ type GameDefManager interface {
 	CommitUserOverrides() error
 	AddUserOverride(key string, jsonOverride string) error
 	GetGameDefMap() map[string]*GameDef
+	RemoveGameDef(key string)
 	GetSyncpathForGame(id string) ([]Datapath, error)
 	GetUserOverrideLocation() string
 	SetCloudManager(cm *CloudManager)
@@ -215,6 +166,14 @@ type GameDefManager interface {
 
 func (d *FsGameDefManager) SetCloudManager(cm *CloudManager) {
 	d.cm = cm
+}
+
+func (d *FsGameDefManager) RemoveGameDef(key string) {
+	fmt.Println("Removing " + key)
+	entry, ok := d.gamedefs[key]
+	if ok {
+		entry.Hidden = true
+	}
 }
 
 func (d *FsGameDefManager) ApplyUserOverrides() error {

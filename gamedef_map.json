@@ -247,12 +247,12 @@
         "display_name": "Hollow Knight",
         "win_path": [
             {
-                "path": "%USERPROFILE%\\AppData\\LocalLow\\Team Cherry\\Hollow Knight\\*.dat",
+                "path": "%USERPROFILE%\\AppData\\LocalLow\\Team Cherry\\Hollow Knight\\",
                 "inc": "",
                 "parent": "*.dat"
             },
             {
-                "path": "%USERPROFILE%\\AppData\\LocalLow\\Team Cherry\\Hollow Knight\\*.bak",
+                "path": "%USERPROFILE%\\AppData\\LocalLow\\Team Cherry\\Hollow Knight\\",
                 "inc": "",
                 "parent": "*.bak"
             },
@@ -264,7 +264,7 @@
         ],
         "linux_path": [
             {
-                "path": "$XDG_CONFIG_HOME/unity3d/Team Cherry/Hollow Knight/*.dat",
+                "path": "$XDG_CONFIG_HOME/unity3d/Team Cherry/Hollow Knight/",
                 "inc": "",
                 "parent": "*.dat"
             }
@@ -535,7 +535,7 @@
         ],
         "linux_path": [
             {
-                "path": "$XDG_DATA_HOME/Paradox Interactive/Stellaris/",
+                "path": "$XDG_CONFIG_HOME/Paradox Interactive/Stellaris/",
                 "inc": "",
                 "parent": "Stellaris"
             }
@@ -596,18 +596,6 @@
         "linux_path": [
             {
                 "path": "%STEAM%/steamapps/compatdata/1237970/pfx/",
-                "inc": "",
-                "parent": "pfx"
-            }
-        ],
-        "darwin_path": []
-    },
-    "Train Simulator": {
-        "display_name": "Train Simulator",
-        "win_path": [],
-        "linux_path": [
-            {
-                "path": "%STEAM%/steamapps/compatdata/24010/pfx/",
                 "inc": "",
                 "parent": "pfx"
             }

@@ -121,10 +121,13 @@ type GuiGamedef struct {
 	Linux   []GuiDatapath
 }
 
+// @TODO the issue with this is that when we refresh, we will
+// rebuild the list. Instead, we may need a 'hidden' flag and not
+// actually delete entries.
 func removeGamedefByKey(key string) {
 	dm := MakeGameDefManager("")
-	gamedefMap := dm.GetGameDefMap()
-	delete(gamedefMap, key)
+	dm.ApplyUserOverrides()
+	dm.RemoveGameDef(key)
 	dm.CommitUserOverrides()
 }
 
@@ -345,7 +348,6 @@ func buildGamelist(dm GameDefManager) []Game {
 			continue
 		}
 		for _, datapath := range paths {
-			fmt.Println("Datapath " + datapath.Path)
 			// @TODO better handle empty path being root
 			// because of the logic in GetSyncpaths
 			if datapath.Path == "" || datapath.Path == "/" {
