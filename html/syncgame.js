@@ -121,6 +121,7 @@ async function sync(gameName, dryRun) {
 async function setupSyncModal(gameName) {
     log(`Setting up sync for ${gameName}`);
     resetSyncModal();
+    document.getElementById('accordion-cont').style.display='none';
 
     pendingSyncGame = gameName;
     const shouldPerformDryRun = await getShouldPerformDryRun();
@@ -130,6 +131,7 @@ async function setupSyncModal(gameName) {
 async function onSyncGameModalClosed(element) {
     const model = document.getElementById("bisync-confirm");
     model.style.display = 'none';
+    document.getElementById('accordion-cont').style.display='block';
     refresh();
 }
 

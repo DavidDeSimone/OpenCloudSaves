@@ -1,9 +1,11 @@
 async function onSettingsModalClosed(element) {
+    document.getElementById('accordion-cont').style.display='block';
     const settingsEl = document.getElementById('settings-modal');
     settingsEl.style.display = 'none';
 }
 
 async function onSettingsModalOpen() {
+    document.getElementById('accordion-cont').style.display='none';
     const currentSettingsString = await getCloudPerfs();
     const currentSettings = JSON.parse(currentSettingsString);
 
