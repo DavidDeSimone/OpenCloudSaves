@@ -5,7 +5,6 @@
 </p>
 
 
-## 
 
 Open Cloud Saves is an open source application for managing your saves games across Windows, MacOs, and Linux (including SteamOS). Open Cloud Saves is available for use offically as a "beta". As a beta test, we recommend that you manually make a backup of your save data before usage. Until Open Cloud Save is more battle tested, we will issue a warning for users to use caution with "critical, beloved" save data. 
 
@@ -24,7 +23,7 @@ We have a growing list of game save locations, which we will upload to and from 
 
 Under the hood, OpenCloudSave uses the popular tool [rclone](https://github.com/rclone/rclone) to perform a bi-directional sync to allow your for games to be updated across multiple clients. This includes Valve's Steam Deck. 
 
-## 
+
 
 In addition to our provided library of game save locations, you can define custom save locations for your games. If you have a game you would like added to the default list, be sure to submit an issue https://github.com/DavidDeSimone/OpenCloudSaves/issues
 
