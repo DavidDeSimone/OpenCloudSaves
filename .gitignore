@@ -16,3 +16,5 @@ build/linux/build-dir/*
 .flatpak-builder/*
 build/linux/.flatpak-builder/*
 tests/Test*
+repo/
+build/linux/pkg/
