@@ -1,5 +1,11 @@
 # Open Cloud Saves 
-This project is a cross platform, open source executable to allow cross platform saves across games. This project is currently in beta and requires a invitation to use.
+Open Cloud Saves is an open source application for managing your saves games across Windows, MacOs, and Linux (including SteamOS). Open Cloud Saves is available for use offically as a “beta”. As a beta test, we recommend that you manually make a backup of your save data before usage. Until Open Cloud Save is more battle tested, we will issue a warning for users to use caution with “critical, beloved” save data.
+
+Open Cloud Save gives an advantage over exisiting cloud solutions:
+
+Allows cloud saves for games without developer support
+Allows for the exclusion of certain files or filetypes. This can prevent games syncing graphical settings in addition to syncing save data.
+Allows for sync between storefronts (you own a Steam on linux and a Epic Game Store version on windows
 
 <p align="center">
 
