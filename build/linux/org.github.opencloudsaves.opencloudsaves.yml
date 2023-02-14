@@ -61,3 +61,20 @@ modules:
         url: https://github.com/DavidDeSimone/rclone
         tag: v1.0.2
         commit: 8d620b4c48a7e493290167397af779cb65d069c7
+  - name: io.github.daviddesimone.opencloudsaves.png
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/share/icons/hicolor/128x128/apps/
+      - install -D io.github.daviddesimone.opencloudsaves.png /app/share/icons/hicolor/128x128/apps/
+    sources:
+      - type: file
+        path: icon/io.github.daviddesimone.opencloudsaves.png
+  - name: OpenCloudSaves.desktop
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/share/applications/
+      - install -D OpenCloudSaves.desktop /app/share/applications/io.github.daviddesimone.opencloudsaves.desktop
+    sources:
+      - type: file
+        path: OpenCloudSaves.desktop
+

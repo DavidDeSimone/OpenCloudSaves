@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Open Cloud Saves
+Exec="WEBKIT_DISABLE_COMPOSITING_MODE=1 /app/bin/opencloudsave"
+Type=Application
+Icon=io.github.daviddesimone.opencloudsaves
