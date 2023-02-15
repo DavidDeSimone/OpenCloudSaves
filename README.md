@@ -3,16 +3,45 @@ Open Cloud Saves is an open source application for managing your saves games acr
 
 Open Cloud Save gives an advantage over exisiting cloud solutions:
 
-Allows cloud saves for games without developer support
-Allows for the exclusion of certain files or filetypes. This can prevent games syncing graphical settings in addition to syncing save data.
-Allows for sync between storefronts (you own a Steam on linux and a Epic Game Store version on windows
+1. Allows cloud saves for games without developer support
+2. Allows for the exclusion of certain files or filetypes. This can prevent games syncing graphical settings in addition to syncing save data.
+3. Allows for sync between storefronts (you own a Steam on linux and a Epic Game Store version on windows
+
+Key Features:
+
+1. Inclusion of specific save files based on [pattern matching](https://rclone.org/filtering/)
+2. Customizable save data locations - you can tailor the app to your specific save locations
+3. Ability to create new save definitions - you do not need to wait for developers to support cloud saves for their games.
 
 <p align="center">
 
-<img width="1052" alt="Screenshot 2023-01-23 093549" src="https://user-images.githubusercontent.com/7245174/214109745-110d1674-39f6-4fa1-a454-2b0e597edc3c.png">
-
+![image](https://user-images.githubusercontent.com/7245174/218942321-510179b1-1f18-4ea6-8e91-6cbabae63672.png)
 
 </p>
+
+
+# Install
+
+## Linux / Steam Deck
+
+NOTE: This method requires Flatpak to be installed. Steamdeck already has flatpak installed. For non-steam deck users you may need to [install flatpak based on your distro](https://flatpak.org/setup/)
+
+1. Download the [Install.desktop](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.16.0/Install.desktop) file and place it on your desktop.
+2. Run the Install.Desktop and agree to usage terms
+3. Once the download is complete, run "OpenCloudSave.desktop" - it should be located on your desktop.
+4. Add "OpenCloudSave" as a non-steam game if you want to launch it in game mode.
+
+## Windows
+
+1. Download the [Open Cloud Save Installer](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.16.0/windows_opencloudsaves_0.16.0_x86_64.msi)
+2. Follow the instructions for installation.
+3. Launch opencloudsave.exe located in C:\Program Files\OpenCloudSave\
+
+## MacOS
+1. Download the [Open Cloud Save .dmg](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.16.0/macOS_opencloudsaves_0.16.0_aarch64.dmg)
+2. Drag the executable into your /Applications/ directory
+3. Launch OpenCloudSave
+
 
 ## Build
 
