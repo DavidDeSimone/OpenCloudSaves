@@ -31,6 +31,7 @@ NOTE: This method requires Flatpak to be installed. Steamdeck already has flatpa
 2. Run the Install.Desktop and agree to usage terms
 3. Once the download is complete, run "OpenCloudSave.desktop" - it should be located on your desktop.
 4. Add "OpenCloudSave" as a non-steam game if you want to launch it in game mode.
+5. If on the Steam Deck, I recommend using the "Browser" control configuration in Game Mode. 
 
 ## Windows
 
