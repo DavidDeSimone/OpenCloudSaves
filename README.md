@@ -42,7 +42,7 @@ NOTE: This method requires Flatpak to be installed. Steamdeck already has flatpa
 NOTE: There is a chance that windows defender or your AV may flag this application as a "virus". This is a consequence of the application being written in golang. Windows marks a lot of golang applications as viruses, as documented here: 
 https://go.dev/doc/faq#virus
 
-This application is free and open source, and is free to aduit.
+This application is free and open source, and is free to audit.
 
 ## MacOS
 1. Download the [Open Cloud Save .dmg](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.16.0/macOS_opencloudsaves_0.16.0_aarch64.dmg)
