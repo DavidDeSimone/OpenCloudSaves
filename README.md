@@ -12,6 +12,7 @@ Key Features:
 1. Inclusion of specific save files based on [pattern matching](https://rclone.org/filtering/)
 2. Customizable save data locations - you can tailor the app to your specific save locations
 3. Ability to create new save definitions - you do not need to wait for developers to support cloud saves for their games.
+4. Data protection - by default, OpenCloudSave will perform a dry-run before all syncs. This way you can see what changes will be made to your save data before they happen. (You can disable this functionality if you just want to immediately sync)
 
 <p align="center">
 
