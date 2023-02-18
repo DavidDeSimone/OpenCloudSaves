@@ -1,5 +1,5 @@
 [Desktop Entry]
 Name=Open Cloud Saves
-Exec=opencloudsave
+Exec=bootstrap-opencloudsave.sh
 Type=Application
 Icon=io.github.daviddesimone.opencloudsaves

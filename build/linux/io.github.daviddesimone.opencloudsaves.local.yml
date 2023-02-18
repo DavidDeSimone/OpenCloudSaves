@@ -4,7 +4,7 @@ base-version: juno-21.08
 runtime: org.gnome.Platform
 runtime-version: '42'
 sdk: org.gnome.Sdk
-command: opencloudsave
+command: bootstrap-opencloudsave.sh
 finish-args:
   - '--share=ipc'
   - '--socket=fallback-x11'
@@ -56,6 +56,7 @@ modules:
     build-commands:
       - $GOROOT/bin/go build -trimpath -o opencloudsave
       - install -D opencloudsave /app/bin/opencloudsave
+      - install -D ./build/linux/bootstrap-opencloudsave.sh /app/bin/bootstrap-opencloudsave.sh
       - mkdir -p /app/share/applications/
       - install -D ./build/linux/icon/io.github.daviddesimone.opencloudsaves.png /app/share/icons/hicolor/128x128/apps/io.github.daviddesimone.opencloudsaves.png
       - install -D ./build/linux/OpenCloudSaves.desktop /app/share/applications/io.github.daviddesimone.opencloudsaves.desktop
