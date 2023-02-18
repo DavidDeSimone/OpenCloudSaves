@@ -64,7 +64,7 @@ modules:
     buildsystem: simple
     build-commands:
       - mkdir -p /app/share/icons/hicolor/128x128/apps/
-      - install -D io.github.daviddesimone.opencloudsaves.png /app/share/icons/hicolor/128x128/apps/
+      - install -D io.github.daviddesimone.opencloudsaves.png /app/share/icons/hicolor/128x128/apps/io.github.daviddesimone.png
     sources:
       - type: file
         path: icon/io.github.daviddesimone.opencloudsaves.png
@@ -72,7 +72,7 @@ modules:
     buildsystem: simple
     build-commands:
       - mkdir -p /app/share/applications/
-      - install -D OpenCloudSaves.desktop /app/share/applications/io.github.daviddesimone.opencloudsaves.desktop
+      - install -D OpenCloudSaves.desktop /app/share/applications/io.github.daviddesimone.desktop
     sources:
       - type: file
         path: OpenCloudSaves.desktop
