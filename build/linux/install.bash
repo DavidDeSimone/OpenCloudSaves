@@ -13,10 +13,6 @@ if [[ $passIsSet != "P" ]]; then
     exit 1
 fi
 
-mkdir -p /tmp/
-curl -L "https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.16.0/linux_opencloudsaves_0.16.0_x86_64.flatpak" > /tmp/opencloudsaves.flatpak
-flatpak install --user --noninteractive --or-update /tmp/opencloudsaves.flatpak
-
 if [[ -d ~/Desktop/ ]]; then
     curl -L "https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.16.0/OpenCloudSave.desktop" > ~/Desktop/OpenCloudSave.desktop
 else 
