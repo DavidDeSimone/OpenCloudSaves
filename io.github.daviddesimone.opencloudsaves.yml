@@ -4,7 +4,7 @@ base-version: juno-21.08
 runtime: org.gnome.Platform
 runtime-version: '42'
 sdk: org.gnome.Sdk
-command: opencloudsave
+command: bootstrap-opencloudsave.sh
 finish-args:
   - '--share=ipc'
   - '--socket=fallback-x11'
@@ -46,6 +46,10 @@ modules:
     build-commands:
       - $GOROOT/bin/go build -trimpath -o opencloudsave
       - install -D opencloudsave /app/bin/opencloudsave
+      - install -D ./build/linux/bootstrap-opencloudsave.sh /app/bin/bootstrap-opencloudsave.sh
+      - mkdir -p /app/share/applications/
+      - install -D ./build/linux/icon/io.github.daviddesimone.opencloudsaves.png /app/share/icons/hicolor/128x128/apps/io.github.daviddesimone.opencloudsaves.png
+      - install -D ./build/linux/OpenCloudSaves.desktop /app/share/applications/io.github.daviddesimone.opencloudsaves.desktop
     sources:
       - type: git
         url: https://github.com/DavidDeSimone/OpenCloudSaves
@@ -61,20 +65,3 @@ modules:
         url: https://github.com/DavidDeSimone/rclone
         tag: v1.0.2
         commit: 8d620b4c48a7e493290167397af779cb65d069c7
-  - name: io.github.daviddesimone.opencloudsaves.png
-    buildsystem: simple
-    build-commands:
-      - mkdir -p /app/share/icons/hicolor/128x128/apps/
-      - install -D io.github.daviddesimone.opencloudsaves.png /app/share/icons/hicolor/128x128/apps/
-    sources:
-      - type: file
-        path: icon/io.github.daviddesimone.opencloudsaves.png
-  - name: OpenCloudSaves.desktop
-    buildsystem: simple
-    build-commands:
-      - mkdir -p /app/share/applications/
-      - install -D OpenCloudSaves.desktop /app/share/applications/io.github.daviddesimone.opencloudsaves.desktop
-    sources:
-      - type: file
-        path: OpenCloudSaves.desktop
-
