@@ -433,8 +433,8 @@ func executeTemplate() (string, error) {
 
 	htmlWriter.Flush()
 	result := b.String()
-	js := fmt.Sprintf("<script>%v</script>", jsContent)
-	css := fmt.Sprintf("<style>%v</style>", cssContent)
+	js := fmt.Sprintf("<script>%v</script>", string(jsContent))
+	css := fmt.Sprintf("<style>%v</style>", string(cssContent))
 	syncgamejs := fmt.Sprintf("\n<script>%v</script>\n", string(syncgamejsbytes))
 	settingsjs := fmt.Sprintf("<script>%v</script>\n", string(settingsjsbytes))
 	finalResult := css + result + js + syncgamejs + settingsjs
