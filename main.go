@@ -131,6 +131,10 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 			result, err := cm.PerformSyncOperation(storage, syncops, syncpath.Path, remotePath)
 			if err != nil {
 				fmt.Println(err)
+				logs <- Message{
+					Err:      err,
+					Finished: true,
+				}
 				continue
 			}
 
