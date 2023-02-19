@@ -14,13 +14,25 @@ async function onSettingsModalOpen() {
 
     const dryRunSwitch = document.getElementById('settings-dry-run');
     dryRunSwitch.checked = currentSettings.performDryRun;
+
+    const syncSwitch = document.getElementById('settings-use-sync');
+    syncSwitch.checked = currentSettings.useStdSync;
 }
 
-async function onSettingsToggle(element) {
+async function onDryRunToggle(element) {
     const dryRunSwitch = document.getElementById('settings-dry-run');
     const currentSettingsString = await getCloudPerfs();
     const currentSettings = JSON.parse(currentSettingsString);
 
     currentSettings.performDryRun = dryRunSwitch.checked;
+    await commitCloudPerfs(JSON.stringify(currentSettings));
+}
+
+async function onUseSyncToggle(element) {
+    const syncSwitch = document.getElementById('settings-use-sync');
+    const currentSettingsString = await getCloudPerfs();
+    const currentSettings = JSON.parse(currentSettingsString);
+
+    currentSettings.useStdSync = syncSwitch.checked;
     await commitCloudPerfs(JSON.stringify(currentSettings));
 }

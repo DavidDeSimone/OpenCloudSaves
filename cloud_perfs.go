@@ -76,7 +76,17 @@ func writeCloudPerfs(cloudperfs *CloudPerfs) error {
 		return err
 	}
 
-	return os.WriteFile(path, data, os.ModePerm)
+	err = os.WriteFile(path, data, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	cm := MakeCloudManager()
+	storage := GetCurrentStorageProvider()
+	ops := GetDefaultCloudOptions()
+	go cm.PerformSyncOperation(storage, ops, path, ToplevelCloudFolder+"user_settings/")
+
+	return nil
 }
 
 func GetCurrentCloudPerfs() (*CloudPerfs, error) {

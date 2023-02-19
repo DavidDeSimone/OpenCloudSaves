@@ -109,11 +109,22 @@
     <hr>
     <div class="settings-switch-cont">
       <label class="switch switch-float">
-        <input id="settings-dry-run" type="checkbox" onclick="onSettingsToggle(this)">
+        <input id="settings-dry-run" type="checkbox" onclick="onDryRunToggle(this)">
         <span class="slider round"></span>
       </label>
       <div class="setting-text">
         <p>Perform a Dry Run prior to sync.</p>
+      </div>
+    </div>
+    <div class="clearfix">
+    </div>
+    <div class="settings-switch-cont">
+      <label class="switch switch-float">
+        <input id="settings-use-sync" type="checkbox" onclick="onUseSyncToggle(this)">
+        <span class="slider round"></span>
+      </label>
+      <div class="setting-text">
+        <p>Use a standard Sync instead of a BiSync.</p>
       </div>
     </div>
     <div class="clearfix">

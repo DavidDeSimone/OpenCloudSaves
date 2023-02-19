@@ -172,7 +172,7 @@ func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) 
 }
 
 func (cm *CloudManager) PerformSyncOperation(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-	fmt.Println("Performing BiSync....")
+	fmt.Println("Performing Sync Operation....")
 	os.MkdirAll(localPath, os.ModePerm)
 	exists, err := cm.DoesRemoteDirExist(storage, remotePath)
 	if err != nil {
