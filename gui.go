@@ -19,19 +19,8 @@ import (
 	"github.com/webview/webview"
 )
 
-// @TODO merge everything to the embedded html synthetic fs
-
 //go:embed html
 var html embed.FS
-
-//go:embed html/index.html
-var htmlMain embed.FS
-
-//go:embed html/style.css
-var cssContent string
-
-//go:embed html/main.js
-var jsContent string
 
 type SaveFile struct {
 	Filename   string
@@ -416,7 +405,7 @@ func executeTemplate() (string, error) {
 	var b bytes.Buffer
 	htmlWriter := bufio.NewWriterSize(&b, 2*1024*1024)
 
-	templ := template.Must(template.ParseFS(htmlMain, "html/index.html"))
+	templ := template.Must(template.ParseFS(html, "html/index.html"))
 	err := templ.Execute(htmlWriter, input)
 	if err != nil {
 		return "", err
@@ -432,10 +421,20 @@ func executeTemplate() (string, error) {
 		return "", err
 	}
 
+	jsContent, err := fs.ReadFile(html, "html/main.js")
+	if err != nil {
+		return "", err
+	}
+
+	cssContent, err := fs.ReadFile(html, "html/style.css")
+	if err != nil {
+		return "", err
+	}
+
 	htmlWriter.Flush()
 	result := b.String()
-	js := fmt.Sprintf("<script>%v</script>", jsContent)
-	css := fmt.Sprintf("<style>%v</style>", cssContent)
+	js := fmt.Sprintf("<script>%v</script>", string(jsContent))
+	css := fmt.Sprintf("<style>%v</style>", string(cssContent))
 	syncgamejs := fmt.Sprintf("\n<script>%v</script>\n", string(syncgamejsbytes))
 	settingsjs := fmt.Sprintf("<script>%v</script>\n", string(settingsjsbytes))
 	finalResult := css + result + js + syncgamejs + settingsjs

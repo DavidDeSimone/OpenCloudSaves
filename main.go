@@ -128,7 +128,7 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 
 			syncops.Include = syncpath.Include
 
-			result, err := cm.BisyncDir(storage, syncops, syncpath.Path, remotePath)
+			result, err := cm.PerformSyncOperation(storage, syncops, syncpath.Path, remotePath)
 			if err != nil {
 				fmt.Println(err)
 				continue

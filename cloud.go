@@ -171,14 +171,9 @@ func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) 
 	return arr, nil
 }
 
-func (cm *CloudManager) BisyncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-	fmt.Println("Performing BiSync....")
+func (cm *CloudManager) PerformSyncOperation(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+	fmt.Println("Performing Sync Operation....")
 	os.MkdirAll(localPath, os.ModePerm)
-	// _, err := os.Stat(localPath)
-	// if err != nil {
-	// 	return "", err
-	// }
-
 	exists, err := cm.DoesRemoteDirExist(storage, remotePath)
 	if err != nil {
 		return "", err
@@ -189,6 +184,50 @@ func (cm *CloudManager) BisyncDir(storage Storage, ops *CloudOperationOptions, l
 			return "", err
 		}
 	}
+
+	cloudperfs := GetCurrentCloudPerfsOrDefault()
+	if cloudperfs.UseBiSync {
+		return cm.bisyncDir(storage, ops, localPath, remotePath)
+	} else {
+		return cm.syncDir(storage, ops, localPath, remotePath)
+	}
+}
+
+// @TODO support cancellation
+func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+	// We can't pass an empty string as a flag to the rclone command, but we
+	// can pass the same flag multiple times. We use this as a hack to enable
+	// conditional commands with a varargs function. There is likely a better way to
+	// do this, but this should be generally low cost.
+	defaultFlag := "--use-json-log"
+
+	verboseString := defaultFlag
+	if ops.Verbose {
+		verboseString = "-v"
+	}
+
+	dryRunString := defaultFlag
+	if ops.DryRun {
+		dryRunString = "--dry-run"
+	}
+
+	include := defaultFlag
+	if ops.Include != "" {
+		include = fmt.Sprintf("--include=%v", ops.Include)
+	}
+
+	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
+	fmt.Println("Running Command ", getCloudApp(), defaultFlag, verboseString, dryRunString, include, "sync", localPath, path)
+	cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, include, "sync", localPath, path)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	return string(output), nil
+}
+
+func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 
 	// We can't pass an empty string as a flag to the rclone command, but we
 	// can pass the same flag multiple times. We use this as a hack to enable
@@ -218,6 +257,7 @@ func (cm *CloudManager) BisyncDir(storage Storage, ops *CloudOperationOptions, l
 	if err != nil {
 		exiterr := err.(*exec.ExitError)
 		if exiterr.ExitCode() == 2 {
+			// @TODO - in this case, I want to explain sync vs bisync to the user and let them choose
 			fmt.Println("Need to run resync")
 			fmt.Println("Running Command ", getCloudApp(), defaultFlag, verboseString, dryRunString, include, "--resync", "bisync", localPath, path)
 			cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, include, "bisync", "--resync", localPath, path)
