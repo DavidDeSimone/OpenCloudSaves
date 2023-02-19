@@ -16,7 +16,7 @@ async function onSettingsModalOpen() {
     dryRunSwitch.checked = currentSettings.performDryRun;
 
     const syncSwitch = document.getElementById('settings-use-sync');
-    syncSwitch.checked = currentSettings.useStdSync;
+    syncSwitch.checked = currentSettings.useBiSync;
 }
 
 async function onDryRunToggle(element) {
@@ -28,11 +28,11 @@ async function onDryRunToggle(element) {
     await commitCloudPerfs(JSON.stringify(currentSettings));
 }
 
-async function onUseSyncToggle(element) {
+async function onUseBiSyncToggle(element) {
     const syncSwitch = document.getElementById('settings-use-sync');
     const currentSettingsString = await getCloudPerfs();
     const currentSettings = JSON.parse(currentSettingsString);
 
-    currentSettings.useStdSync = syncSwitch.checked;
+    currentSettings.useBiSync = syncSwitch.checked;
     await commitCloudPerfs(JSON.stringify(currentSettings));
 }

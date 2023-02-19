@@ -186,13 +186,14 @@ func (cm *CloudManager) PerformSyncOperation(storage Storage, ops *CloudOperatio
 	}
 
 	cloudperfs := GetCurrentCloudPerfsOrDefault()
-	if cloudperfs.UseSync {
-		return cm.syncDir(storage, ops, localPath, remotePath)
-	} else {
+	if cloudperfs.UseBiSync {
 		return cm.bisyncDir(storage, ops, localPath, remotePath)
+	} else {
+		return cm.syncDir(storage, ops, localPath, remotePath)
 	}
 }
 
+// @TODO support cancellation
 func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	// We can't pass an empty string as a flag to the rclone command, but we
 	// can pass the same flag multiple times. We use this as a hack to enable
@@ -256,6 +257,7 @@ func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, l
 	if err != nil {
 		exiterr := err.(*exec.ExitError)
 		if exiterr.ExitCode() == 2 {
+			// @TODO - in this case, I want to explain sync vs bisync to the user and let them choose
 			fmt.Println("Need to run resync")
 			fmt.Println("Running Command ", getCloudApp(), defaultFlag, verboseString, dryRunString, include, "--resync", "bisync", localPath, path)
 			cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, include, "bisync", "--resync", localPath, path)
