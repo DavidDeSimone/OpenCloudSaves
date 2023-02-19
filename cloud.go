@@ -127,7 +127,7 @@ func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (
 	cmd := makeCommand(getCloudApp(), "lsjon", path+"/")
 	err := cmd.Run()
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 
 	return true, nil
