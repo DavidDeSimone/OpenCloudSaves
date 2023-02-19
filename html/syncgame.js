@@ -105,7 +105,7 @@ async function sync(gameName, dryRun) {
     const interval = setInterval(async () => {
         const resultStr = await pollLogs(gameName);
         if (resultStr !== "") {
-            const result = JSON.parse(resultStr)
+            const result = JSON.parse(resultStr);
             if (result && result.Finished) {
                 clearInterval(interval);
                 try {

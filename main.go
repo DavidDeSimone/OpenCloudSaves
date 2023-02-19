@@ -18,7 +18,7 @@ type Options struct {
 	UserOverride     []string          `short:"o" long:"user-override" description:"--user-override <FILE> Provide location for custom user override JSON file for game definitions"`
 	PrintGameDefs    []bool            `short:"p" long:"print-gamedefs" description:"Print current gamedef map as JSON"`
 	SyncUserSettings []bool            `short:"s" long:"--sync-user-settings" description:"Attempt to sync user settings from the current cloud provider. If no cloud provider is set, will be a NO-OP."`
-	SetCloud         []string          `short:"c" long:"--set-cloud" description:"Sets the current cloud. 0 - GOOGLE, 1 - ONEDRIVE, 2 - DROPBOX, 3 - BOX, 4 - NEXTCLOUD"`
+	SetCloud         []string          `short:"c" long:"--set-cloud" description:"Sets the current cloud. 0 - GOOGLE, 1 - ONEDRIVE, 2 - DROPBOX, 3 - BOX, 4 - NEXTCLOUD, 5 - FTP"`
 	DryRun           []bool            `short:"d" long:"--dry-run" description:"Does not actually perform any network operations."`
 	Verbose          []bool            `short:"v" long:"--verbose" description:"Enable verbose logging"`
 }
@@ -112,11 +112,8 @@ func CliMain(cm *CloudManager, ops *Options, dm GameDefManager, channels *Channe
 		for _, syncpath := range syncpaths {
 			LogMessage(logs, "Examining Path %v", syncpath.Path)
 			remotePath := fmt.Sprintf("%v%v/", ToplevelCloudFolder, gamename)
-			LogMessage(logs, "Performing BiDirectional Sync: "+remotePath)
+			LogMessage(logs, "Performing Sync: "+remotePath)
 
-			//@TODO
-			// This needs a way to respect ignore/exts
-			// This should be as simple as --include/--exclude flags
 			syncops := GetDefaultCloudOptions()
 			if len(ops.DryRun) > 0 && ops.DryRun[0] {
 				syncops.DryRun = true
@@ -178,10 +175,6 @@ func main() {
 		cloud, err := strconv.Atoi(ops.SetCloud[0])
 		if err != nil {
 			log.Fatal(err)
-		}
-
-		if cloud < GOOGLE || cloud > NEXT {
-			log.Fatal("Invalid cloud")
 		}
 
 		cloudperfs := GetCurrentCloudPerfsOrDefault()

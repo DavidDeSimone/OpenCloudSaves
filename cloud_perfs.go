@@ -11,6 +11,7 @@ const ONEDRIVE = 1
 const DROPBOX = 2
 const BOX = 3
 const NEXT = 4
+const FTP = 5
 
 type CloudPerfs struct {
 	Cloud         int  `json:"cloud"`
@@ -118,15 +119,17 @@ func GetCurrentCloudStorage() (Storage, error) {
 
 	switch cloudperfs.Cloud {
 	case GOOGLE:
-		return &GoogleStorage{}, nil
+		return GetGoogleDriveStorage(), nil
 	case ONEDRIVE:
-		return &OneDriveStorage{}, nil
+		return GetOneDriveStorage(), nil
 	case DROPBOX:
-		return &DropBoxStorage{}, nil
+		return GetDropBoxStorage(), nil
 	case BOX:
-		return &BoxStorage{}, nil
+		return GetBoxStorage(), nil
 	case NEXT:
-		return &NextCloudStorage{}, nil
+		return GetNextCloudStorage(), nil
+	case FTP:
+		return GetFtpDriveStorage(), nil
 	default:
 		return nil, fmt.Errorf("failed to identify cloud solution")
 	}
