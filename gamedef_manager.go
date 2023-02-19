@@ -119,13 +119,14 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				linuxPath = strings.Replace(linuxPath, "$XDG_CONFIG_HOME", homedir, 1)
 			}
 
-			if strings.Contains(datapath.Path, "/pfx/") {
+			if strings.HasSuffix(datapath.Path, "pfx") || strings.HasSuffix(datapath.Path, "pfx/") {
 				if len(d.WinPath) == 0 {
 					fmt.Println("Unable to resolve " + datapath.Path)
 					continue
 				}
 
 				winpath := d.WinPath[0].Path
+				winpath = strings.Replace(winpath, "C:\\", "", 1)
 				winpath = strings.Replace(winpath, "%APPDATA%", "users/steamuser/AppData/Roaming/", 1)
 				winpath = strings.Replace(winpath, "%LOCALAPPDATA%", "users/steamuser/AppData/Local/", 1)
 				winpath = strings.Replace(winpath, "%USERPROFILE%", "users/steamuser/", 1)
