@@ -59,3 +59,73 @@ body {
   color: #f44336;
   cursor: pointer;
 }
+
+.modal {
+  display: none; 
+  position: fixed; 
+  z-index: 1; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  overflow: auto; 
+  background-color: #474e5d;
+  padding-top: 50px;
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto 15% auto; 
+  border: 1px solid #888;
+  width: 80%; 
+}
+
+.title {
+  font-size: 24;
+  color: rgb(0, 0, 0);
+  text-align: center;
+  outline: 3px;
+  margin-bottom: 20px;
+  margin-top: 40px;
+}
+
+.modal-table { display: table;      }
+.modal-row { display: table-row;  }
+.modal-label { display: table-cell; }
+.modal-input { display: table-cell; }
+
+.cancelbtn {
+  padding: 14px 20px;
+  background-color: #f44336;
+}
+
+.confirmbtn {
+  background-color: #04AA6D;
+}
+
+.contentbutton {
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  opacity: 0.9;
+}
+
+.contentbutton:hover {
+  opacity:1;
+}
+
+.cancelbtn, .confirmbtn {
+  float: left;
+  width: 50%;
+}
+
+.confirmbtn:disabled {
+  opacity: 30%;
+}
+
+.cancelbtn:disabled {
+  opacity: 30%;
+}

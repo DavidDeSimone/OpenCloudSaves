@@ -282,6 +282,31 @@ func clearUserSettings() error {
 	return os.Remove(path)
 }
 
+func commitFTPSettings(jsonInput string) error {
+	ftp := &FtpStorage{}
+	err := json.Unmarshal([]byte(jsonInput), ftp)
+	if err != nil {
+		return err
+	}
+
+	if ftp.Password != "" {
+		cm := MakeCloudManager()
+		obscuredpw, err := cm.ObscurePassword(ftp.Password)
+		if err != nil {
+			return err
+		}
+
+		ftp.Password = obscuredpw
+	}
+
+	SetFtpDriveStorage(ftp)
+	return nil
+}
+
+func deleteCurrentFTPSettings() {
+	DeleteFtpDriveStorage()
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -306,6 +331,8 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("getCloudPerfs", getCloudPerfs)
 	w.Bind("commitCloudPerfs", commitCloudPerfs)
 	w.Bind("clearUserSettings", clearUserSettings)
+	w.Bind("commitFTPSettings", commitFTPSettings)
+	w.Bind("deleteCurrentFTPSettings", deleteCurrentFTPSettings)
 }
 
 func DirSize(path string) (int64, error) {

@@ -23,5 +23,36 @@
     <div class="cloudbtncont">
     <div class="cloudproviderbtn" onclick="cloudSelected(4)"><p>NextCloud</p></div>
     </div>
+    <div class="cloudbtncont">
+    <div class="cloudproviderbtn" onclick="setFtpServer()"><p>Custom FTP Server</p></div>
+    </div>
+
+    <div id="ftp-modal" class="modal">
+        <div class="modal-content">
+          <div class="title">FTP Settings</div>
+          <hr>
+          <form class="modal-table">
+            <p class="modal-row">
+            <label class="modal-label" for="HostName">Host:</label>
+            <input class="modal-input" id="HostName" placeholder="127.0.0.1" ></input>
+            </p>
+            <p class="modal-row">
+            <label class="modal-label" for="Port">Port:</label>
+            <input class="modal-input" id="Port" placeholder="21" ></input>
+            </p>
+            <p class="modal-row">
+            <label class="modal-label" for="UserName">User Name:</label>
+            <input class="modal-input" id="UserName" placeholder="Your User Name" ></input>
+            </p>
+            <p class="modal-row">
+            <label class="modal-label" for="Password">Password:</label>
+            <input class="modal-input" id="Password" placeholder="*********" type="password"></input>
+            </p>
+          </form>
+          <button id="ftp-confirm" class="contentbutton confirmbtn" onclick="onFtpConfirm(this)">Confirm</button>
+          <button id="ftp-cancel" class="contentbutton cancelbtn" onclick="onFtpClose(this)">Cancel</button>
+        </div>
+    </div>
+    
 </body>
 </html>
