@@ -36,3 +36,14 @@ async function onUseBiSyncToggle(element) {
     currentSettings.useBiSync = syncSwitch.checked;
     await commitCloudPerfs(JSON.stringify(currentSettings));
 }
+
+async function onNoticeClicked() {
+    const noticeModal = document.getElementById('notice-modal');
+    noticeModal.style.display = 'block';
+}
+
+async function onNoticeClosed() {
+    const noticeModal = document.getElementById('notice-modal');
+    noticeModal.style.display = 'none';
+
+}

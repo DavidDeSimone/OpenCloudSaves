@@ -22,6 +22,9 @@ import (
 //go:embed html
 var html embed.FS
 
+//go:embed NOTICE.txt
+var notice string
+
 type SaveFile struct {
 	Filename   string
 	ModifiedBy string
@@ -38,6 +41,7 @@ type Game struct {
 type HtmlInput struct {
 	Games     []Game
 	Platforms []string
+	Notice    string
 }
 
 func consoleLog(s string) {
@@ -427,10 +431,11 @@ func executeTemplate() (string, error) {
 	input := HtmlInput{
 		Games:     games,
 		Platforms: []string{"Windows", "MacOS", "Linux"},
+		Notice:    notice,
 	}
 
 	var b bytes.Buffer
-	htmlWriter := bufio.NewWriterSize(&b, 2*1024*1024)
+	htmlWriter := bufio.NewWriterSize(&b, 4*1024*1024)
 
 	templ := template.Must(template.ParseFS(html, "html/index.html"))
 	err := templ.Execute(htmlWriter, input)
