@@ -66,6 +66,7 @@ async function onFtpConfirm() {
         password: password.value,
     };
 
+    await deleteCurrentFTPSettings();
     await commitFTPSettings(JSON.stringify(ftpSettings));
     await cloudSelected(5);
 }

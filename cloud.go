@@ -9,7 +9,7 @@ import (
 	"runtime"
 )
 
-var ToplevelCloudFolder = "opencloudsaves/"
+const ToplevelCloudFolder = "opencloudsaves/"
 
 // This is a real hack, but we fallback to $PATH if we can't
 // find rclone locally in linux. This is really only for the
@@ -17,6 +17,29 @@ var ToplevelCloudFolder = "opencloudsaves/"
 // within the flatpak
 var checkedLinuxPath = false
 var relativeLinuxPath = true
+
+type Storage interface {
+	GetName() string
+	GetCreationCommand() *exec.Cmd
+}
+
+type CloudManager struct {
+}
+
+type CloudOperationOptions struct {
+	Verbose bool
+	DryRun  bool
+	Include string
+}
+
+type CloudFile struct {
+	Path     string
+	Name     string
+	Size     int64
+	MimeType string
+	ModTime  string
+	IsDir    bool
+}
 
 func getCloudApp() string {
 	switch runtime.GOOS {
@@ -47,23 +70,10 @@ func getCloudApp() string {
 }
 
 func makeCommand(cmd_string string, arg ...string) *exec.Cmd {
+	fmt.Println("Running Command ", cmd_string, arg)
 	cmd := exec.Command(cmd_string, arg...)
 	StripWindow(cmd)
 	return cmd
-}
-
-type Storage interface {
-	GetName() string
-	GetCreationCommand() *exec.Cmd
-}
-
-type CloudManager struct {
-}
-
-type CloudOperationOptions struct {
-	Verbose bool
-	DryRun  bool
-	Include string
 }
 
 func GetDefaultCloudOptions() *CloudOperationOptions {
@@ -124,7 +134,7 @@ func (cm *CloudManager) MakeStorageDrive(storage Storage) error {
 
 func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (bool, error) {
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	cmd := makeCommand(getCloudApp(), "lsjon", path+"/")
+	cmd := makeCommand(getCloudApp(), "lsjson", path+"/")
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println(err)
@@ -138,15 +148,6 @@ func (cm *CloudManager) MakeRemoteDir(storage Storage, remotePath string) error 
 	path := fmt.Sprintf("%v:%v/", storage.GetName(), remotePath)
 	cmd := makeCommand(getCloudApp(), "mkdir", path)
 	return cmd.Run()
-}
-
-type CloudFile struct {
-	Path     string
-	Name     string
-	Size     int64
-	MimeType string
-	ModTime  string
-	IsDir    bool
 }
 
 func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) ([]CloudFile, error) {
@@ -170,6 +171,22 @@ func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) 
 	}
 
 	return arr, nil
+}
+
+func (cm *CloudManager) DeleteCloudEntry(storage Storage) error {
+	name := storage.GetName()
+	cmd := makeCommand(getCloudApp(), "config", "delete", name)
+	_, err := cmd.CombinedOutput()
+	return err
+}
+
+func (cm *CloudManager) ObscurePassword(password string) (string, error) {
+	cmd := makeCommand(getCloudApp(), "obscure", password)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+	return string(output), nil
 }
 
 func (cm *CloudManager) PerformSyncOperation(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {

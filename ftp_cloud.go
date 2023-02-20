@@ -14,10 +14,30 @@ func (ftpfs *FtpStorage) GetName() string {
 }
 
 func (ftpfs *FtpStorage) GetCreationCommand() *exec.Cmd {
-	return makeCommand(getCloudApp(), "config", "create", ftpfs.GetName(), "ftp", "host="+ftpfs.Host, "username="+ftpfs.UserName, "port="+ftpfs.Port, "password="+ftpfs.Password)
+	args := []string{"config", "create", ftpfs.GetName(), "ftp"}
+	if ftpfs.Host != "" {
+		args = append(args, "host="+ftpfs.Host)
+	}
+	if ftpfs.UserName != "" {
+		args = append(args, "user="+ftpfs.UserName)
+	}
+	if ftpfs.Port != "" {
+		args = append(args, "port="+ftpfs.Port)
+	}
+	if ftpfs.Password != "" {
+		args = append(args, "pass="+ftpfs.Password)
+	}
+
+	return makeCommand(getCloudApp(), args...)
 }
 
 var ftpDrive *FtpStorage
+
+func DeleteFtpDriveStorage() error {
+	storage := &FtpStorage{}
+	cm := MakeCloudManager()
+	return cm.DeleteCloudEntry(storage)
+}
 
 func SetFtpDriveStorage(ftp *FtpStorage) {
 	ftpDrive = ftp
