@@ -175,6 +175,16 @@ input[type=text]:focus, input[type=password]:focus {
   margin-left: 17%;
 }
 
+.noticebutton {
+  background-color: #726e6e;
+  width: 70%;
+  margin-left: 17%;
+}
+
+.noticebox {
+  white-space: pre-wrap;
+}
+
 .danger-zone {
   font-weight: bolder;
   color: #db1305;
