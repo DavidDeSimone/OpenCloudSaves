@@ -619,5 +619,85 @@
             }
         ],
         "darwin_path": []
+    },
+    "Dark_Souls:_Prepare_to_Die_Edition": {
+        "display_name": "Dark Souls: Prepare to Die Edition",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\NBGI\\DarkSouls\\",
+                "inc": ""
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/211420/pfx/",
+                "inc": ""
+            }
+        ],
+        "darwin_path": []
+    },
+    "Dark_Souls_II": {
+        "display_name": "Dark Souls II",
+        "win_path": [
+            {
+                "path": "%APPDATA%\\DarkSoulsII\\",
+                "inc": ""
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/236430/pfx/",
+                "inc": ""
+            }
+        ],
+        "darwin_path": []
+    },
+    "Dark_Souls_II:_Scholar_of_the_First_Sin": {
+        "display_name": "Dark Souls II: Scholar of the First Sin",
+        "win_path": [
+            {
+                "path": "%APPDATA%\\DarkSoulsII\\%USERID%\\DS2SOFS0000.sl2",
+                "inc": ""
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/335300/pfx/",
+                "inc": ""
+            }
+        ],
+        "darwin_path": []
+    },
+    "Dark_Souls_III": {
+        "display_name": "Dark Souls III",
+        "win_path": [
+            {
+                "path": "%APPDATA%\\DarkSoulsIII\\%USERID%\\DS30000.sl2",
+                "inc": ""
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/374320/pfx/",
+                "inc": ""
+            }
+        ],
+        "darwin_path": []
+    },
+    "Dark_Souls_Remastered": {
+        "display_name": "Dark Souls Remastered",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\NBGI\\DARK SOULS REMASTERED\\",
+                "inc": ""
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/570940/pfx/",
+                "inc": ""
+            }
+        ],
+        "darwin_path": []
     }
 }
