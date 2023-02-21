@@ -4,16 +4,25 @@
   
   <name>Open Cloud Save</name>
   <summary>A tool used for syncing your save games across your devices</summary>
+
+  <developer_name>David DeSimone</developer_name>
   
   <metadata_license>MIT</metadata_license>
   <project_license>MIT</project_license>
   <content_rating type="oars-1.1" />
   <releases>
-    <release version="0.17.0" date="2023-01-20"/>
+    <release version="0.17.1" date="2023-01-20"/>
   </releases>
 
   <url type="homepage">https://daviddesimone.github.io/OpenCloudSaves/</url>
   <url type="bugtracker">https://github.com/DavidDeSimone/OpenCloudSaves/issues</url>
+
+  <keywords>
+    <keyword>videogames</keyword>
+    <keyword>saves</keyword>
+    <keyword>cloud</keyword>
+    <keyword>games</keyword>
+  </keywords>
   
   <description>
     <p>
