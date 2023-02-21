@@ -7,6 +7,13 @@
   
   <metadata_license>MIT</metadata_license>
   <project_license>MIT</project_license>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="0.17.0" date="2023-01-20"/>
+  </releases>
+
+  <url type="homepage">https://daviddesimone.github.io/OpenCloudSaves/</url>
+  <url type="bugtracker">https://github.com/DavidDeSimone/OpenCloudSaves/issues</url>
   
   <description>
     <p>
