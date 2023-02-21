@@ -62,10 +62,12 @@ async function onFinished(result, dryRun) {
         lineContEl.appendChild(lineDiv);
     }
 
-    const lineDiv = document.createElement("div");
-    lineDiv.className = "bisync-line";
-    lineDiv.innerText = "Sync Complete!";
-    lineContEl.appendChild(lineDiv);
+    if (!dryRun) {
+        const lineDiv = document.createElement("div");
+        lineDiv.className = "bisync-line";
+        lineDiv.innerText = "Sync Complete!";
+        lineContEl.appendChild(lineDiv);    
+    }
 
     const closeSyncButtonEl = document.getElementById('close-sync-window');
     closeSyncButtonEl.style.display = 'block';
