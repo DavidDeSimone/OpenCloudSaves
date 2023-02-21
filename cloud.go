@@ -7,9 +7,13 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 )
 
 const ToplevelCloudFolder = "opencloudsaves/"
+
+// Used for debugging
+const printCommands = false
 
 // This is a real hack, but we fallback to $PATH if we can't
 // find rclone locally in linux. This is really only for the
@@ -70,7 +74,10 @@ func getCloudApp() string {
 }
 
 func makeCommand(cmd_string string, arg ...string) *exec.Cmd {
-	fmt.Println("Running Command ", cmd_string, arg)
+	if printCommands {
+		fmt.Println("Running Command ", cmd_string, arg)
+	}
+
 	cmd := exec.Command(cmd_string, arg...)
 	StripWindow(cmd)
 	return cmd
@@ -129,15 +136,26 @@ func (cm *CloudManager) MakeStorageDrive(storage Storage) error {
 	fmt.Println("Getting creation command...")
 	cmd := storage.GetCreationCommand()
 	fmt.Println("Running creation command", cmd)
-	return cmd.Run()
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf(stderr.String())
+	}
+
+	return nil
 }
 
 func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (bool, error) {
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
 	cmd := makeCommand(getCloudApp(), "lsjson", path+"/")
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(stderr.String())
 		return false, nil
 	}
 
@@ -147,7 +165,15 @@ func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (
 func (cm *CloudManager) MakeRemoteDir(storage Storage, remotePath string) error {
 	path := fmt.Sprintf("%v:%v/", storage.GetName(), remotePath)
 	cmd := makeCommand(getCloudApp(), "mkdir", path)
-	return cmd.Run()
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf(stderr.String())
+	}
+
+	return nil
 }
 
 func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) ([]CloudFile, error) {
@@ -159,13 +185,19 @@ func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) 
 
 	fmt.Println("Running Command ", getCloudApp(), defaultFlag, include, "lsjson", localPath)
 	cmd := makeCommand(getCloudApp(), defaultFlag, include, "lsjson", localPath)
-	output, err := cmd.CombinedOutput()
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+
+	var stdout strings.Builder
+	cmd.Stdout = &stdout
+
+	err := cmd.Run()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(stderr.String())
 	}
 
 	arr := []CloudFile{}
-	err = json.Unmarshal(output, &arr)
+	err = json.Unmarshal([]byte(stdout.String()), &arr)
 	if err != nil {
 		return nil, err
 	}
@@ -176,17 +208,30 @@ func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) 
 func (cm *CloudManager) DeleteCloudEntry(storage Storage) error {
 	name := storage.GetName()
 	cmd := makeCommand(getCloudApp(), "config", "delete", name)
-	_, err := cmd.CombinedOutput()
-	return err
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf(stderr.String())
+	}
+
+	return nil
 }
 
 func (cm *CloudManager) ObscurePassword(password string) (string, error) {
 	cmd := makeCommand(getCloudApp(), "obscure", password)
-	output, err := cmd.CombinedOutput()
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+
+	var output strings.Builder
+	cmd.Stdout = &output
+
+	err := cmd.Run()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf(stderr.String())
 	}
-	return string(output), nil
+	return output.String(), nil
 }
 
 func (cm *CloudManager) PerformSyncOperation(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
@@ -213,81 +258,90 @@ func (cm *CloudManager) PerformSyncOperation(storage Storage, ops *CloudOperatio
 
 // @TODO support cancellation
 func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-	// We can't pass an empty string as a flag to the rclone command, but we
-	// can pass the same flag multiple times. We use this as a hack to enable
-	// conditional commands with a varargs function. There is likely a better way to
-	// do this, but this should be generally low cost.
-	defaultFlag := "--use-json-log"
-
-	verboseString := defaultFlag
+	args := []string{"--use-json-log"}
 	if ops.Verbose {
-		verboseString = "-v"
+		args = append(args, "-v")
 	}
 
-	dryRunString := defaultFlag
 	if ops.DryRun {
-		dryRunString = "--dry-run"
+		args = append(args, "--dry-run")
 	}
 
-	include := defaultFlag
 	if ops.Include != "" {
-		include = fmt.Sprintf("--include=%v", ops.Include)
+		args = append(args, fmt.Sprintf("--include=%v", ops.Include))
 	}
 
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	fmt.Println("Running Command ", getCloudApp(), defaultFlag, verboseString, dryRunString, include, "sync", localPath, path)
-	cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, include, "sync", localPath, path)
-	output, err := cmd.CombinedOutput()
+	args = append(args, "sync", localPath, path)
+
+	cmd := makeCommand(getCloudApp(), args...)
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+
+	var stdout strings.Builder
+	cmd.Stdout = &stdout
+
+	err := cmd.Run()
 	if err != nil {
+		fmt.Println(stderr.String())
 		return "", err
 	}
 
-	return string(output), nil
+	// Rclone reports the information we want to display to the user
+	// via stderr instead of stdout. To capture all of stderr, we use
+	// the pipe instead of CombinedOutput, so we will return stderr
+	return stderr.String(), nil
 }
 
 func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-
-	// We can't pass an empty string as a flag to the rclone command, but we
-	// can pass the same flag multiple times. We use this as a hack to enable
-	// conditional commands with a varargs function. There is likely a better way to
-	// do this, but this should be generally low cost.
-	defaultFlag := "--use-json-log"
-
-	verboseString := defaultFlag
+	args := []string{"--use-json-log"}
 	if ops.Verbose {
-		verboseString = "-v"
+		args = append(args, "--verbose")
 	}
 
-	dryRunString := defaultFlag
 	if ops.DryRun {
-		dryRunString = "--dry-run"
+		args = append(args, "--dry-run")
 	}
 
-	include := defaultFlag
 	if ops.Include != "" {
-		include = fmt.Sprintf("--include=%v", ops.Include)
+		args = append(args, fmt.Sprintf("--include=%v", ops.Include))
 	}
 
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	fmt.Println("Running Command ", getCloudApp(), defaultFlag, verboseString, dryRunString, include, "bisync", localPath, path)
-	cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, include, "bisync", localPath, path)
-	output, err := cmd.CombinedOutput()
+	args = append(args, "bisync", localPath, path)
+
+	cmd := makeCommand(getCloudApp(), args...)
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+
+	var stdout strings.Builder
+	cmd.Stdout = &stdout
+
+	err := cmd.Run()
 	if err != nil {
 		exiterr := err.(*exec.ExitError)
 		if exiterr.ExitCode() == 2 {
-			// @TODO - in this case, I want to explain sync vs bisync to the user and let them choose
 			fmt.Println("Need to run resync")
-			fmt.Println("Running Command ", getCloudApp(), defaultFlag, verboseString, dryRunString, include, "--resync", "bisync", localPath, path)
-			cmd := makeCommand(getCloudApp(), defaultFlag, verboseString, dryRunString, include, "bisync", "--resync", localPath, path)
-			output, err = cmd.CombinedOutput()
+			args = append(args, "--resync")
+			cmd := makeCommand(getCloudApp(), args...)
+			var resyncstderr strings.Builder
+			cmd.Stderr = &resyncstderr
+
+			var resyncstdout strings.Builder
+			cmd.Stdout = &resyncstdout
+
+			err = cmd.Run()
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf(resyncstderr.String())
 			}
-			return string(output), nil
+			return resyncstderr.String(), nil
 		}
 
-		return "", err
+		return "", fmt.Errorf(stderr.String())
 	}
 
-	return string(output), nil
+	// Rclone reports the information we want to display to the user
+	// via stderr instead of stdout. To capture all of stderr, we use
+	// the pipe instead of CombinedOutput, so we will return stderr
+	return stderr.String(), nil
 }
