@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.daviddesimone.opencloudsaves.opencloudsaves</id>
+  <id>io.github.daviddesimone.opencloudsaves</id>
   
   <name>Open Cloud Save</name>
   <summary>A tool used for syncing your save games across your devices</summary>
