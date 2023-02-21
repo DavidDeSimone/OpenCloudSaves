@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.daviddesimone.opencloudsaves.opencloudsaves</id>
+  
+  <name>Open Cloud Save</name>
+  <summary>A tool used for syncing your save games across your devices</summary>
+  
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  
+  <description>
+    <p>
+      # Open Cloud Saves  Open Cloud Saves is an open source application for managing your saves games across Windows, MacOS, and Linux (including SteamOS). Open Cloud Saves is available for use officially as a “beta”. As a beta test, we recommend that you manually make a backup of your save data before usage. Until Open Cloud Save is more battle tested, we will issue a warning for users to use caution with “critical, beloved” save data.
+    </p>
+    <p>
+      Open Cloud Save gives an advantage over existing cloud solutions:
+    </p>
+    <p>
+      1. Allows cloud saves for games without developer support 2. Allows for the exclusion of certain files or filetypes. This can prevent games syncing graphical settings in addition to syncing save data. 3. Allows for sync between storefronts (you own a Steam on linux and a Epic Game Store version on windows
+    </p>
+    <p>
+      Key Features:
+    </p>
+    <p>
+      1. Inclusion of specific save files based on [pattern matching](https://rclone.org/filtering/) 2. Customizable save data locations - you can tailor the app to your specific save locations 3. Ability to create new save definitions - you do not need to wait for developers to support cloud saves for their games. 4. Data protection - by default, OpenCloudSave will perform a dry-run before all syncs. This way you can see what changes will be made to your save data before they happen. (You can disable this functionality if you just want to immediately sync)
+    </p>
+  </description>
+  
+  <launchable type="desktop-id">io.github.daviddesimone.opencloudsaves.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://user-images.githubusercontent.com/7245174/220252425-48e6a456-16d8-42e6-a2d7-7c5e87876e95.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://user-images.githubusercontent.com/7245174/220252565-e639e42f-d993-46c1-b8f2-fe32a0271947.png</image>
+    </screenshot>
+  </screenshots>
+</component>
