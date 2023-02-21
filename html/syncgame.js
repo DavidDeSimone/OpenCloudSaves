@@ -1,5 +1,6 @@
 // window.pendingSyncGame = null;
 let pendingSyncGame = null;
+let retryDryRun = false;
 
 async function onFinished(result, dryRun) {
     log("Finished Sync");
@@ -66,6 +67,37 @@ async function onFinished(result, dryRun) {
     closeSyncButtonEl.style.display = 'block';
 }
 
+async function onSyncError(error, dryRun) {
+    await log("Error " + error);
+    const lineContEl = document.getElementById('bisync-line-cont');
+    const loaderEl = document.getElementById('sync-game-modal-loader');
+    const syncConfirm = document.getElementById('sync-modal-confirm');
+    const syncCancel = document.getElementById('sync-modal-cancel');
+    const bisyncSubtitle = document.getElementById('bisync-subtitle');
+    bisyncSubtitle.innerText = "Error while syncing!";
+
+    loaderEl.style.display = 'none';
+    lineContEl.style.display = 'block';
+    syncConfirm.disabled = false;
+    syncCancel.disabled = false;
+
+    const lineDiv = document.createElement("div");
+    lineDiv.className = "bisync-line";
+    if (!dryRun) {
+        lineDiv.innerText = `Error while performing sync: ${error}`;
+    } else {
+        lineDiv.innerText = `Error while performing dry-run of sync: ${error}`;
+    }
+
+    lineContEl.appendChild(lineDiv);
+
+    const closeSyncButtonEl = document.getElementById('close-sync-window');
+    closeSyncButtonEl.style.display = 'block';
+
+    syncConfirm.innerText = "Retry";
+    retryDryRun = dryRun;
+} 
+
 function resetSyncModal() {
     const lineContEl = document.getElementById('bisync-line-cont');
     const loaderEl = document.getElementById('sync-game-modal-loader');
@@ -82,6 +114,8 @@ function resetSyncModal() {
     pendingSyncGame = null;
     const closeSyncButtonEl = document.getElementById('close-sync-window');
     closeSyncButtonEl.style.display = 'block';
+    retryDryRun = false;
+    syncConfirm.innerText = "Confirm";
 }
 
 async function sync(gameName, dryRun) {
@@ -103,7 +137,18 @@ async function sync(gameName, dryRun) {
     }
 
     const interval = setInterval(async () => {
-        const resultStr = await pollLogs(gameName);
+        let error = null;
+        const resultStr = await pollLogs(gameName)
+        .catch(e => {
+            error = e;
+        });
+
+        if (error !== null) {
+            clearInterval(interval);
+            await onSyncError(error, dryRun);
+            return;
+        }
+
         if (resultStr !== "") {
             const result = JSON.parse(resultStr);
             if (result && result.Finished) {
@@ -141,5 +186,7 @@ async function onSyncGameConfirm(element) {
 
     loaderEl.style.display = 'block';
     lineContEl.innerHTML = "";
-    await sync(pendingSyncGame, false);
+    const dryRun = retryDryRun;
+    retryDryRun = false;
+    await sync(pendingSyncGame, dryRun);
 }
