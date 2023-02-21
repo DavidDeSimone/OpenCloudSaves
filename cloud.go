@@ -283,8 +283,7 @@ func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, loc
 
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println(stderr.String())
-		return "", err
+		return "", fmt.Errorf(stderr.String())
 	}
 
 	// Rclone reports the information we want to display to the user

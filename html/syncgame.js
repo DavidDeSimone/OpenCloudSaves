@@ -68,7 +68,7 @@ async function onFinished(result, dryRun) {
 }
 
 async function onSyncError(error, dryRun) {
-    await log("Error " + error);
+    log("Error " + error);
     const lineContEl = document.getElementById('bisync-line-cont');
     const loaderEl = document.getElementById('sync-game-modal-loader');
     const syncConfirm = document.getElementById('sync-modal-confirm');
@@ -96,6 +96,9 @@ async function onSyncError(error, dryRun) {
 
     syncConfirm.innerText = "Retry";
     retryDryRun = dryRun;
+
+    syncConfirm.style.display = 'block';
+    syncCancel.style.display = 'block';
 } 
 
 function resetSyncModal() {
@@ -123,28 +126,28 @@ async function sync(gameName, dryRun) {
     closeSyncButtonEl.style.display = 'none';
     log(`Checking If should perform dry run - ${dryRun}`);
     const bisyncSubtitle = document.getElementById('bisync-subtitle');
+    const syncConfirm = document.getElementById('sync-modal-confirm');
+    const syncCancel = document.getElementById('sync-modal-cancel');
+    syncConfirm.style.display = 'none';
+    syncCancel.style.display = 'none';
+
     if (dryRun) {
         bisyncSubtitle.innerText = "Simulating transfer - please wait";
         await getSyncDryRun(gameName);
+        syncConfirm.style.display = 'block';
+        syncCancel.style.display = 'block';
     } else {
         bisyncSubtitle.innerText = "Performing sync - please wait";
-
-        const syncConfirm = document.getElementById('sync-modal-confirm');
-        const syncCancel = document.getElementById('sync-modal-cancel');
-        syncConfirm.style.display = 'none';
-        syncCancel.style.display = 'none';
         await syncGame(gameName);
     }
 
-    const interval = setInterval(async () => {
-        let error = null;
-        const resultStr = await pollLogs(gameName)
-        .catch(e => {
-            error = e;
-        });
-
-        if (error !== null) {
-            clearInterval(interval);
+    const timerValue = 250;
+    var timerFunc = async () => {
+        var clear = false;
+        let resultStr = "";
+        try {
+            resultStr = await pollLogs(gameName);
+        } catch (error) {
             await onSyncError(error, dryRun);
             return;
         }
@@ -152,7 +155,7 @@ async function sync(gameName, dryRun) {
         if (resultStr !== "") {
             const result = JSON.parse(resultStr);
             if (result && result.Finished) {
-                clearInterval(interval);
+                clear = true;
                 try {
                     await onFinished(result, dryRun);
                 } catch (e) {
@@ -160,7 +163,13 @@ async function sync(gameName, dryRun) {
                 }
             }    
         }
-    }, 500);
+
+        if (!clear) {
+            setTimeout(timerFunc, timerValue);
+        }
+    };
+
+    setTimeout(timerFunc, timerValue);
 }
 
 async function setupSyncModal(gameName) {
