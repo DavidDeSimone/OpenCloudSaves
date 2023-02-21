@@ -1,6 +1,4 @@
 app-id: io.github.daviddesimone.opencloudsaves
-base: io.elementary.BaseApp
-base-version: juno-21.08
 runtime: org.gnome.Platform
 runtime-version: '42'
 sdk: org.gnome.Sdk
@@ -41,8 +39,22 @@ modules:
         - "-Dflatpak_build=true"
     sources:
       - type: archive
-        url: https://gitlab.gnome.org/GNOME/devhelp/-/archive/41.3/devhelp-41.3.tar.gz
-        sha256: 48035f2655b3002b6fa9e08fa81915d92f850efed2fb9c86b24314f41f5868f5
+        url: https://gitlab.gnome.org/GNOME/devhelp/-/archive/41.2/devhelp-41.2.tar.gz
+        sha256: 2798546427a42484b61733f13d8532f31e5aa0bdff4a22aa1dc8e3085358fc87
+  - name: opencloudsave
+    buildsystem: simple    
+    build-commands:
+      - $GOROOT/bin/go build -trimpath -o opencloudsave
+      - install -D opencloudsave /app/bin/opencloudsave
+      - install -D ./build/linux/bootstrap-opencloudsave.sh /app/bin/bootstrap-opencloudsave.sh
+      - mkdir -p /app/share/applications/
+      - install -D ./build/linux/icon/io.github.daviddesimone.opencloudsaves.512.png /app/share/icons/hicolor/512x512/apps/io.github.daviddesimone.opencloudsaves.png
+      - install -D ./build/linux/OpenCloudSaves.desktop /app/share/applications/io.github.daviddesimone.opencloudsaves.desktop
+      - install -Dm644 ./build/linux/io.github.daviddesimone.opencloudsaves.appdata.xml /app/share/appdata/io.github.daviddesimone.opencloudsaves.metainfo.xml
+    sources:
+      - type: git
+        path: ../..
+        branch: main
   - name: rclone
     buildsystem: simple
     build-commands:
@@ -53,21 +65,3 @@ modules:
         url: https://github.com/DavidDeSimone/rclone
         tag: v1.0.2
         commit: 8d620b4c48a7e493290167397af779cb65d069c7
-  - name: opencloudsave
-    buildsystem: simple
-    build-commands:
-      - $GOROOT/bin/go build -trimpath -o opencloudsave
-      - install -D opencloudsave /app/bin/opencloudsave
-      - install -D ./build/linux/bootstrap-opencloudsave.sh /app/bin/bootstrap-opencloudsave.sh
-      - mkdir -p /app/share/applications/
-      - install -D ./build/linux/icon/io.github.daviddesimone.opencloudsaves.512.png /app/share/icons/hicolor/512x512/apps/io.github.daviddesimone.opencloudsaves.png
-      - install -D ./build/linux/icon/io.github.daviddesimone.opencloudsaves.256.png /app/share/icons/hicolor/256x256/apps/io.github.daviddesimone.opencloudsaves.png
-      - install -D ./build/linux/icon/io.github.daviddesimone.opencloudsaves.128.png /app/share/icons/hicolor/128x128/apps/io.github.daviddesimone.opencloudsaves.png
-      - install -D ./build/linux/icon/io.github.daviddesimone.opencloudsaves.64.png /app/share/icons/hicolor/64x64/apps/io.github.daviddesimone.opencloudsaves.png
-      - install -D ./build/linux/icon/io.github.daviddesimone.opencloudsaves.32.png /app/share/icons/hicolor/32x32/apps/io.github.daviddesimone.opencloudsaves.png
-      - install -D ./build/linux/OpenCloudSaves.desktop /app/share/applications/io.github.daviddesimone.opencloudsaves.desktop
-      - install -Dm644 ./build/linux/io.github.daviddesimone.opencloudsaves.appdata.xml /app/share/appdata/io.github.daviddesimone.opencloudsaves.metainfo.xml
-    sources:
-      - type: git
-        path: ../..
-        branch: main
