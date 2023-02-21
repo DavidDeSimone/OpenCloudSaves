@@ -1,7 +1,7 @@
 # Open Cloud Saves 
-Open Cloud Saves is an open source application for managing your saves games across Windows, MacOs, and Linux (including SteamOS). Open Cloud Saves is available for use offically as a “beta”. As a beta test, we recommend that you manually make a backup of your save data before usage. Until Open Cloud Save is more battle tested, we will issue a warning for users to use caution with “critical, beloved” save data.
+Open Cloud Saves is an open source application for managing your saves games across Windows, MacOS, and Linux (including SteamOS). Open Cloud Saves is available for use officially as a “beta”. As a beta test, we recommend that you manually make a backup of your save data before usage. Until Open Cloud Save is more battle tested, we will issue a warning for users to use caution with “critical, beloved” save data.
 
-Open Cloud Save gives an advantage over exisiting cloud solutions:
+Open Cloud Save gives an advantage over existing cloud solutions:
 
 1. Allows cloud saves for games without developer support
 2. Allows for the exclusion of certain files or filetypes. This can prevent games syncing graphical settings in addition to syncing save data.
@@ -52,7 +52,7 @@ This application is free and open source, and is free to audit.
 
 ## Build
 
-On all platforms, you will need to initalize the rclone submodule:
+On all platforms, you will need to initialize the rclone submodule:
 
 ```
 git submodule update --init
@@ -165,7 +165,7 @@ You can run
 This will build the flatpak - from there you can install it and run the flatpak version. `package-local` builds off of the current state of the repo, so you can iterate and build the app without needing to install any deps beside flatpak and flatpak-builder.
 
 
-The following command builds the "release" version of the app. This is tied to a specific commit to ensure that the build is reproducable. 
+The following command builds the "release" version of the app. This is tied to a specific commit to ensure that the build is reproducible. 
 ```bash
 ./build/linux/package.bash
 ```
