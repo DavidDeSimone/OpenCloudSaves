@@ -18,7 +18,12 @@ We have a growing list of game save locations, which we will upload to and from 
 
 
 <p align="center">
-  <img width="798" alt="Screenshot 2023-02-04 at 6 06 16 PM" src="https://user-images.githubusercontent.com/7245174/216797838-82411ebf-3bba-46bb-a277-9d6e35595806.png">
+<img width="804" alt="Screenshot 2023-02-20 at 9 02 40 PM" src="https://user-images.githubusercontent.com/7245174/220252425-48e6a456-16d8-42e6-a2d7-7c5e87876e95.png">
+
+ </p>
+ 
+ <p align="center">
+ <img width="798" alt="Screenshot 2023-02-20 at 9 05 23 PM" src="https://user-images.githubusercontent.com/7245174/220252565-e639e42f-d993-46c1-b8f2-fe32a0271947.png">
  </p>
 
 Under the hood, OpenCloudSave uses the popular tool [rclone](https://github.com/rclone/rclone) to perform a bi-directional sync to allow your for games to be updated across multiple clients. This includes Valve's Steam Deck. 
