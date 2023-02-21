@@ -4,7 +4,7 @@ let retryDryRun = false;
 
 async function onFinished(result, dryRun) {
     log("Finished Sync");
-    const messages = result.Message.split("\n");
+    const messages = (result && result.Message) ? result.Message.split("\n") : [];
     const lineContEl = document.getElementById('bisync-line-cont');
     const loaderEl = document.getElementById('sync-game-modal-loader');
     const syncConfirm = document.getElementById('sync-modal-confirm');
@@ -28,7 +28,14 @@ async function onFinished(result, dryRun) {
             continue;
         }
 
-        const result = JSON.parse(messages[i]);
+        let result = null;
+        try {
+            result = JSON.parse(messages[i]);
+        } catch (e) {
+            log(`Error in message processing ${e}`);
+            continue;
+        }
+
         // We strip this out for end users - bisync is good enough
         // for our application, and we will warn on our main page prior 
         // to usage
