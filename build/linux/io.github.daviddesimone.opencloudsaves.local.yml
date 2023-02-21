@@ -5,6 +5,8 @@ runtime: org.gnome.Platform
 runtime-version: '42'
 sdk: org.gnome.Sdk
 command: bootstrap-opencloudsave.sh
+cleanup:
+  - /app/lib/sdk/golang
 finish-args:
   - '--share=ipc'
   - '--socket=fallback-x11'
@@ -64,7 +66,7 @@ modules:
       - install -D ./build/linux/icon/io.github.daviddesimone.opencloudsaves.64.png /app/share/icons/hicolor/64x64/apps/io.github.daviddesimone.opencloudsaves.png
       - install -D ./build/linux/icon/io.github.daviddesimone.opencloudsaves.32.png /app/share/icons/hicolor/32x32/apps/io.github.daviddesimone.opencloudsaves.png
       - install -D ./build/linux/OpenCloudSaves.desktop /app/share/applications/io.github.daviddesimone.opencloudsaves.desktop
-      - install -D ./build/linux/io.github.daviddesimone.opencloudsaves.appdata.xml /usr/share/metainfo/io.github.daviddesimone.opencloudsaves.metainfo.xml
+      - install -Dm644 ./build/linux/io.github.daviddesimone.opencloudsaves.appdata.xml /app/share/appdata/io.github.daviddesimone.opencloudsaves.metainfo.xml
     sources:
       - type: git
         path: ../..
