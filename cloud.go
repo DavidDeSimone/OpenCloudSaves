@@ -286,10 +286,15 @@ func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, loc
 		return "", fmt.Errorf(stderr.String())
 	}
 
+	result := stderr.String()
+	if result == "" {
+		result = stdout.String()
+	}
+
 	// Rclone reports the information we want to display to the user
 	// via stderr instead of stdout. To capture all of stderr, we use
 	// the pipe instead of CombinedOutput, so we will return stderr
-	return stderr.String(), nil
+	return result, nil
 }
 
 func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
@@ -333,14 +338,24 @@ func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, l
 			if err != nil {
 				return "", fmt.Errorf(resyncstderr.String())
 			}
-			return resyncstderr.String(), nil
+
+			result := resyncstderr.String()
+			if result == "" {
+				result = resyncstdout.String()
+			}
+			return result, nil
 		}
 
 		return "", fmt.Errorf(stderr.String())
 	}
 
+	result := stderr.String()
+	if result == "" {
+		result = stdout.String()
+	}
+
 	// Rclone reports the information we want to display to the user
 	// via stderr instead of stdout. To capture all of stderr, we use
 	// the pipe instead of CombinedOutput, so we will return stderr
-	return stderr.String(), nil
+	return result, nil
 }
