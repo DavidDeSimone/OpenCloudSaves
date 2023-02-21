@@ -1,5 +1,6 @@
 // window.pendingSyncGame = null;
 let pendingSyncGame = null;
+let retryDryRun = false;
 
 async function onFinished(result, dryRun) {
     log("Finished Sync");
@@ -66,6 +67,40 @@ async function onFinished(result, dryRun) {
     closeSyncButtonEl.style.display = 'block';
 }
 
+async function onSyncError(error, dryRun) {
+    log("Error " + error);
+    const lineContEl = document.getElementById('bisync-line-cont');
+    const loaderEl = document.getElementById('sync-game-modal-loader');
+    const syncConfirm = document.getElementById('sync-modal-confirm');
+    const syncCancel = document.getElementById('sync-modal-cancel');
+    const bisyncSubtitle = document.getElementById('bisync-subtitle');
+    bisyncSubtitle.innerText = "Error while syncing!";
+
+    loaderEl.style.display = 'none';
+    lineContEl.style.display = 'block';
+    syncConfirm.disabled = false;
+    syncCancel.disabled = false;
+
+    const lineDiv = document.createElement("div");
+    lineDiv.className = "bisync-line";
+    if (!dryRun) {
+        lineDiv.innerText = `Error while performing sync: ${error}`;
+    } else {
+        lineDiv.innerText = `Error while performing dry-run of sync: ${error}`;
+    }
+
+    lineContEl.appendChild(lineDiv);
+
+    const closeSyncButtonEl = document.getElementById('close-sync-window');
+    closeSyncButtonEl.style.display = 'block';
+
+    syncConfirm.innerText = "Retry";
+    retryDryRun = dryRun;
+
+    syncConfirm.style.display = 'block';
+    syncCancel.style.display = 'block';
+} 
+
 function resetSyncModal() {
     const lineContEl = document.getElementById('bisync-line-cont');
     const loaderEl = document.getElementById('sync-game-modal-loader');
@@ -82,6 +117,8 @@ function resetSyncModal() {
     pendingSyncGame = null;
     const closeSyncButtonEl = document.getElementById('close-sync-window');
     closeSyncButtonEl.style.display = 'block';
+    retryDryRun = false;
+    syncConfirm.innerText = "Confirm";
 }
 
 async function sync(gameName, dryRun) {
@@ -89,25 +126,36 @@ async function sync(gameName, dryRun) {
     closeSyncButtonEl.style.display = 'none';
     log(`Checking If should perform dry run - ${dryRun}`);
     const bisyncSubtitle = document.getElementById('bisync-subtitle');
+    const syncConfirm = document.getElementById('sync-modal-confirm');
+    const syncCancel = document.getElementById('sync-modal-cancel');
+    syncConfirm.style.display = 'none';
+    syncCancel.style.display = 'none';
+
     if (dryRun) {
         bisyncSubtitle.innerText = "Simulating transfer - please wait";
         await getSyncDryRun(gameName);
+        syncConfirm.style.display = 'block';
+        syncCancel.style.display = 'block';
     } else {
         bisyncSubtitle.innerText = "Performing sync - please wait";
-
-        const syncConfirm = document.getElementById('sync-modal-confirm');
-        const syncCancel = document.getElementById('sync-modal-cancel');
-        syncConfirm.style.display = 'none';
-        syncCancel.style.display = 'none';
         await syncGame(gameName);
     }
 
-    const interval = setInterval(async () => {
-        const resultStr = await pollLogs(gameName);
+    const timerValue = 250;
+    var timerFunc = async () => {
+        var clear = false;
+        let resultStr = "";
+        try {
+            resultStr = await pollLogs(gameName);
+        } catch (error) {
+            await onSyncError(error, dryRun);
+            return;
+        }
+
         if (resultStr !== "") {
             const result = JSON.parse(resultStr);
             if (result && result.Finished) {
-                clearInterval(interval);
+                clear = true;
                 try {
                     await onFinished(result, dryRun);
                 } catch (e) {
@@ -115,7 +163,13 @@ async function sync(gameName, dryRun) {
                 }
             }    
         }
-    }, 500);
+
+        if (!clear) {
+            setTimeout(timerFunc, timerValue);
+        }
+    };
+
+    setTimeout(timerFunc, timerValue);
 }
 
 async function setupSyncModal(gameName) {
@@ -141,5 +195,7 @@ async function onSyncGameConfirm(element) {
 
     loaderEl.style.display = 'block';
     lineContEl.innerHTML = "";
-    await sync(pendingSyncGame, false);
+    const dryRun = retryDryRun;
+    retryDryRun = false;
+    await sync(pendingSyncGame, dryRun);
 }
