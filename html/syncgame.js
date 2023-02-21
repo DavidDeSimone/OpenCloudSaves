@@ -75,9 +75,6 @@ async function onFinished(result, dryRun) {
         lineDiv.innerText = "Sync Complete!";
         lineContEl.appendChild(lineDiv);    
     }
-
-    const closeSyncButtonEl = document.getElementById('close-sync-window');
-    closeSyncButtonEl.style.display = 'block';
 }
 
 async function onSyncError(error, dryRun) {
@@ -104,9 +101,6 @@ async function onSyncError(error, dryRun) {
 
     lineContEl.appendChild(lineDiv);
 
-    const closeSyncButtonEl = document.getElementById('close-sync-window');
-    closeSyncButtonEl.style.display = 'block';
-
     syncConfirm.innerText = "Retry";
     retryDryRun = dryRun;
 
@@ -128,15 +122,11 @@ function resetSyncModal() {
     syncConfirm.style.display = 'block';
     loaderEl.style.display = 'block';
     pendingSyncGame = null;
-    const closeSyncButtonEl = document.getElementById('close-sync-window');
-    closeSyncButtonEl.style.display = 'block';
     retryDryRun = false;
     syncConfirm.innerText = "Confirm";
 }
 
 async function sync(gameName, dryRun) {
-    const closeSyncButtonEl = document.getElementById('close-sync-window');
-    closeSyncButtonEl.style.display = 'none';
     log(`Checking If should perform dry run - ${dryRun}`);
     const bisyncSubtitle = document.getElementById('bisync-subtitle');
     const syncConfirm = document.getElementById('sync-modal-confirm');
