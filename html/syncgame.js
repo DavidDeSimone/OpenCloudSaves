@@ -36,7 +36,6 @@ async function onFinished(result, dryRun) {
             continue;
         }
 
-
         const lineDiv = document.createElement("div");
         lineDiv.className = "bisync-line";
 
@@ -62,6 +61,11 @@ async function onFinished(result, dryRun) {
 
         lineContEl.appendChild(lineDiv);
     }
+
+    const lineDiv = document.createElement("div");
+    lineDiv.className = "bisync-line";
+    lineDiv.innerText = "Sync Complete!";
+    lineContEl.appendChild(lineDiv);
 
     const closeSyncButtonEl = document.getElementById('close-sync-window');
     closeSyncButtonEl.style.display = 'block';
@@ -134,8 +138,6 @@ async function sync(gameName, dryRun) {
     if (dryRun) {
         bisyncSubtitle.innerText = "Simulating transfer - please wait";
         await getSyncDryRun(gameName);
-        syncConfirm.style.display = 'block';
-        syncCancel.style.display = 'block';
     } else {
         bisyncSubtitle.innerText = "Performing sync - please wait";
         await syncGame(gameName);
@@ -160,6 +162,11 @@ async function sync(gameName, dryRun) {
                     await onFinished(result, dryRun);
                 } catch (e) {
                     await log(`Error : ${e}`);
+                } finally {
+                    if (dryRun) {
+                        syncConfirm.style.display = 'block';
+                        syncCancel.style.display = 'block';    
+                    }
                 }
             }    
         }
