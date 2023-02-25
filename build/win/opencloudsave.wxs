@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="Open Cloud Save" Language="1033" Version="0.16.0.0" Manufacturer="DavidDeSimone" UpgradeCode="3bf3b84c-e140-4276-81bd-23f461b01f71">
+  <Product Id="*" Name="Open Cloud Save" Language="1033" Version="0.17.3.0" Manufacturer="DavidDeSimone" UpgradeCode="3bf3b84c-e140-4276-81bd-23f461b01f71">
 <Package Platform="x64" InstallerVersion="200" Compressed="yes" InstallScope="perMachine"/>
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."/>
     <MediaTemplate EmbedCab="yes"/>
