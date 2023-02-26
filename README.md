@@ -45,7 +45,7 @@ https://go.dev/doc/faq#virus
 This application is free and open source, and is free to audit.
 
 ## MacOS
-1. Download the [Open Cloud Save .dmg](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.16.0/macOS_opencloudsaves_0.16.0_aarch64.dmg)
+1. Download the [Open Cloud Save .dmg](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.3/opencloudsaves_0.17.3_aarch64.dmg)
 2. Drag the executable into your /Applications/ directory
 3. Launch OpenCloudSave
 
