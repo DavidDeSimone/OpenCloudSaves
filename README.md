@@ -35,7 +35,7 @@ NOTE: This method requires Flatpak to be installed. Steamdeck already has flatpa
 
 ## Windows
 
-1. Download the [Open Cloud Save Installer](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.16.0/windows_opencloudsaves_0.16.0_x86_64.msi)
+1. Download the [Open Cloud Save Installer](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.3/opencloudsave_0.17.3_x86_64.msi)
 2. Follow the instructions for installation.
 3. Launch opencloudsave.exe located in C:\Program Files\OpenCloudSave\
 
