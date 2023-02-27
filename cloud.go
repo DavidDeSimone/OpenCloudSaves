@@ -13,7 +13,7 @@ import (
 const ToplevelCloudFolder = "opencloudsaves/"
 
 // Used for debugging
-const printCommands = false
+const printCommands = true
 
 // This is a real hack, but we fallback to $PATH if we can't
 // find rclone locally in linux. This is really only for the
@@ -258,6 +258,35 @@ func (cm *CloudManager) PerformSyncOperation(storage Storage, ops *CloudOperatio
 
 // @TODO support cancellation
 func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
+	exists, err := cm.DoesRemoteDirExist(storage, remotePath)
+	if err != nil {
+		return "", err
+	}
+	copy := ""
+	if exists {
+		copy, err = cm.copy(storage, ops, path, localPath)
+		if err != nil {
+			return "", err
+		}
+	}
+	result, err := cm.sync(storage, ops, localPath, path)
+	if err != nil {
+		return "", err
+	}
+
+	return copy + "\n" + result, nil
+}
+
+func (cm *CloudManager) copy(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+	return cm.syncAction("copy", storage, ops, localPath, remotePath)
+}
+
+func (cm *CloudManager) sync(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+	return cm.syncAction("sync", storage, ops, localPath, remotePath)
+}
+
+func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	args := []string{"--use-json-log"}
 	if ops.Verbose {
 		args = append(args, "-v")
@@ -271,8 +300,7 @@ func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, loc
 		args = append(args, fmt.Sprintf("--include=%v", ops.Include))
 	}
 
-	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	args = append(args, "sync", localPath, path)
+	args = append(args, action, localPath, remotePath)
 
 	cmd := makeCommand(getCloudApp(), args...)
 	var stderr strings.Builder
