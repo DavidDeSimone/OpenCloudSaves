@@ -11,7 +11,7 @@
   <project_license>MIT</project_license>
   <content_rating type="oars-1.1" />
   <releases>
-    <release version="0.17.3" date="2023-01-20"/>
+    <release version="0.17.4" date="2023-01-20"/>
   </releases>
 
   <url type="homepage">https://daviddesimone.github.io/OpenCloudSaves/</url>
