@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	_ "embed"
@@ -253,6 +253,10 @@ func GetDefaultUserOverridePath() string {
 	fmt.Println("Getting User Override Path " + cacheDir + separator + APP_NAME + separator + "user_overrides.json")
 	os.Stdout.WriteString("Getting User Override Path " + cacheDir + separator + APP_NAME + separator + "user_overrides.json")
 	return cacheDir + separator + APP_NAME + separator + "user_overrides.json"
+}
+
+func MakeDefaultGameDefManager() GameDefManager {
+	return MakeGameDefManager("")
 }
 
 func MakeGameDefManager(userOverride string) GameDefManager {

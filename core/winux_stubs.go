@@ -1,6 +1,6 @@
 //go:build windows || linux
 
-package main
+package core
 
 func GetMacOsPath() string {
 	return ""
