@@ -31,9 +31,10 @@ type CloudManager struct {
 }
 
 type CloudOperationOptions struct {
-	Verbose bool
-	DryRun  bool
-	Include string
+	Verbose    bool
+	DryRun     bool
+	Include    string
+	UpdateOnly bool
 }
 
 type CloudFile struct {
@@ -265,10 +266,13 @@ func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, loc
 	}
 	copy := ""
 	if exists {
+		exisitingUFlag := ops.UpdateOnly
+		ops.UpdateOnly = true
 		copy, err = cm.copy(storage, ops, path, localPath)
 		if err != nil {
 			return "", err
 		}
+		ops.UpdateOnly = exisitingUFlag
 	}
 	result, err := cm.sync(storage, ops, localPath, path)
 	if err != nil {
@@ -298,6 +302,10 @@ func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOpe
 
 	if ops.Include != "" {
 		args = append(args, fmt.Sprintf("--include=%v", ops.Include))
+	}
+
+	if ops.UpdateOnly {
+		args = append(args, "-u")
 	}
 
 	args = append(args, action, localPath, remotePath)
