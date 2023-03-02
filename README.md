@@ -28,7 +28,7 @@ Key Features:
 
 ## Linux / Steam Deck
 
-NOTE: This method requires Flatpak to be installed. Steamdeck already has flatpak installed. For non-steam deck users you may need to [install flatpak based on your distro](https://flatpak.org/setup/)
+NOTE: This app is listed on Flathub/The Discover Store. Please download the app via Flathub/The Discover Store. If that fails, you can try to follow these steps to manually install the flatpak. 
 
 1. Download the [Install.desktop](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.6/Install.desktop) file and place it on your desktop.
 2. Run the Install.Desktop and agree to usage terms
