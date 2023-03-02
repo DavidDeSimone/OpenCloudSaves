@@ -35,6 +35,7 @@ type CloudOperationOptions struct {
 	DryRun     bool
 	Include    string
 	UpdateOnly bool
+	Checksum   bool
 }
 
 type CloudFile struct {
@@ -267,12 +268,17 @@ func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, loc
 	copy := ""
 	if exists {
 		exisitingUFlag := ops.UpdateOnly
+		exisitingChecksumFlag := ops.Checksum
+
 		ops.UpdateOnly = true
+		ops.Checksum = true
+
 		copy, err = cm.copy(storage, ops, path, localPath)
 		if err != nil {
 			return "", err
 		}
 		ops.UpdateOnly = exisitingUFlag
+		ops.Checksum = exisitingChecksumFlag
 	}
 	result, err := cm.sync(storage, ops, localPath, path)
 	if err != nil {
@@ -306,6 +312,10 @@ func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOpe
 
 	if ops.UpdateOnly {
 		args = append(args, "-u")
+	}
+
+	if ops.Checksum {
+		args = append(args, "--checksum")
 	}
 
 	args = append(args, action, localPath, remotePath)
