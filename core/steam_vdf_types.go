@@ -1,4 +1,4 @@
-package main
+package core
 
 type LibraryFolders struct {
 	LibraryFolders map[string]LibraryFolder `json:"libraryfolders"`

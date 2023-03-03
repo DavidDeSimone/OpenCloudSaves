@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 const ToplevelCloudFolder = "opencloudsaves/"
 
 // Used for debugging
-const printCommands = true
+const printCommands = false
 
 // This is a real hack, but we fallback to $PATH if we can't
 // find rclone locally in linux. This is really only for the

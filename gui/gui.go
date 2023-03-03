@@ -1,4 +1,4 @@
-package main
+package gui
 
 import (
 	"bufio"
@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"io/fs"
 	"log"
+	"opencloudsave/core"
 	"os"
 	"path/filepath"
 	"sort"
@@ -33,7 +34,7 @@ type SaveFile struct {
 
 type Game struct {
 	Name           string
-	Def            *GameDef
+	Def            *core.GameDef
 	SaveFiles      []SaveFile
 	SaveFilesFound bool
 }
@@ -49,7 +50,7 @@ func consoleLog(s string) {
 }
 
 var chanelMutex sync.Mutex
-var channelMap map[string]*ChannelProvider = make(map[string]*ChannelProvider)
+var channelMap map[string]*core.ChannelProvider = make(map[string]*core.ChannelProvider)
 
 func openDirDialog() (string, error) {
 	return dialog.Directory().Title("Select Folder").Browse()
@@ -64,7 +65,7 @@ func pollLogs(key string) (string, error) {
 	}
 
 	select {
-	case res := <-channels.logs:
+	case res := <-channels.Logs:
 		if res.Err != nil {
 			return "", res.Err
 		}
@@ -83,19 +84,19 @@ func pollLogs(key string) (string, error) {
 }
 
 func syncGame(key string) {
-	ops := &Options{
+	ops := &core.Options{
 		Gamenames: []string{key},
 		Verbose:   []bool{true},
 	}
-	cm := MakeCloudManager()
+	cm := core.MakeCloudManager()
 
-	dm := MakeGameDefManager("")
+	dm := core.MakeGameDefManager("")
 	dm.SetCloudManager(cm)
-	channels := &ChannelProvider{
-		logs: make(chan Message, 100),
+	channels := &core.ChannelProvider{
+		Logs: make(chan core.Message, 100),
 	}
 
-	go CliMain(cm, ops, dm, channels)
+	go core.RequestMainOperation(cm, ops, dm, channels)
 	chanelMutex.Lock()
 	defer chanelMutex.Unlock()
 
@@ -118,14 +119,14 @@ type GuiGamedef struct {
 // rebuild the list. Instead, we may need a 'hidden' flag and not
 // actually delete entries.
 func removeGamedefByKey(key string) {
-	dm := MakeGameDefManager("")
+	dm := core.MakeDefaultGameDefManager()
 	dm.ApplyUserOverrides()
 	dm.RemoveGameDef(key)
 	dm.CommitUserOverrides()
 }
 
 func fetchGamedef(key string) (*GuiGamedef, error) {
-	dm := MakeGameDefManager("")
+	dm := core.MakeDefaultGameDefManager()
 	gamedefMap := dm.GetGameDefMap()
 	def, ok := gamedefMap[key]
 	if !ok {
@@ -161,32 +162,32 @@ func fetchGamedef(key string) (*GuiGamedef, error) {
 }
 
 func commitGamedef(gamedef GuiGamedef) {
-	dm := MakeGameDefManager("")
+	dm := core.MakeDefaultGameDefManager()
 	gamedefMap := dm.GetGameDefMap()
-	gamedefMap[gamedef.Name] = &GameDef{
+	gamedefMap[gamedef.Name] = &core.GameDef{
 		DisplayName: gamedef.Name,
 		SteamId:     "0",
-		WinPath:     []*Datapath{},
-		DarwinPath:  []*Datapath{},
-		LinuxPath:   []*Datapath{},
+		WinPath:     []*core.Datapath{},
+		DarwinPath:  []*core.Datapath{},
+		LinuxPath:   []*core.Datapath{},
 	}
 
 	for _, def := range gamedef.Windows {
-		gamedefMap[gamedef.Name].WinPath = append(gamedefMap[gamedef.Name].WinPath, &Datapath{
+		gamedefMap[gamedef.Name].WinPath = append(gamedefMap[gamedef.Name].WinPath, &core.Datapath{
 			Path:    def.Path,
 			Include: def.Include,
 		})
 	}
 
 	for _, def := range gamedef.MacOS {
-		gamedefMap[gamedef.Name].DarwinPath = append(gamedefMap[gamedef.Name].DarwinPath, &Datapath{
+		gamedefMap[gamedef.Name].DarwinPath = append(gamedefMap[gamedef.Name].DarwinPath, &core.Datapath{
 			Path:    def.Path,
 			Include: def.Include,
 		})
 	}
 
 	for _, def := range gamedef.Linux {
-		gamedefMap[gamedef.Name].LinuxPath = append(gamedefMap[gamedef.Name].LinuxPath, &Datapath{
+		gamedefMap[gamedef.Name].LinuxPath = append(gamedefMap[gamedef.Name].LinuxPath, &core.Datapath{
 			Path:    def.Path,
 			Include: def.Include,
 		})
@@ -206,24 +207,24 @@ func load(w webview.WebView, path string) error {
 }
 
 func commitCloudService(service int) error {
-	cloudperfs := GetCurrentCloudPerfsOrDefault()
+	cloudperfs := core.GetCurrentCloudPerfsOrDefault()
 	cloudperfs.Cloud = service
-	err := CommitCloudPerfs(cloudperfs)
+	err := core.CommitCloudPerfs(cloudperfs)
 	if err != nil {
 		return err
 	}
 
-	storage, err := GetCurrentCloudStorage()
+	storage, err := core.GetCurrentCloudStorage()
 	if err != nil {
 		return err
 	}
 
-	cm := MakeCloudManager()
+	cm := core.MakeCloudManager()
 	return cm.CreateDriveIfNotExists(storage)
 }
 
 func getCloudService() (int, error) {
-	cloudperfs, err := GetCurrentCloudPerfs()
+	cloudperfs, err := core.GetCurrentCloudPerfs()
 	if err != nil {
 		return -1, nil
 	}
@@ -232,47 +233,47 @@ func getCloudService() (int, error) {
 }
 
 func getSyncDryRun(name string) error {
-	ops := &Options{
+	ops := &core.Options{
 		DryRun:    []bool{true},
 		Gamenames: []string{name},
 		Verbose:   []bool{true},
 	}
-	channels := &ChannelProvider{
-		logs: make(chan Message, 100),
+	channels := &core.ChannelProvider{
+		Logs: make(chan core.Message, 100),
 	}
 
 	chanelMutex.Lock()
 	channelMap[name] = channels
 	chanelMutex.Unlock()
 
-	cm := MakeCloudManager()
-	dm := MakeGameDefManager("")
+	cm := core.MakeCloudManager()
+	dm := core.MakeDefaultGameDefManager()
 	dm.SetCloudManager(cm)
 
-	go CliMain(cm, ops, dm, channels)
+	go core.RequestMainOperation(cm, ops, dm, channels)
 	return nil
 }
 
 func getShouldPerformDryRun() (bool, error) {
-	cloudperfs := GetCurrentCloudPerfsOrDefault()
+	cloudperfs := core.GetCurrentCloudPerfsOrDefault()
 	return cloudperfs.PerformDryRun, nil
 }
 
 func getCloudPerfs() (string, error) {
-	cloudperfs := GetCurrentCloudPerfsOrDefault()
+	cloudperfs := core.GetCurrentCloudPerfsOrDefault()
 	json, err := json.Marshal(cloudperfs)
 	return string(json), err
 }
 
 func commitCloudPerfs(cloudJson string) error {
 	fmt.Println("Commiting Cloud Perfs " + cloudJson)
-	cloudperfs := &CloudPerfs{}
+	cloudperfs := &core.CloudPerfs{}
 	err := json.Unmarshal([]byte(cloudJson), cloudperfs)
 	if err != nil {
 		return err
 	}
 	fmt.Println("Writing cloud perfs")
-	err = CommitCloudPerfs(cloudperfs)
+	err = core.CommitCloudPerfs(cloudperfs)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -282,19 +283,19 @@ func commitCloudPerfs(cloudJson string) error {
 }
 
 func clearUserSettings() error {
-	path := GetDefaultUserOverridePath()
+	path := core.GetDefaultUserOverridePath()
 	return os.Remove(path)
 }
 
 func commitFTPSettings(jsonInput string) error {
-	ftp := &FtpStorage{}
+	ftp := &core.FtpStorage{}
 	err := json.Unmarshal([]byte(jsonInput), ftp)
 	if err != nil {
 		return err
 	}
 
 	if ftp.Password != "" {
-		cm := MakeCloudManager()
+		cm := core.MakeCloudManager()
 		obscuredpw, err := cm.ObscurePassword(ftp.Password)
 		if err != nil {
 			return err
@@ -303,12 +304,12 @@ func commitFTPSettings(jsonInput string) error {
 		ftp.Password = obscuredpw
 	}
 
-	SetFtpDriveStorage(ftp)
+	core.SetFtpDriveStorage(ftp)
 	return nil
 }
 
 func deleteCurrentFTPSettings() {
-	DeleteFtpDriveStorage()
+	core.DeleteFtpDriveStorage()
 }
 
 func bindFunctions(w webview.WebView) {
@@ -353,7 +354,7 @@ func DirSize(path string) (int64, error) {
 	return size, err
 }
 
-func buildGamelist(dm GameDefManager) []Game {
+func buildGamelist(dm core.GameDefManager) []Game {
 	games := []Game{}
 	for k, v := range dm.GetGameDefMap() {
 		game := Game{
@@ -422,7 +423,7 @@ func buildGamelist(dm GameDefManager) []Game {
 }
 
 func executeTemplate() (string, error) {
-	dm := MakeGameDefManager("")
+	dm := core.MakeDefaultGameDefManager()
 	games := buildGamelist(dm)
 
 	sort.Slice(games, func(i, j int) bool {
@@ -504,7 +505,7 @@ func setCloudSelectScreen(w webview.WebView) error {
 	return nil
 }
 
-func GuiMain(ops *Options, dm GameDefManager) {
+func GuiMain(ops *core.Options, dm core.GameDefManager) {
 	debug := true
 	w := webview.New(debug)
 	defer w.Destroy()
@@ -512,7 +513,7 @@ func GuiMain(ops *Options, dm GameDefManager) {
 	w.SetSize(800, 600, 0)
 	bindFunctions(w)
 
-	storage := GetCurrentStorageProvider()
+	storage := core.GetCurrentStorageProvider()
 	if storage == nil {
 		err := setCloudSelectScreen(w)
 		if err != nil {

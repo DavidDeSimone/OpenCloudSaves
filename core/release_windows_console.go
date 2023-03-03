@@ -1,6 +1,6 @@
 //go:build windows && !debug
 
-package main
+package core
 
 func SetupWindowsConsole() {
 
