@@ -6,6 +6,8 @@ if [ ! -f "build/macos/OpenCloudSave.dmg" ]; then
     curl "https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/macos-dmg-v1.0.0/OpenCloudSave-release.dmg" > build/macos/OpenCloudSave.dmg
 fi
 
+./build/gen-version-rev.bash
+
 cd rclone
 go build 
 cd ../

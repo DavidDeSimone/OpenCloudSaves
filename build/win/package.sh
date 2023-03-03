@@ -2,7 +2,7 @@
 
 set -e
 
-## TODO update to include rclone.exe
+./build/gen-version-rev.bash
 
 CURR=$(pwd)
 cd build/win/
