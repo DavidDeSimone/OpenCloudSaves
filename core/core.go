@@ -94,8 +94,10 @@ func RequestMainOperation(cm *CloudManager, ops *Options, dm GameDefManager, cha
 
 	LogMessage(logs, "Starting Upload Process...")
 
+	gamedefs := dm.GetGameDefMap()
 	for _, gamename := range ops.Gamenames {
 		gamename = strings.TrimSpace(gamename)
+		gamedef := gamedefs[gamename]
 		LogMessage(logs, "Performing Check on %v", gamename)
 
 		syncpaths, err := dm.GetSyncpathForGame(gamename)
@@ -122,6 +124,7 @@ func RequestMainOperation(cm *CloudManager, ops *Options, dm GameDefManager, cha
 				syncops.Verbose = true
 			}
 
+			syncops.CustomFlags = gamedef.CustomFlags
 			syncops.Include = syncpath.Include
 
 			result, err := cm.PerformSyncOperation(storage, syncops, syncpath.Path, remotePath)
