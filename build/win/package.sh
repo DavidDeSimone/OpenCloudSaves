@@ -2,8 +2,6 @@
 
 set -e
 
-./build/gen-version-rev.bash
-
 CURR=$(pwd)
 cd build/win/
 
