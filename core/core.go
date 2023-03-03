@@ -1,10 +1,14 @@
 package core
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"strings"
 )
+
+//go:embed version.txt
+var VersionRevision string
 
 type Options struct {
 	Gamenames        []string          `short:"g" long:"gamenames" description:"The name of the game(s) you will attempt to sync"`

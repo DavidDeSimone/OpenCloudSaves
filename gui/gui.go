@@ -43,6 +43,7 @@ type HtmlInput struct {
 	Games     []Game
 	Platforms []string
 	Notice    string
+	Version   string
 }
 
 func consoleLog(s string) {
@@ -433,6 +434,7 @@ func executeTemplate() (string, error) {
 		Games:     games,
 		Platforms: []string{"Windows", "MacOS", "Linux"},
 		Notice:    notice,
+		Version:   core.VersionRevision,
 	}
 
 	var b bytes.Buffer
