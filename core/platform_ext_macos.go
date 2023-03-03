@@ -14,7 +14,7 @@ var useMacRelativePath = false
 func GetMacOsPath() string {
 	if !checkedPath {
 		_, err := os.Stat("./bin/rclone")
-		if err != nil {
+		if err == nil {
 			useMacRelativePath = true
 		}
 		checkedPath = true
