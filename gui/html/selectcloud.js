@@ -49,6 +49,42 @@ async function setCurrentCloud() {
     }
 }
 
+function setNextCloud() {
+    const nextCloudModal = document.getElementById('nextcloud-modal');
+    nextCloudModal.style = 'display: block';
+}
+
+async function onNextCloudConfirm() {
+    const url = document.getElementById('NextCloud-Url');
+    const userName = document.getElementById('NextCloud-Username');
+    const password = document.getElementById('NextCloud-Password');
+    const bearerToken = document.getElementById('NextCloud-BearerToken');
+    const nextCloudSettings = {
+        url: url.value,
+        user: userName.value,
+        bearer_token: bearerToken.value,
+        pass: password.value,
+    };
+
+    await deleteCurrentNextCloudSettings();
+    await commitNextCloudSettings(JSON.stringify(nextCloudSettings));
+    await cloudSelected(4);
+}
+
+async function onNextCloudClose() {
+    const nextCloudModal = document.getElementById('nextcloud-modal');
+    nextCloudModal.style = 'display: none';
+
+    const url = document.getElementById('NextCloud-Url');
+    const userName = document.getElementById('NextCloud-Username');
+    const password = document.getElementById('NextCloud-Password');
+    const bearerToken = document.getElementById('NextCloud-BearerToken');
+    url.value = "";
+    userName.value = "";
+    password.value = "";
+    bearerToken.value = "";
+}
+
 function setFtpServer() {
     const ftpModal = document.getElementById('ftp-modal');
     ftpModal.style = 'display: block';
