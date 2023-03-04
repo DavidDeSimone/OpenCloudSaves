@@ -3,10 +3,10 @@ package core
 import "os/exec"
 
 type FtpStorage struct {
-	Host     string `json: host`
-	UserName string `json: userName`
-	Port     string `json: port`
-	Password string `json: password`
+	Host     string `json:"host"`
+	UserName string `json:"userName"`
+	Port     string `json:"port"`
+	Password string `json:"password"`
 }
 
 func (ftpfs *FtpStorage) GetName() string {

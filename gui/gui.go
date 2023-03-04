@@ -312,6 +312,31 @@ func commitFTPSettings(jsonInput string) error {
 	return nil
 }
 
+func commitNextCloudSettings(jsonInput string) error {
+	nextCloud := &core.NextCloudStorage{}
+	err := json.Unmarshal([]byte(jsonInput), nextCloud)
+	if err != nil {
+		return err
+	}
+
+	if nextCloud.Pass != "" {
+		cm := core.MakeCloudManager()
+		obscuredpw, err := cm.ObscurePassword(nextCloud.Pass)
+		if err != nil {
+			return err
+		}
+
+		nextCloud.Pass = obscuredpw
+	}
+
+	core.SetNextCloudStorage(nextCloud)
+	return nil
+}
+
+func deleteCurrentNextCloudSettings() {
+	core.DeleteNextCloudStorage()
+}
+
 func deleteCurrentFTPSettings() {
 	core.DeleteFtpDriveStorage()
 }
@@ -341,6 +366,8 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("commitCloudPerfs", commitCloudPerfs)
 	w.Bind("clearUserSettings", clearUserSettings)
 	w.Bind("commitFTPSettings", commitFTPSettings)
+	w.Bind("deleteCurrentNextCloudSettings", deleteCurrentNextCloudSettings)
+	w.Bind("commitNextCloudSettings", commitNextCloudSettings)
 	w.Bind("deleteCurrentFTPSettings", deleteCurrentFTPSettings)
 }
 
