@@ -27,6 +27,7 @@ type GameDef struct {
 	LinuxPath   []*Datapath `json:"linux_path"`
 	DarwinPath  []*Datapath `json:"darwin_path"`
 	Hidden      bool        `json:"hidden"`
+	CustomFlags string      `json:"flags"`
 }
 
 type SyncFile struct {

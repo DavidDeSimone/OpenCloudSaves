@@ -64,6 +64,9 @@ function deserGamedef(gamedef) {
     const gamenameEl = document.getElementById('gamename');
     gamenameEl.value = gamedef.Name;
 
+    const flags = document.getElementById('flags');
+    flags.value = gamedef.CustomFlags;
+
     ["Windows", "MacOS", "Linux"].forEach(element => {
         const def = gamedef[element];
         if (!def) {
@@ -99,11 +102,13 @@ function deserGamedef(gamedef) {
 async function submitGamedef() {
     document.getElementById('id01').style.display='none';
     gamenameEl = document.getElementById('gamename');
+    const flags = document.getElementById('flags').value;
     let result = {
         Name: gamenameEl.value,
         Windows: [],
         MacOS: [],
-        Linux: []
+        Linux: [],
+        CustomFlags: flags,
     };
 
     ["Windows", "MacOS", "Linux"].forEach(element => {

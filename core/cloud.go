@@ -13,7 +13,7 @@ import (
 const ToplevelCloudFolder = "opencloudsaves/"
 
 // Used for debugging
-const printCommands = false
+const printCommands = true
 
 // This is a real hack, but we fallback to $PATH if we can't
 // find rclone locally in linux. This is really only for the
@@ -31,11 +31,12 @@ type CloudManager struct {
 }
 
 type CloudOperationOptions struct {
-	Verbose    bool
-	DryRun     bool
-	Include    string
-	UpdateOnly bool
-	Checksum   bool
+	Verbose     bool
+	DryRun      bool
+	Include     string
+	UpdateOnly  bool
+	Checksum    bool
+	CustomFlags string
 }
 
 type CloudFile struct {
@@ -299,7 +300,7 @@ func (cm *CloudManager) sync(storage Storage, ops *CloudOperationOptions, localP
 func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	args := []string{"--use-json-log"}
 	if ops.Verbose {
-		args = append(args, "-v")
+		args = append(args, "-vv")
 	}
 
 	if ops.DryRun {
@@ -316,6 +317,12 @@ func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOpe
 
 	if ops.Checksum {
 		args = append(args, "--checksum")
+	}
+
+	if len(ops.CustomFlags) > 0 {
+		trimmed := strings.TrimSpace(ops.CustomFlags)
+		flags := strings.Split(trimmed, " ")
+		args = append(args, flags...)
 	}
 
 	args = append(args, action, localPath, remotePath)
@@ -346,7 +353,7 @@ func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOpe
 func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	args := []string{"--use-json-log"}
 	if ops.Verbose {
-		args = append(args, "--verbose")
+		args = append(args, "-vv")
 	}
 
 	if ops.DryRun {
@@ -355,6 +362,12 @@ func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, l
 
 	if ops.Include != "" {
 		args = append(args, fmt.Sprintf("--include=%v", ops.Include))
+	}
+
+	if len(ops.CustomFlags) > 0 {
+		trimmed := strings.TrimSpace(ops.CustomFlags)
+		flags := strings.Split(trimmed, " ")
+		args = append(args, flags...)
 	}
 
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)

@@ -110,10 +110,11 @@ type GuiDatapath struct {
 }
 
 type GuiGamedef struct {
-	Name    string
-	Windows []GuiDatapath
-	MacOS   []GuiDatapath
-	Linux   []GuiDatapath
+	Name        string
+	Windows     []GuiDatapath
+	MacOS       []GuiDatapath
+	Linux       []GuiDatapath
+	CustomFlags string
 }
 
 // @TODO the issue with this is that when we refresh, we will
@@ -135,7 +136,8 @@ func fetchGamedef(key string) (*GuiGamedef, error) {
 	}
 
 	resultDef := &GuiGamedef{
-		Name: def.DisplayName,
+		Name:        def.DisplayName,
+		CustomFlags: def.CustomFlags,
 	}
 
 	for _, path := range def.WinPath {
@@ -171,6 +173,7 @@ func commitGamedef(gamedef GuiGamedef) {
 		WinPath:     []*core.Datapath{},
 		DarwinPath:  []*core.Datapath{},
 		LinuxPath:   []*core.Datapath{},
+		CustomFlags: gamedef.CustomFlags,
 	}
 
 	for _, def := range gamedef.Windows {
