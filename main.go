@@ -24,6 +24,20 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if len(ops.LogLocation) > 0 {
+		err := core.InitLoggingWithPath(ops.LogLocation[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		err := core.InitLoggingWithDefaultPath()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	core.InfoLogger.Println("Launching with version " + core.VersionRevision)
+
 	if len(ops.SetCloud) > 0 {
 		cloud, err := strconv.Atoi(ops.SetCloud[0])
 		if err != nil {
@@ -61,11 +75,11 @@ func main() {
 
 		err = core.ApplyCloudUserOverride(cm, userOverrideLocation)
 		if err != nil {
-			fmt.Println(err)
+			core.ErrorLogger.Println(err)
 			log.Fatal(err)
 		}
 
-		fmt.Println("Cloud Settings In Sync")
+		core.InfoLogger.Println("Cloud Settings In Sync")
 		return
 	}
 

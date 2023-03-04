@@ -47,6 +47,7 @@ type HtmlInput struct {
 }
 
 func consoleLog(s string) {
+	core.InfoLogger.Println(s)
 	fmt.Println(s)
 }
 
@@ -270,16 +271,16 @@ func getCloudPerfs() (string, error) {
 }
 
 func commitCloudPerfs(cloudJson string) error {
-	fmt.Println("Commiting Cloud Perfs " + cloudJson)
+	core.InfoLogger.Println("Commiting Cloud Perfs " + cloudJson)
 	cloudperfs := &core.CloudPerfs{}
 	err := json.Unmarshal([]byte(cloudJson), cloudperfs)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Writing cloud perfs")
+
 	err = core.CommitCloudPerfs(cloudperfs)
 	if err != nil {
-		fmt.Println(err)
+		core.ErrorLogger.Println(err)
 		return err
 	}
 
@@ -396,7 +397,6 @@ func buildGamelist(dm core.GameDefManager) []Game {
 		game.SaveFiles = []SaveFile{}
 		paths, err := v.GetSyncpaths()
 		if err != nil {
-			fmt.Println(err)
 			continue
 		}
 		for _, datapath := range paths {
@@ -408,7 +408,6 @@ func buildGamelist(dm core.GameDefManager) []Game {
 
 			dirFiles, err := os.ReadDir(datapath.Path)
 			if err != nil {
-				fmt.Println(err)
 				continue
 			}
 
@@ -422,7 +421,6 @@ func buildGamelist(dm core.GameDefManager) []Game {
 
 				info, err := dirFile.Info()
 				if err != nil {
-					fmt.Println(err)
 					continue
 				}
 
@@ -430,7 +428,6 @@ func buildGamelist(dm core.GameDefManager) []Game {
 				if info.IsDir() {
 					size, err = DirSize(datapath.Path + string(os.PathSeparator) + info.Name())
 					if err != nil {
-						fmt.Println(err)
 						continue
 					}
 				}

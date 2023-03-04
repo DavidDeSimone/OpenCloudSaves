@@ -20,6 +20,7 @@ type Options struct {
 	SetCloud         []string          `short:"c" long:"--set-cloud" description:"Sets the current cloud. 0 - GOOGLE, 1 - ONEDRIVE, 2 - DROPBOX, 3 - BOX, 4 - NEXTCLOUD, 5 - FTP"`
 	DryRun           []bool            `short:"d" long:"--dry-run" description:"Does not actually perform any network operations."`
 	Verbose          []bool            `short:"v" long:"--verbose" description:"Enable verbose logging"`
+	LogLocation      []string          `short:"l" long:"--log-location" description:"Specifies path to logfile. Defaults to User's Cache Dir / opencloudsave.log"`
 }
 
 type Message struct {
@@ -37,7 +38,7 @@ const APP_NAME = "OpenCloudSave"
 func GetCurrentStorageProvider() Storage {
 	storage, err := GetCurrentCloudStorage()
 	if err != nil {
-		fmt.Println(err)
+		ErrorLogger.Println(err)
 		return nil
 	}
 	return storage
@@ -129,7 +130,7 @@ func RequestMainOperation(cm *CloudManager, ops *Options, dm GameDefManager, cha
 
 			result, err := cm.PerformSyncOperation(storage, syncops, syncpath.Path, remotePath)
 			if err != nil {
-				fmt.Println(err)
+				ErrorLogger.Println(err)
 				logs <- Message{
 					Err:      err,
 					Finished: true,
@@ -154,9 +155,9 @@ func ConsoleLogger(input chan Message) {
 		}
 
 		if result.Err != nil {
-			fmt.Println(result.Err)
+			ErrorLogger.Println(result.Err)
 		} else {
-			fmt.Println(result.Message)
+			InfoLogger.Println(result.Message)
 		}
 	}
 }

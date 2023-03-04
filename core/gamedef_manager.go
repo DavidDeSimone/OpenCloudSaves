@@ -122,7 +122,6 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 
 			if strings.HasSuffix(datapath.Path, "pfx") || strings.HasSuffix(datapath.Path, "pfx/") {
 				if len(d.WinPath) == 0 {
-					fmt.Println("Unable to resolve " + datapath.Path)
 					continue
 				}
 
@@ -171,7 +170,7 @@ func (d *FsGameDefManager) SetCloudManager(cm *CloudManager) {
 }
 
 func (d *FsGameDefManager) RemoveGameDef(key string) {
-	fmt.Println("Removing " + key)
+	InfoLogger.Println("Removing " + key)
 	entry, ok := d.gamedefs[key]
 	if ok {
 		entry.Hidden = true
@@ -182,7 +181,7 @@ func (d *FsGameDefManager) ApplyUserOverrides() error {
 	fileName := d.GetUserOverrideLocation()
 	content, err := os.ReadFile(fileName)
 	if err != nil {
-		fmt.Println(err)
+		InfoLogger.Println(err)
 		return err
 	}
 
@@ -250,9 +249,6 @@ func GetDefaultUserOverridePath() string {
 		log.Fatal(err)
 	}
 	separator := string(os.PathSeparator)
-
-	fmt.Println("Getting User Override Path " + cacheDir + separator + APP_NAME + separator + "user_overrides.json")
-	os.Stdout.WriteString("Getting User Override Path " + cacheDir + separator + APP_NAME + separator + "user_overrides.json")
 	return cacheDir + separator + APP_NAME + separator + "user_overrides.json"
 }
 
@@ -301,7 +297,7 @@ func (d *FsGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
 
 func (dm *FsGameDefManager) CommitCloudUserOverride() error {
 	if dm.cm == nil {
-		fmt.Println("No cloud driver present")
+		InfoLogger.Println("No cloud driver present")
 		return nil
 	}
 
