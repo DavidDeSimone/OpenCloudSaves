@@ -6,6 +6,7 @@
 <body>
     <ul class="topnav">
         <li><div class="activeButton" onclick="openAddGamesMenu()" style="width:auto;">Add Games</div></li>
+        <li><div onclick="onOpenMultisync(this)">Sync Multiple Games</div></li>
         <li><div onclick="onSetCloudClicked(this)">Select Cloud</div></li>
         <li><div onclick="onSyncSettingsClicked(this)">Settings</div></li>
         <div class="search-container">
@@ -149,6 +150,24 @@
   </div>
 </div>
 
+<div id="multisync-modal" class="multisync-modal">
+  <span class="close" onclick="onCloseMultisync(this)" title="Close Modal">&times;</span>
+  <div class="settings-modal-content">
+    <div class="multisync-title">Sync Multiple Games</div>
+    <button id="multisync-modal-confirm" class="multisyncbtn" onclick="onSyncSelectedClicked()">Sync Selected</button>
+    <button id="multisync-modal-selectall" class="multisyncbtn multisync-selectallbtn" onclick="onMultisyncSelectAllClicked()">Select All</button>
+    <button id="multisync-modal-selectall" class="multisyncbtn multisync-selectallbtn" onclick="onMultisyncUnselectAllClicked()">Unselect All</button>
+    <hr>
+    {{range .Games}}
+    {{if not .Def.Hidden}}
+    <label class="multisync-container">{{.Def.DisplayName}}
+      <input class="multisync-check" id="{{.Def.DisplayName}}-multisync-check" type="checkbox" checked="checked">
+      <span class="multisync-checkmark"></span>
+    </label>
+    {{end}}
+    {{end}}
+  </div>
+</div>
 
 </body>
 </html> 

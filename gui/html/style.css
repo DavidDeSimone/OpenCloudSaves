@@ -449,6 +449,123 @@ hr {
   display: table;
 }
 
+.multisync-modal {
+  display: none; 
+  position: fixed; 
+  z-index: 1; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  overflow: auto; 
+  background-color: #474e5d;
+  padding-top: 50px;
+}
+
+
+.multisync-modal-content {
+  background-color: #fefefe;
+  margin: 5% auto 15% auto; 
+  border: 1px solid #888;
+  width: 95%; 
+}
+
+.multisync-title {
+  font-size: 24;
+  color: rgb(0, 0, 0);
+  text-align: center;
+  outline: 3px;
+  margin-bottom: 20px;
+  margin-top: 40px;
+}
+
+.multisync-container {
+  display: block;
+  position: relative;
+  padding-left: 35px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 22px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.multisync-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.multisync-checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 25px;
+  width: 25px;
+  background-color: #eee;
+}
+
+.multisync-container:hover input ~ .multisync-checkmark {
+  background-color: #ccc;
+}
+
+.multisync-container input:checked ~ .multisync-checkmark {
+  background-color: #2196F3;
+}
+
+.multisync-checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.multisync-container input:checked ~ .multisync-checkmark:after {
+  display: block;
+}
+
+.multisync-container .multisync-checkmark:after {
+  left: 9px;
+  top: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+.multisyncbtn {
+  padding: 14px 20px;
+  background-color: #04AA6D;
+  float: left;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  opacity: 0.9;
+}
+
+.multisyncbtn:hover {
+  background-color: #038e5b;
+  opacity: 0.7;
+}
+
+.multisync-selectallbtn {
+  margin-top: 0;
+  width: 50%;
+  float: left;
+  border: 1px solid black;
+  border-color: #111;
+  background-color: #474e5d;
+}
+
 .loader-cont {
   margin-left: 47%;
   margin-top: 5%;

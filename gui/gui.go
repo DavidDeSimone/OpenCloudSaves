@@ -465,7 +465,7 @@ func executeTemplate() (string, error) {
 	}
 
 	var b bytes.Buffer
-	htmlWriter := bufio.NewWriterSize(&b, 4*1024*1024)
+	htmlWriter := bufio.NewWriterSize(&b, 8*1024*1024)
 
 	templ := template.Must(template.ParseFS(html, "html/index.html"))
 	err := templ.Execute(htmlWriter, input)
@@ -479,6 +479,11 @@ func executeTemplate() (string, error) {
 	}
 
 	settingsjsbytes, err := fs.ReadFile(html, "html/settings.js")
+	if err != nil {
+		return "", err
+	}
+
+	multisyncbytes, err := fs.ReadFile(html, "html/multisync.js")
 	if err != nil {
 		return "", err
 	}
@@ -499,7 +504,8 @@ func executeTemplate() (string, error) {
 	css := fmt.Sprintf("<style>%v</style>", string(cssContent))
 	syncgamejs := fmt.Sprintf("\n<script>%v</script>\n", string(syncgamejsbytes))
 	settingsjs := fmt.Sprintf("<script>%v</script>\n", string(settingsjsbytes))
-	finalResult := css + result + js + syncgamejs + settingsjs
+	multisyncjs := fmt.Sprintf("<script>%v</script>\n", string(multisyncbytes))
+	finalResult := css + result + js + syncgamejs + settingsjs + multisyncjs
 	return finalResult, nil
 }
 
