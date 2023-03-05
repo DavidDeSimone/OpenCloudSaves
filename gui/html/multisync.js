@@ -32,8 +32,18 @@ async function onSyncSelectedClicked() {
         if (check.checked) {
             var name = check.id.replaceAll("-multisync-check", "");
             gamesToSync.push(name);
+
+            var spinner = document.getElementById(`${name}-multisync-game-modal-loader`);
+            spinner.style.display = 'block';
+            check.disabled = true;
+            check.style.display = 'none';
         }
     }
 
+    var checkSpans = document.getElementsByClassName('multisync-checkmark');
+    for (let i = 0; i < checkSpans.length; ++i) {
+        checkSpans[i].style.display = 'none';
+    }
+ 
     await log(`Would Sync ${JSON.stringify(gamesToSync)}`);
 }

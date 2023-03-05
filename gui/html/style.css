@@ -464,7 +464,7 @@ hr {
 
 
 .multisync-modal-content {
-  background-color: #fefefe;
+  background-color: #3e3e3e;
   margin: 5% auto 15% auto; 
   border: 1px solid #888;
   width: 95%; 
@@ -472,7 +472,7 @@ hr {
 
 .multisync-title {
   font-size: 24;
-  color: rgb(0, 0, 0);
+  color: rgb(255, 255, 255);
   text-align: center;
   outline: 3px;
   margin-bottom: 20px;
@@ -490,6 +490,7 @@ hr {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  color:rgb(255, 255, 255)
 }
 
 .multisync-container input {
@@ -539,6 +540,22 @@ hr {
   transform: rotate(45deg);
 }
 
+.multisync-loader {
+  width: 12px;
+  height: 12px;
+  float: left;
+  margin-left: -25px;
+  margin-top: 5px;
+
+  border-radius: 50%;
+  /* display: inline-block; */
+  position: relative;
+  border: 3px solid;
+  border-color: transparent transparent #04ff00 #04ff00;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
 .multisyncbtn {
   padding: 14px 20px;
   background-color: #04AA6D;
@@ -564,6 +581,10 @@ hr {
   border: 1px solid black;
   border-color: #111;
   background-color: #474e5d;
+}
+
+.multisync-loader-cont {
+  display: none;
 }
 
 .loader-cont {
