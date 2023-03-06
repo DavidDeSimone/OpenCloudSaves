@@ -40,10 +40,48 @@ async function onSyncSelectedClicked() {
         }
     }
 
-    var checkSpans = document.getElementsByClassName('multisync-checkmark');
+    const checkSpans = document.getElementsByClassName('multisync-checkmark');
     for (let i = 0; i < checkSpans.length; ++i) {
         checkSpans[i].style.display = 'none';
     }
  
-    await log(`Would Sync ${JSON.stringify(gamesToSync)}`);
+    const multisyncButton = document.getElementById('multisync-modal-confirm');
+    multisyncButton.disabled = true;
+
+    for (let i = 0; i < gamesToSync.length; ++i) {
+        const gameName = gamesToSync[i]; 
+        await syncGame(gameName);
+        onSyncGameComplete(gameName);
+    }
+
+    multisyncButton.disabled = false;
+}
+
+async function onSyncGameComplete(gameName) {
+    const success = document.getElementById(`${gameName}-multisync-success`);
+    const spinner = document.getElementById(`${gameName}-multisync-game-modal-loader`);
+    success.style.display = 'block';
+    spinner.style.display = 'none';
+}
+
+async function onSyncGameFailure(gameName) {
+    const success = document.getElementById(`${gameName}-multisync-failure`);
+    const spinner = document.getElementById(`${gameName}-multisync-game-modal-loader`);
+    success.style.display = 'block';
+    spinner.style.display = 'none';
+
+}
+
+async function syncGame(gameName) {
+    await log(`Syncing ${gameName}`);
+    await sleepFor(1000);
+    await log(`Sync for ${gameName} complete`);
+}
+
+async function sleepFor(miliseconds) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve();
+        }, miliseconds)
+    });
 }

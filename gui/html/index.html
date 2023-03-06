@@ -163,6 +163,13 @@
     <label class="multisync-container">
       <div>
         <div id="{{.Def.DisplayName}}-multisync-game-modal-loader" class="multisync-loader-cont"><span class="multisync-loader"></span></div>  
+        <span class="multisync-checkmark"></span>
+          <div class="multisync-check-success-cont">
+          <li id="{{.Def.DisplayName}}-multisync-success" class="multisync-li multisync-check-success"></li>
+          </div>
+          <div class="multisync-check-failure-cont">
+          <li id="{{.Def.DisplayName}}-multisync-failure" class="multisync-li multisync-check-failure"></li>
+        </div>
         {{.Def.DisplayName}}
       </div>
       <input class="multisync-check" id="{{.Def.DisplayName}}-multisync-check" type="checkbox" checked="checked">
