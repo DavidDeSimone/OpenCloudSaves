@@ -78,7 +78,7 @@ func getCloudApp() string {
 
 func makeCommand(cmd_string string, arg ...string) *exec.Cmd {
 	if printCommands {
-		fmt.Println("Running Command ", cmd_string, arg)
+		InfoLogger.Println("Running Command ", cmd_string, arg)
 	}
 
 	cmd := exec.Command(cmd_string, arg...)
@@ -98,16 +98,15 @@ func MakeCloudManager() *CloudManager {
 }
 
 func (cm *CloudManager) CreateDriveIfNotExists(storage Storage) error {
-	fmt.Println("Checking if drive exists...")
+	InfoLogger.Println("Checking if drive exists")
 	if cm.ContainsStorageDrive(storage) {
-		fmt.Println("Not creating drive...")
 		return nil
 	}
 
-	fmt.Println("Creating new drive for storage....")
+	InfoLogger.Println("Creating new drive for storage")
 	err := cm.MakeStorageDrive(storage)
 	if err != nil {
-		fmt.Println(err)
+		ErrorLogger.Println(err)
 		return err
 	}
 
@@ -119,15 +118,15 @@ func (cm *CloudManager) ContainsStorageDrive(storage Storage) bool {
 	stdout, err := cmd.Output()
 
 	if err != nil {
-		fmt.Println(err.Error())
+		InfoLogger.Println(err.Error())
 		return false
 	}
-	fmt.Println(string(stdout))
+	InfoLogger.Println(string(stdout))
 
 	var data map[string]interface{}
 	err = json.Unmarshal(stdout, &data)
 	if err != nil {
-		fmt.Println(err)
+		ErrorLogger.Println(err)
 		return false
 	}
 
@@ -136,9 +135,8 @@ func (cm *CloudManager) ContainsStorageDrive(storage Storage) bool {
 }
 
 func (cm *CloudManager) MakeStorageDrive(storage Storage) error {
-	fmt.Println("Getting creation command...")
 	cmd := storage.GetCreationCommand()
-	fmt.Println("Running creation command", cmd)
+	InfoLogger.Println("Running creation command", cmd)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 
@@ -158,7 +156,7 @@ func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (
 
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println(stderr.String())
+		ErrorLogger.Println(stderr.String())
 		return false, nil
 	}
 
@@ -186,7 +184,6 @@ func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) 
 		include = fmt.Sprintf("--include=%v", ops.Include)
 	}
 
-	fmt.Println("Running Command ", getCloudApp(), defaultFlag, include, "lsjson", localPath)
 	cmd := makeCommand(getCloudApp(), defaultFlag, include, "lsjson", localPath)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
@@ -238,7 +235,7 @@ func (cm *CloudManager) ObscurePassword(password string) (string, error) {
 }
 
 func (cm *CloudManager) PerformSyncOperation(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-	fmt.Println("Performing Sync Operation....")
+	InfoLogger.Println("Performing Sync Operation")
 	os.MkdirAll(localPath, os.ModePerm)
 	exists, err := cm.DoesRemoteDirExist(storage, remotePath)
 	if err != nil {
@@ -384,7 +381,7 @@ func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, l
 	if err != nil {
 		exiterr := err.(*exec.ExitError)
 		if exiterr.ExitCode() == 2 {
-			fmt.Println("Need to run resync")
+			InfoLogger.Println("Need to run resync")
 			args = append(args, "--resync")
 			cmd := makeCommand(getCloudApp(), args...)
 			var resyncstderr strings.Builder

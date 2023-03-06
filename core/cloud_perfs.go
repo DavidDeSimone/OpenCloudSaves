@@ -25,7 +25,6 @@ func getCloudPerfDir() (string, error) {
 		return "", err
 	}
 
-	fmt.Println("Looking - " + configDir)
 	return configDir + string(os.PathSeparator) + APP_NAME + string(os.PathSeparator), nil
 
 }
