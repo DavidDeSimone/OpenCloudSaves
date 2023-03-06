@@ -479,6 +479,14 @@ hr {
   margin-top: 40px;
 }
 
+.multisync-subtitle {
+  font-size: 16;
+  color: white;
+  text-align: center;
+  outline: 3px;
+  margin-bottom: 15px;
+}
+
 .multisync-container {
   display: block;
   position: relative;

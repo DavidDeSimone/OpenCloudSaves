@@ -25,6 +25,11 @@ async function onMultisyncUnselectAllClicked() {
 }
 
 async function onSyncSelectedClicked() {
+    const dryRunSettings = await getShouldPerformDryRun();
+    if (dryRunSettings) {
+        // @TODO warn user this screen doesn't perform dry runs
+    }
+
     const gamesToSync = [];
     var checks = document.getElementsByClassName("multisync-check");
     for (let i = 0; i < checks.length; ++i) {
@@ -50,8 +55,13 @@ async function onSyncSelectedClicked() {
 
     for (let i = 0; i < gamesToSync.length; ++i) {
         const gameName = gamesToSync[i]; 
-        await syncGame(gameName);
-        onSyncGameComplete(gameName);
+        try {
+            await performSingleGameSync(gameName);
+        } catch(e) {
+            await onSyncGameFailure(gameName);
+            continue;
+        }
+        await onSyncGameComplete(gameName);
     }
 
     multisyncButton.disabled = false;
@@ -72,9 +82,30 @@ async function onSyncGameFailure(gameName) {
 
 }
 
-async function syncGame(gameName) {
+async function pollLoop(gameName) {
+    return new Promise((resolve, reject) => {
+        const func = async () => {
+            try {
+                const logsStr = await pollLogs(gameName);
+                const result = JSON.parse(logsStr);
+                if (result && result.Finished) {
+                    resolve();
+                }
+                setTimeout(func, 500);
+            } catch (e) {
+                reject(e);
+            }
+        };
+        const timeout = setTimeout(func, 500);
+    });
+}
+
+async function performSingleGameSync(gameName, dryRun) {
+    const subTitle = document.getElementById('multisync-subtitle');
+    subTitle.innerText = `Performing sync for ${gameName}`;
     await log(`Syncing ${gameName}`);
-    await sleepFor(1000);
+    await syncGame(gameName);
+    await pollLoop(gameName);
     await log(`Sync for ${gameName} complete`);
 }
 
