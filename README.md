@@ -28,14 +28,9 @@ Key Features:
 
 ## Linux / Steam Deck
 
-NOTE: We are now listed on [Flathub](https://flathub.org/apps/details/io.github.daviddesimone.opencloudsaves) and the Discover store on steam deck. We recommend downloading through flathub 
-or the discover store on steam deck! if you cannt install via those means, you can try to manually install via:
+1. We are now listed on [Flathub](https://flathub.org/apps/details/io.github.daviddesimone.opencloudsaves) and the Discover store on steam deck. We recommend downloading through flathub or the discover store on steam deck!
 
-1. Download the [Install.desktop](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.7/Install.desktop) file and place it on your desktop.
-2. Run the Install.Desktop and agree to usage terms
-3. Once the download is complete, run "OpenCloudSave.desktop" - it should be located on your desktop.
-4. Add "OpenCloudSave" as a non-steam game if you want to launch it in game mode.
-5. If on the Steam Deck, I recommend using the "Browser" control configuration in Game Mode. 
+For power users we offer a precompiled binary for [x86_64 in .tar.gz format](https://github.com/DavidDeSimone/OpenCloudSaves/releases/tag/v0.17.7). 
 
 ## Windows
 
