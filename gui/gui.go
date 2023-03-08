@@ -137,7 +137,7 @@ func fetchGamedef(key string) (*GuiGamedef, error) {
 		return nil, fmt.Errorf("gamedef not found")
 	}
 
-	if def.CustomFlags == "undefined" || strings.TrimSpace(def.CustomFlags) == "" {
+	if strings.TrimSpace(def.CustomFlags) == "undefined" || strings.TrimSpace(def.CustomFlags) == "" {
 		def.CustomFlags = ""
 	}
 
@@ -171,7 +171,7 @@ func fetchGamedef(key string) (*GuiGamedef, error) {
 }
 
 func commitGamedef(gamedef GuiGamedef) {
-	if gamedef.CustomFlags == "undefined" || strings.TrimSpace(gamedef.CustomFlags) == "" {
+	if strings.TrimSpace(gamedef.CustomFlags) == "undefined" || strings.TrimSpace(gamedef.CustomFlags) == "" {
 		gamedef.CustomFlags = ""
 	}
 
