@@ -34,7 +34,7 @@ For power users we offer a precompiled binary for [x86_64 in .tar.gz format](htt
 
 ## Windows
 
-1. Download the [Open Cloud Save Installer](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.8/windows_opencloudsave_0.17.8_x86_64.msi)
+1. Download the [Open Cloud Save Installer](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.8.0/windows_opencloudsave_0.17.8_x86_64.msi)
 2. Follow the instructions for installation.
 3. Launch opencloudsave.exe located in C:\Program Files\OpenCloudSave\
 
@@ -44,7 +44,7 @@ https://go.dev/doc/faq#virus
 This application is free and open source, and is free to audit.
 
 ## MacOS
-1. Download the [Open Cloud Save .dmg](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.8/macos_opencloudsaves_0.17.8_aarch64.dmg)
+1. Download the [Open Cloud Save .dmg](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.8.0/macos_opencloudsaves_0.17.8_aarch64.dmg)
 2. Drag the executable into your /Applications/ directory
 3. Launch OpenCloudSave
 
