@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -136,6 +137,10 @@ func fetchGamedef(key string) (*GuiGamedef, error) {
 		return nil, fmt.Errorf("gamedef not found")
 	}
 
+	if def.CustomFlags == "undefined" || strings.TrimSpace(def.CustomFlags) == "" {
+		def.CustomFlags = ""
+	}
+
 	resultDef := &GuiGamedef{
 		Name:        def.DisplayName,
 		CustomFlags: def.CustomFlags,
@@ -166,6 +171,10 @@ func fetchGamedef(key string) (*GuiGamedef, error) {
 }
 
 func commitGamedef(gamedef GuiGamedef) {
+	if gamedef.CustomFlags == "undefined" || strings.TrimSpace(gamedef.CustomFlags) == "" {
+		gamedef.CustomFlags = ""
+	}
+
 	dm := core.MakeDefaultGameDefManager()
 	gamedefMap := dm.GetGameDefMap()
 	gamedefMap[gamedef.Name] = &core.GameDef{
