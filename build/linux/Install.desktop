@@ -1,5 +1,5 @@
 [Desktop Entry]
-Exec=curl -L 'https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.7/install.sh' | sh
+Exec=curl -L 'https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.8/install.sh' | sh
 Icon=steamdeck-gaming-return
 Name[en_US]=InstallOpenCloudSave
 Name=InstallOpenCloudSave
