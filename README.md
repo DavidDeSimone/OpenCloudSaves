@@ -31,7 +31,7 @@ Key Features:
 NOTE: We are now listed on [Flathub](https://flathub.org/apps/details/io.github.daviddesimone.opencloudsaves) and the Discover store on steam deck. We recommend downloading through flathub 
 or the discover store on steam deck! if you cannt install via those means, you can try to manually install via:
 
-1. Download the [Install.desktop](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.6/Install.desktop) file and place it on your desktop.
+1. Download the [Install.desktop](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.7/Install.desktop) file and place it on your desktop.
 2. Run the Install.Desktop and agree to usage terms
 3. Once the download is complete, run "OpenCloudSave.desktop" - it should be located on your desktop.
 4. Add "OpenCloudSave" as a non-steam game if you want to launch it in game mode.
@@ -39,7 +39,7 @@ or the discover store on steam deck! if you cannt install via those means, you c
 
 ## Windows
 
-1. Download the [Open Cloud Save Installer](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.6/opencloudsave_0.17.6_x86_64.msi)
+1. Download the [Open Cloud Save Installer](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.7/opencloudsave_0.17.7_x86_64.msi)
 2. Follow the instructions for installation.
 3. Launch opencloudsave.exe located in C:\Program Files\OpenCloudSave\
 
@@ -49,7 +49,7 @@ https://go.dev/doc/faq#virus
 This application is free and open source, and is free to audit.
 
 ## MacOS
-1. Download the [Open Cloud Save .dmg](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.6/opencloudsaves_0.17.6_aarch64.dmg)
+1. Download the [Open Cloud Save .dmg](https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.7/opencloudsaves_0.17.7_aarch64.dmg)
 2. Drag the executable into your /Applications/ directory
 3. Launch OpenCloudSave
 

@@ -8,13 +8,13 @@ if ! (zenity --question --title="Welcome" --text="This software is in a open bet
 fi
 
 mkdir -p /tmp/
-curl -L "https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.6/linux_opencloudsaves_0.17.6_x86_64.flatpak" > /tmp/opencloudsaves.flatpak
+curl -L "https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.7/linux_opencloudsaves_0.17.7_x86_64.flatpak" > /tmp/opencloudsaves.flatpak
 flatpak install --user --noninteractive --or-update /tmp/opencloudsaves.flatpak
 
 if [[ -d ~/Desktop/ ]]; then
-    curl -L "https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.6/OpenCloudSave.desktop" > ~/Desktop/OpenCloudSave.desktop
+    curl -L "https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.7/OpenCloudSave.desktop" > ~/Desktop/OpenCloudSave.desktop
 elif [[ -d /home/deck/Desktop/ ]]; then
-    curl -L "https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.6/OpenCloudSave.desktop" > /home/deck/Desktop/OpenCloudSave.desktop
+    curl -L "https://github.com/DavidDeSimone/OpenCloudSaves/releases/download/v0.17.7/OpenCloudSave.desktop" > /home/deck/Desktop/OpenCloudSave.desktop
 else 
     zenity --error --title="Cannot find desktop location" --text="The install script cannot find your desktop. Please report this as a bug to https://github.com/DavidDeSimone/OpenCloudSaves/" -- width=500 2> /dev/null
 fi
