@@ -89,7 +89,6 @@ func pollLogs(key string) (string, error) {
 func syncGame(key string) {
 	ops := &core.Options{
 		Gamenames: []string{key},
-		Verbose:   []bool{true},
 	}
 	cm := core.MakeCloudManager()
 
@@ -250,7 +249,6 @@ func getSyncDryRun(name string) error {
 	ops := &core.Options{
 		DryRun:    []bool{true},
 		Gamenames: []string{name},
-		Verbose:   []bool{true},
 	}
 	channels := &core.ChannelProvider{
 		Logs: make(chan core.Message, 100),

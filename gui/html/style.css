@@ -533,6 +533,7 @@ hr {
   padding: 0 6px 0 0;
 }
 
+/* 2583 code for minus block */
 .multisync-check-success-cont .multisync-li:before {
   content: '\2713';
   display: inline-block;

@@ -82,6 +82,15 @@ async function onSyncGameFailure(gameName) {
 
 }
 
+function recordMessage(message) {
+    const multisync = document.getElementById('multisync-line-cont');
+    // multisync.style.display = 'block';
+    const lineDiv = document.createElement('div');
+    lineDiv.className = "bisync-line";
+    lineDiv.innerText = message;
+    multisync.appendChild(lineDiv);
+}
+
 async function pollLoop(gameName) {
     return new Promise((resolve, reject) => {
         const func = async () => {
@@ -91,6 +100,29 @@ async function pollLoop(gameName) {
                 if (result && result.Finished) {
                     resolve();
                 }
+
+                const multisync = document.getElementById('multisync-line-cont');
+                multisync.style.display = 'block';                
+                const messages = (result && result.Message) ? result.Message.split("\n") : [];
+                for (let i = 0; i < messages.length; ++i) {
+                    const message = messages[i];
+                    if (message === null || message === "") {
+                        continue;
+                    }
+
+                    let msgResult = null;
+                    // @TODO I don't think we need a JSON parse here
+                    try {
+                        msgResult = JSON.parse(message);
+                    } catch (e) {
+                        msgResult = {msg: message};
+                        // log(`Error in message processing ${e}`);
+                        // continue;            
+                    }
+
+                    recordMessage(msgResult.msg);
+                }
+
                 setTimeout(func, 500);
             } catch (e) {
                 reject(e);
@@ -104,8 +136,14 @@ async function performSingleGameSync(gameName, dryRun) {
     const subTitle = document.getElementById('multisync-subtitle');
     subTitle.innerText = `Performing sync for ${gameName}`;
     await log(`Syncing ${gameName}`);
+    recordMessage(`---------------------------------------------------------`);
+    recordMessage(`Syncing: ${gameName}`);
+    recordMessage(`---------------------------------------------------------`);
     await syncGame(gameName);
     await pollLoop(gameName);
+    recordMessage(`---------------------------------------------------------`);
+    recordMessage(`Sync Complete: ${gameName}`);
+    recordMessage(`---------------------------------------------------------`);
     await log(`Sync for ${gameName} complete`);
 }
 

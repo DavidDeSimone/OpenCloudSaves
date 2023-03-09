@@ -295,7 +295,7 @@ func (cm *CloudManager) sync(storage Storage, ops *CloudOperationOptions, localP
 }
 
 func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-	args := []string{"--use-json-log"}
+	args := []string{}
 	if ops.Verbose {
 		args = append(args, "-vv")
 	}
@@ -348,7 +348,7 @@ func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOpe
 }
 
 func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-	args := []string{"--use-json-log"}
+	args := []string{}
 	if ops.Verbose {
 		args = append(args, "-vv")
 	}
