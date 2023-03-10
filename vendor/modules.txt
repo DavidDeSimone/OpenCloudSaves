@@ -4,8 +4,6 @@ github.com/TheTitanrain/w32
 # github.com/andygrunwald/vdf v1.1.0
 ## explicit; go 1.15
 github.com/andygrunwald/vdf
-# github.com/google/go-cmp v0.5.9
-## explicit
 # github.com/jessevdk/go-flags v1.5.0
 ## explicit; go 1.15
 github.com/jessevdk/go-flags
@@ -24,3 +22,6 @@ golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
+# gopkg.in/natefinch/lumberjack.v2 v2.2.1
+## explicit; go 1.13
+gopkg.in/natefinch/lumberjack.v2
