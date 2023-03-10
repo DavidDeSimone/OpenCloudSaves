@@ -35,6 +35,7 @@ type SaveFile struct {
 
 type Game struct {
 	Name           string
+	TotalSize      int64
 	Def            *core.GameDef
 	SaveFiles      []SaveFile
 	SaveFilesFound bool
@@ -351,6 +352,11 @@ func deleteCurrentFTPSettings() {
 	core.DeleteFtpDriveStorage()
 }
 
+func getShouldNotPromptForLargeSyncs() bool {
+	cloudperfs := core.GetCurrentCloudPerfsOrDefault()
+	return cloudperfs.ShouldNotPromptForLargeSyncs
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -379,6 +385,7 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("deleteCurrentNextCloudSettings", deleteCurrentNextCloudSettings)
 	w.Bind("commitNextCloudSettings", commitNextCloudSettings)
 	w.Bind("deleteCurrentFTPSettings", deleteCurrentFTPSettings)
+	w.Bind("getShouldNotPromptForLargeSyncs", getShouldNotPromptForLargeSyncs)
 }
 
 func DirSize(path string) (int64, error) {
@@ -403,6 +410,7 @@ func buildGamelist(dm core.GameDefManager) []Game {
 			Def:  v,
 		}
 
+		var sizeInBytes int64 = 0
 		game.SaveFiles = []SaveFile{}
 		paths, err := v.GetSyncpaths()
 		if err != nil {
@@ -446,11 +454,14 @@ func buildGamelist(dm core.GameDefManager) []Game {
 					ModifiedBy: info.ModTime().Format(time.RFC3339),
 					Size:       fmt.Sprintf("%vMB", size/(1024*1024)),
 				})
+
+				sizeInBytes += size
 			}
 		}
 
 		if len(game.SaveFiles) > 0 {
 			game.SaveFilesFound = true
+			game.TotalSize = sizeInBytes / (1024 * 1024)
 		}
 
 		games = append(games, game)
@@ -492,6 +503,11 @@ func executeTemplate() (string, error) {
 		return "", err
 	}
 
+	confirmjsbytes, err := fs.ReadFile(html, "html/confirm-modal.js")
+	if err != nil {
+		return "", err
+	}
+
 	jsContent, err := fs.ReadFile(html, "html/main.js")
 	if err != nil {
 		return "", err
@@ -507,8 +523,9 @@ func executeTemplate() (string, error) {
 	js := fmt.Sprintf("<script>%v</script>", string(jsContent))
 	css := fmt.Sprintf("<style>%v</style>", string(cssContent))
 	syncgamejs := fmt.Sprintf("\n<script>%v</script>\n", string(syncgamejsbytes))
-	settingsjs := fmt.Sprintf("<script>%v</script>\n", string(settingsjsbytes))
-	finalResult := css + result + js + syncgamejs + settingsjs
+	settingsjs := fmt.Sprintf("\n<script>%v</script>\n", string(settingsjsbytes))
+	confirmjs := fmt.Sprintf("\n<script>%v</script>\n", string(confirmjsbytes))
+	finalResult := css + result + js + syncgamejs + settingsjs + confirmjs
 	return finalResult, nil
 }
 
