@@ -355,6 +355,47 @@ func getShouldNotPromptForLargeSyncs() bool {
 	return cloudperfs.ShouldNotPromptForLargeSyncs
 }
 
+func getMultisyncSelectedGames() (string, error) {
+	dm := core.MakeDefaultGameDefManager()
+	err := dm.ApplyUserOverrides()
+	if err != nil {
+		return "", err
+	}
+
+	gamedefs := dm.GetGameDefMap()
+	result := make(map[string]bool)
+	for _, def := range gamedefs {
+		if def.SelectInMultisyncMenu {
+			result[def.DisplayName] = true
+		}
+	}
+
+	resultBytes, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+
+	return string(resultBytes), nil
+}
+
+func commitMultisyncSelectGames(gameNames []string) error {
+	dm := core.MakeDefaultGameDefManager()
+	err := dm.ApplyUserOverrides()
+	if err != nil {
+		return err
+	}
+
+	gamedefs := dm.GetGameDefMap()
+	for _, gamename := range gameNames {
+		result, ok := gamedefs[gamename]
+		if ok {
+			result.SelectInMultisyncMenu = true
+		}
+	}
+
+	return dm.CommitUserOverrides()
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -384,6 +425,8 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("commitNextCloudSettings", commitNextCloudSettings)
 	w.Bind("deleteCurrentFTPSettings", deleteCurrentFTPSettings)
 	w.Bind("getShouldNotPromptForLargeSyncs", getShouldNotPromptForLargeSyncs)
+	w.Bind("getMultisyncSelectedGames", getMultisyncSelectedGames)
+	w.Bind("commitMultisyncSelectGames", commitMultisyncSelectGames)
 }
 
 func DirSize(path string) (int64, error) {

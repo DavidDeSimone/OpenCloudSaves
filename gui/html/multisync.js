@@ -9,6 +9,9 @@ async function onOpenMultisync(element) {
     multisync.innerHTML = "";
     dryRunComplete = false;
 
+    const gameNamesJson = await getMultisyncSelectedGames();
+    const gameNames = JSON.parse(gameNamesJson);
+
     const checks = document.getElementsByClassName("multisync-check");
     for (let i = 0; i < checks.length; ++i) {
         const check = checks[i];
@@ -20,6 +23,7 @@ async function onOpenMultisync(element) {
         spinner.style.display = 'none';
         success.style.display = 'none';
         failure.style.display = 'none';
+        check.checked = gameNames[name] !== undefined;
     }
 }
 
@@ -27,6 +31,18 @@ async function onCloseMultisync(element) {
     const modal = document.getElementById('multisync-modal');
     modal.style.display = 'none';
     dryRunComplete = false;
+
+    const gameNames = [];
+    const checks = document.getElementsByClassName("multisync-check");
+    for (let i = 0; i < checks.length; ++i) {
+        const check = checks[i];
+        const name = check.id.replaceAll("-multisync-check", "");
+        if (check.checked) {
+            gameNames.push(name);
+        }
+    }
+
+    commitMultisyncSelectGames(gameNames);
 }
 
 async function onMultisyncSelectAllClicked() {

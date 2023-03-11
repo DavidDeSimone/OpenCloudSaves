@@ -21,13 +21,14 @@ type Datapath struct {
 }
 
 type GameDef struct {
-	DisplayName string      `json:"display_name"`
-	SteamId     string      `json:"steam_id"`
-	WinPath     []*Datapath `json:"win_path"`
-	LinuxPath   []*Datapath `json:"linux_path"`
-	DarwinPath  []*Datapath `json:"darwin_path"`
-	Hidden      bool        `json:"hidden"`
-	CustomFlags string      `json:"flags"`
+	DisplayName           string      `json:"display_name"`
+	SteamId               string      `json:"steam_id"`
+	WinPath               []*Datapath `json:"win_path"`
+	LinuxPath             []*Datapath `json:"linux_path"`
+	DarwinPath            []*Datapath `json:"darwin_path"`
+	Hidden                bool        `json:"hidden"`
+	CustomFlags           string      `json:"flags"`
+	SelectInMultisyncMenu bool        `json:"selectMultiSync"`
 }
 
 type SyncFile struct {
@@ -303,13 +304,13 @@ func (d *FsGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
 }
 
 func (dm *FsGameDefManager) CommitCloudUserOverride() error {
+	cm := dm.cm
 	if dm.cm == nil {
-		InfoLogger.Println("No cloud driver present")
-		return nil
+		cm = MakeCloudManager()
 	}
 
 	userOverride := dm.GetUserOverrideLocation()
-	return ApplyCloudUserOverride(dm.cm, userOverride)
+	return ApplyCloudUserOverride(cm, userOverride)
 }
 
 func ApplyCloudUserOverride(cm *CloudManager, userOverride string) error {
