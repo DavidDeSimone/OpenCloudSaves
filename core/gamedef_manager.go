@@ -50,7 +50,6 @@ func (d *GameDef) GetSteamLocation() string {
 
 func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 	platform := runtime.GOOS
-	prefix := ""
 	separator := string(os.PathSeparator)
 	steamLocation := d.GetSteamLocation()
 
@@ -75,7 +74,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			}
 
 			result = append(result, Datapath{
-				Path:    prefix + winpath + separator,
+				Path:    winpath + separator,
 				Include: datapath.Include,
 			})
 		}
@@ -94,8 +93,12 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			darwinPath = strings.Replace(darwinPath, "~", homedir, 1)
 			darwinPath = strings.Replace(darwinPath, "$HOME", os.Getenv("HOME"), 1)
 
+			if strings.TrimSpace(darwinPath) == "" {
+				continue
+			}
+
 			result = append(result, Datapath{
-				Path:    prefix + darwinPath + separator,
+				Path:    darwinPath + separator,
 				Include: datapath.Include,
 			})
 		}
@@ -136,8 +139,12 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				linuxPath = linuxPath + "drive_c/" + winpath
 			}
 
+			if strings.TrimSpace(linuxPath) == "" {
+				continue
+			}
+
 			result = append(result, Datapath{
-				Path:    prefix + linuxPath + separator,
+				Path:    linuxPath + separator,
 				Include: datapath.Include,
 			})
 		}
