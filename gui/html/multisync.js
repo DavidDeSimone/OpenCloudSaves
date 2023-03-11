@@ -1,11 +1,32 @@
+let dryRunComplete = false;
+
 async function onOpenMultisync(element) {
     const modal = document.getElementById('multisync-modal');
+    const subTitle = document.getElementById('multisync-subtitle');
+    const multisync = document.getElementById('multisync-line-cont');
     modal.style.display = 'block';
+    subTitle.innerText = "Please select and view what games you would like to sync.";
+    multisync.innerHTML = "";
+    dryRunComplete = false;
+
+    const checks = document.getElementsByClassName("multisync-check");
+    for (let i = 0; i < checks.length; ++i) {
+        const check = checks[i];
+        const name = check.id.replaceAll("-multisync-check", "");
+        const spinner = document.getElementById(`${name}-multisync-game-modal-loader`);
+        const success = document.getElementById(`${name}-multisync-success`);
+        const failure = document.getElementById(`${name}-multisync-failure`);
+
+        spinner.style.display = 'none';
+        success.style.display = 'none';
+        failure.style.display = 'none';
+    }
 }
 
 async function onCloseMultisync(element) {
     const modal = document.getElementById('multisync-modal');
     modal.style.display = 'none';
+    dryRunComplete = false;
 }
 
 async function onMultisyncSelectAllClicked() {
@@ -26,6 +47,10 @@ async function onMultisyncUnselectAllClicked() {
 
 async function onSyncSelectedClicked() {
     const dryRunSettings = await getShouldPerformDryRun();
+    const dryRun = dryRunSettings && !dryRunComplete;
+
+    const multisync = document.getElementById('multisync-line-cont');
+    multisync.innerHTML = "";
 
     const gamesToSync = [];
     var checks = document.getElementsByClassName("multisync-check");
@@ -53,7 +78,7 @@ async function onSyncSelectedClicked() {
     for (let i = 0; i < gamesToSync.length; ++i) {
         const gameName = gamesToSync[i]; 
         try {
-            await performSingleGameSync(gameName, dryRunSettings);
+            await performSingleGameSync(gameName, dryRun);
         } catch(e) {
             await onSyncGameFailure(gameName);
             continue;
@@ -63,6 +88,21 @@ async function onSyncSelectedClicked() {
 
     for (let i = 0; i < checkSpans.length; ++i) {
         checkSpans[i].style.display = 'block';
+    }
+
+    const subTitle = document.getElementById('multisync-subtitle');
+    subTitle.innerText = dryRun ? `Your Data is not sync'd. Please review your dry run results and press the sync button if you would like to sync to the cloud.` : `Sync Complete!`;
+
+    // If we have just completed our sync post-dryrun,
+    // we will reset dryRunComplete.
+    if (dryRunComplete) {
+        dryRunComplete = false;
+    }
+
+    // Since this was a dry-run, we will mark dryRunComplete
+    // as true so that we will actually sync next run.
+    if (dryRun) {
+        dryRunComplete = true;
     }
 
     multisyncButton.disabled = false;
