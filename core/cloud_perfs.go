@@ -14,9 +14,10 @@ const NEXT = 4
 const FTP = 5
 
 type CloudPerfs struct {
-	Cloud         int  `json:"cloud"`
-	PerformDryRun bool `json:"performDryRun"`
-	UseBiSync     bool `json:"useBiSync"`
+	Cloud                        int  `json:"cloud"`
+	PerformDryRun                bool `json:"performDryRun"`
+	UseBiSync                    bool `json:"useBiSync"`
+	ShouldNotPromptForLargeSyncs bool `json:"shouldNotPromptForLargeSyncs"`
 }
 
 func getCloudPerfDir() (string, error) {

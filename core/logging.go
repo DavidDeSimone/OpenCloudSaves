@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var InfoLogger *log.Logger
@@ -23,13 +25,15 @@ func InitLoggingWithDefaultPath() error {
 
 func InitLoggingWithPath(path string) error {
 	fmt.Println("Creating logfile at " + path)
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return err
+	logger := &lumberjack.Logger{
+		Filename:   path,
+		MaxSize:    250, // Megabytes
+		MaxAge:     30,  // Days
+		MaxBackups: 1,
 	}
-	// defer file.Close()
-	InfoLogger = log.New(file, "INFO\t", log.Ldate|log.Ltime)
-	ErrorLogger = log.New(file, "ERROR\t", log.Lshortfile|log.Ldate|log.Ltime)
-	log.SetOutput(file)
+
+	InfoLogger = log.New(logger, "INFO\t", log.Ldate|log.Ltime)
+	ErrorLogger = log.New(logger, "ERROR\t", log.Lshortfile|log.Ldate|log.Ltime)
+	log.SetOutput(logger)
 	return nil
 }

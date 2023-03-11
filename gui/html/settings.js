@@ -17,6 +17,9 @@ async function onSettingsModalOpen() {
 
     const syncSwitch = document.getElementById('settings-use-sync');
     syncSwitch.checked = currentSettings.useBiSync;
+
+    const doNotPromptSwitch = document.getElementById('settings-should-not-prompt-large');
+    doNotPromptSwitch.checked = currentSettings.shouldNotPromptForLargeSyncs;
 }
 
 async function onDryRunToggle(element) {
@@ -37,6 +40,15 @@ async function onUseBiSyncToggle(element) {
     await commitCloudPerfs(JSON.stringify(currentSettings));
 }
 
+async function onDoNotPromptLargeSyncsToggle() {
+    const syncSwitch = document.getElementById('settings-should-not-prompt-large');
+    const currentSettingsString = await getCloudPerfs();
+    const currentSettings = JSON.parse(currentSettingsString);
+
+    currentSettings.shouldNotPromptForLargeSyncs = syncSwitch.checked;
+    await commitCloudPerfs(JSON.stringify(currentSettings));
+}
+
 async function onNoticeClicked() {
     const noticeModal = document.getElementById('notice-modal');
     noticeModal.style.display = 'block';
@@ -47,3 +59,4 @@ async function onNoticeClosed() {
     noticeModal.style.display = 'none';
 
 }
+
