@@ -15,6 +15,17 @@
 
       <div class="padding"></div>
 
+<div id="confirmation-modal" class="bisync-modal" style="z-index: 2;">
+  <div id="confirmation-title" class="bisync-title"><p>This is your prompt</p></div>
+  <hr>
+  <div id="confirmation-subtitle" class="bisync-subtitle"><p>This is your subtitle.</p></div>
+  <div class="bisync-modal-content">
+    <div id="confirmation-line-cont" class="bisync-line-cont"></div>
+    <button id="confirmation-modal-confirm" class="signupbtn contentbutton">Confirm</button>
+    <button id="confirmation-modal-cancel" class="cancelbtn contentbutton">Cancel</button>
+  </div>
+</div>
+
 <div id="accordion-cont">
 {{range .Games}}
 {{if not .Def.Hidden}}
@@ -22,6 +33,7 @@
 <div class="panel" id="{{.Def.DisplayName}}-panel">
     <div>
         {{if .SaveFilesFound}}
+        <div>Total File Size: <a id="{{.Def.DisplayName}}-total-size">{{.TotalSize}}</a>MB</div>
         <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{else}}
         <div class="nosavefoundcont"><p>No Save Files found for {{.Def.DisplayName}}</p></div>
@@ -128,6 +140,17 @@
       </label>
       <div class="setting-text">
         <p>Use a Bi-Directional Sync instead of a standard Sync.</p>
+      </div>
+    </div>
+    <div class="clearfix">
+    </div>
+    <div class="settings-switch-cont">
+      <label class="switch switch-float">
+        <input id="settings-should-not-prompt-large" type="checkbox" onclick="onDoNotPromptLargeSyncsToggle(this)">
+        <span class="slider round"></span>
+      </label>
+      <div class="setting-text">
+        <p>Do not show a warning prior to large syncs.</p>
       </div>
     </div>
     <div class="clearfix">

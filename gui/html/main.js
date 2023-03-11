@@ -1,4 +1,5 @@
 const DEFAULT_SEARCH_SCORE = 150;
+const BIG_SYNC_SIZE = 100; // Megabytes
 let pendingEdit = null;
 
 async function onSelectClicked(element, name) {
@@ -15,10 +16,27 @@ async function onAddPathClicked(platform) {
 }
 
 
-async function onSyncButtonClicked(element, name) {
+async function onSyncButtonSuccess(element, name) {
     await setupSyncModal(name);
     const confirmEl = document.getElementById('bisync-confirm');
     confirmEl.style.display = 'block';
+}
+
+async function onSyncButtonClicked(element, name) {
+    const sizeEl = document.getElementById(`${name}-total-size`);
+    const size = parseInt(sizeEl.innerText);
+    const shouldNotPrompt = await getShouldNotPromptForLargeSyncs();
+    if (!shouldNotPrompt && size >= BIG_SYNC_SIZE) {
+        makeConfirmationPopup({
+            title: `Please Confirm Large Sync`,
+            subtitle: `You are attempting to sync ${size}MB of data. Please confirm if you would like to continue. If this number does not look correct, please check your save file definitions via the "Edit" button. This sync may take a long time. You can disable seeing this warning in settings.`,
+            onConfirm: () => {
+                onSyncButtonSuccess(element, name);
+            }
+        })
+    } else {
+        await onSyncButtonSuccess(element, name);
+    }
 }
 
 async function onEditButtonClicked(element, name) {
@@ -185,3 +203,4 @@ setTimeout(async () => {
     setupAccordionHandler();
     await require('html/fuzzy-search.js');
 });
+
