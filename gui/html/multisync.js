@@ -26,9 +26,6 @@ async function onMultisyncUnselectAllClicked() {
 
 async function onSyncSelectedClicked() {
     const dryRunSettings = await getShouldPerformDryRun();
-    if (dryRunSettings) {
-        // @TODO warn user this screen doesn't perform dry runs
-    }
 
     const gamesToSync = [];
     var checks = document.getElementsByClassName("multisync-check");
@@ -56,12 +53,16 @@ async function onSyncSelectedClicked() {
     for (let i = 0; i < gamesToSync.length; ++i) {
         const gameName = gamesToSync[i]; 
         try {
-            await performSingleGameSync(gameName);
+            await performSingleGameSync(gameName, dryRunSettings);
         } catch(e) {
             await onSyncGameFailure(gameName);
             continue;
         }
         await onSyncGameComplete(gameName);
+    }
+
+    for (let i = 0; i < checkSpans.length; ++i) {
+        checkSpans[i].style.display = 'block';
     }
 
     multisyncButton.disabled = false;
@@ -93,12 +94,27 @@ function recordMessage(message) {
 
 async function pollLoop(gameName) {
     return new Promise((resolve, reject) => {
+        const logTime = 250;
         const func = async () => {
             try {
-                const logsStr = await pollLogs(gameName);
+                let logsStr = "";
+                try {
+                    logsStr = await pollLogs(gameName);
+                } catch (e) {
+                    recordMessage(e);
+                    throw e;
+                }
+
+                if (logsStr == "") {
+                    setTimeout(func, logTime);
+                    return;
+                }
+                
                 const result = JSON.parse(logsStr);
                 if (result && result.Finished) {
+                    recordMessage(result.Message)
                     resolve();
+                    return;
                 }
 
                 const multisync = document.getElementById('multisync-line-cont');
@@ -110,41 +126,38 @@ async function pollLoop(gameName) {
                         continue;
                     }
 
-                    let msgResult = null;
-                    // @TODO I don't think we need a JSON parse here
-                    try {
-                        msgResult = JSON.parse(message);
-                    } catch (e) {
-                        msgResult = {msg: message};
-                        // log(`Error in message processing ${e}`);
-                        // continue;            
-                    }
-
-                    recordMessage(msgResult.msg);
+                    recordMessage(message);
                 }
 
-                setTimeout(func, 500);
+                setTimeout(func, logTime);
             } catch (e) {
+                await log(`Top level Error: ${e}`);
                 reject(e);
             }
         };
-        const timeout = setTimeout(func, 500);
+        const timeout = setTimeout(func, logTime);
     });
 }
 
 async function performSingleGameSync(gameName, dryRun) {
     const subTitle = document.getElementById('multisync-subtitle');
     subTitle.innerText = `Performing sync for ${gameName}`;
-    await log(`Syncing ${gameName}`);
+
+    const prefix = dryRun ? "Performing Dry Run" : "Syncing";
+    const suffix = dryRun ? "Dry Run Complete" : "Sync Complete";
+
     recordMessage(`---------------------------------------------------------`);
-    recordMessage(`Syncing: ${gameName}`);
+    recordMessage(`${prefix}: ${gameName}`);
     recordMessage(`---------------------------------------------------------`);
-    await syncGame(gameName);
+    if (dryRun) {
+        await getSyncDryRun(gameName);
+    } else {
+        await syncGame(gameName);
+    }
     await pollLoop(gameName);
     recordMessage(`---------------------------------------------------------`);
-    recordMessage(`Sync Complete: ${gameName}`);
+    recordMessage(`${suffix}: ${gameName}`);
     recordMessage(`---------------------------------------------------------`);
-    await log(`Sync for ${gameName} complete`);
 }
 
 async function sleepFor(miliseconds) {
