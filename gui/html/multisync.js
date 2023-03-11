@@ -85,54 +85,56 @@ async function onSyncGameFailure(gameName) {
 
 function recordMessage(message) {
     const multisync = document.getElementById('multisync-line-cont');
-    // multisync.style.display = 'block';
     const lineDiv = document.createElement('div');
     lineDiv.className = "bisync-line";
     lineDiv.innerText = message;
     multisync.appendChild(lineDiv);
 }
 
+async function processPoll(gameName) {
+    const logsStr = await pollLogs(gameName);
+    if (logsStr == "") {
+        return false;
+    }
+    
+    const result = JSON.parse(logsStr);
+    if (result && result.Finished) {
+        recordMessage(result.Message)
+        return true;
+    }
+
+    const multisync = document.getElementById('multisync-line-cont');
+    multisync.style.display = 'block';                
+    const messages = (result && result.Message) ? result.Message.split("\n") : [];
+    for (let i = 0; i < messages.length; ++i) {
+        const message = messages[i];
+        if (message === null || message === "") {
+            continue;
+        }
+
+        recordMessage(message);
+    }
+
+    return false;
+}
+
 async function pollLoop(gameName) {
     return new Promise((resolve, reject) => {
         const logTime = 250;
         const func = async () => {
-            try {
-                let logsStr = "";
-                try {
-                    logsStr = await pollLogs(gameName);
-                } catch (e) {
-                    recordMessage(e);
-                    throw e;
-                }
-
-                if (logsStr == "") {
-                    setTimeout(func, logTime);
-                    return;
-                }
-                
-                const result = JSON.parse(logsStr);
-                if (result && result.Finished) {
-                    recordMessage(result.Message)
-                    resolve();
-                    return;
-                }
-
-                const multisync = document.getElementById('multisync-line-cont');
-                multisync.style.display = 'block';                
-                const messages = (result && result.Message) ? result.Message.split("\n") : [];
-                for (let i = 0; i < messages.length; ++i) {
-                    const message = messages[i];
-                    if (message === null || message === "") {
-                        continue;
-                    }
-
-                    recordMessage(message);
-                }
-
+            let errorState = false;
+            const complete = await processPoll(gameName)
+                                    .catch((error) => {
+                                        errorState = true;
+                                        recordMessage(error);
+                                        reject();
+                                    });
+            if (errorState) {
+                return;
+            } else if (complete) {
+                resolve();
+            } else {
                 setTimeout(func, logTime);
-            } catch (e) {
-                await log(`Top level Error: ${e}`);
-                reject(e);
             }
         };
         const timeout = setTimeout(func, logTime);
@@ -146,6 +148,9 @@ async function performSingleGameSync(gameName, dryRun) {
     const prefix = dryRun ? "Performing Dry Run" : "Syncing";
     const suffix = dryRun ? "Dry Run Complete" : "Sync Complete";
 
+    const multisync = document.getElementById('multisync-line-cont');
+    multisync.style.display = 'block';
+
     recordMessage(`---------------------------------------------------------`);
     recordMessage(`${prefix}: ${gameName}`);
     recordMessage(`---------------------------------------------------------`);
@@ -154,10 +159,14 @@ async function performSingleGameSync(gameName, dryRun) {
     } else {
         await syncGame(gameName);
     }
-    await pollLoop(gameName);
-    recordMessage(`---------------------------------------------------------`);
-    recordMessage(`${suffix}: ${gameName}`);
-    recordMessage(`---------------------------------------------------------`);
+
+    await pollLoop(gameName)
+    .finally(() => {
+        recordMessage(`---------------------------------------------------------`);
+        recordMessage(`${suffix}: ${gameName}`);
+        recordMessage(`---------------------------------------------------------`);
+    
+    });
 }
 
 async function sleepFor(miliseconds) {
