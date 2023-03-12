@@ -27,6 +27,19 @@ async function onOpenMultisync(element) {
     }
 }
 
+async function resetSuccessAndFailureMarkers() {
+    const checks = document.getElementsByClassName("multisync-check");
+    for (let i = 0; i < checks.length; ++i) {
+        const check = checks[i];
+        const name = check.id.replaceAll("-multisync-check", "");
+        const success = document.getElementById(`${name}-multisync-success`);
+        const failure = document.getElementById(`${name}-multisync-failure`);
+
+        success.style.display = 'none';
+        failure.style.display = 'none';
+    }
+}
+
 async function onCloseMultisync(element) {
     const modal = document.getElementById('multisync-modal');
     modal.style.display = 'none';
@@ -62,6 +75,12 @@ async function onMultisyncUnselectAllClicked() {
 }
 
 async function onSyncSelectedClicked() {
+    const multisyncInput = document.getElementById('multisync-input');
+    multisyncInput.value = "";
+    await onChangeSearchMultisync(multisyncInput);
+    await resetSuccessAndFailureMarkers();
+
+
     const dryRunSettings = await getShouldPerformDryRun();
     const dryRun = dryRunSettings && !dryRunComplete;
 
@@ -231,4 +250,25 @@ async function sleepFor(miliseconds) {
             resolve();
         }, miliseconds)
     });
+}
+
+async function onChangeSearchMultisync(element) {
+    const name = element.value
+
+    var acc = document.getElementsByClassName("multisync-container");
+    var i;
+    
+    for (i = 0; i < acc.length; i++) {
+        if (name === "") {
+            acc[i].style.display = "block";
+            continue;
+        }
+
+        const res = fuzzyMatch(name.toLowerCase(), acc[i].id.replace("-cont", "").toLowerCase())
+        if (res[0] || res[1] > DEFAULT_SEARCH_SCORE) {
+            acc[i].style.display = "block";
+        } else {
+            acc[i].style.display = "none";
+        }
+    }
 }

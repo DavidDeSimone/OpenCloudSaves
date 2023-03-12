@@ -176,15 +176,19 @@
 <div id="multisync-modal" class="multisync-modal">
   <span class="close" onclick="onCloseMultisync(this)" title="Close Modal">&times;</span>
   <!-- <div class="settings-modal-content"> -->
+
     <div class="multisync-title">Sync Multiple Games</div>
     <div id="multisync-subtitle" class="multisync-subtitle"></div>
     <button id="multisync-modal-confirm" class="multisyncbtn" onclick="onSyncSelectedClicked()">Sync Selected</button>
     <button id="multisync-modal-selectall" class="multisyncbtn multisync-selectallbtn" onclick="onMultisyncSelectAllClicked()">Select All</button>
     <button id="multisync-modal-selectall" class="multisyncbtn multisync-selectallbtn" onclick="onMultisyncUnselectAllClicked()">Unselect All</button>
+    <div class="search-container">
+      <input id="multisync-input" type="text" placeholder="Search.." name="search" onchange="onChangeSearchMultisync(this)" onkeypress="onChangeSearchMultisync(this)" onpaste = "onChangeSearchMultisync(this)" oninput = "onChangeSearchMultisync(this)">
+    </div>
     <hr>
     {{range .Games}}
     {{if not .Def.Hidden}}
-    <label class="multisync-container">
+    <label id="{{.Def.DisplayName}}-cont" class="multisync-container">
       <div>
         <div id="{{.Def.DisplayName}}-multisync-game-modal-loader" class="multisync-loader-cont"><span class="multisync-loader"></span></div>  
         <span class="multisync-checkmark"></span>
