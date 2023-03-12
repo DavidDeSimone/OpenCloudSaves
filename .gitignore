@@ -5,12 +5,17 @@ testdata*
 .DS_store
 *.app
 bin/
+
+# windows related files
 libs/webview2
 build/win/WebView2Loader.dll
+build/win/MicrosoftEdgeWebView*.exe
 *.msi
 *.wixobj
 *.wixpdb
 rsrc_*
+
+# linux related files
 build/linux/repo/*
 build/linux/build-dir/*
 .flatpak-builder/*
