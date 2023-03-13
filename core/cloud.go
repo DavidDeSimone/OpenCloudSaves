@@ -294,10 +294,10 @@ func (cm *CloudManager) sync(ctx context.Context, storage Storage, ops *CloudOpe
 	return cm.syncAction(ctx, "sync", storage, ops, localPath, remotePath)
 }
 
-func (cm *CloudManager) syncAction(ctx context.Context, action string, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-	args := []string{"--use-json-log"}
+func constructArgs(ops *CloudOperationOptions) []string {
+	args := []string{}
 	if ops.Verbose {
-		args = append(args, "-vv")
+		args = append(args, "-v")
 	}
 
 	if ops.DryRun {
@@ -312,14 +312,19 @@ func (cm *CloudManager) syncAction(ctx context.Context, action string, storage S
 		args = append(args, "-u")
 	}
 
-	if ops.Checksum {
-		args = append(args, "--checksum")
-	}
-
 	if len(ops.CustomFlags) > 0 {
 		trimmed := strings.TrimSpace(ops.CustomFlags)
 		flags := strings.Split(trimmed, " ")
 		args = append(args, flags...)
+	}
+
+	return args
+}
+
+func (cm *CloudManager) syncAction(ctx context.Context, action string, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+	args := constructArgs(ops)
+	if ops.Checksum {
+		args = append(args, "--checksum")
 	}
 
 	args = append(args, action, localPath, remotePath)
@@ -347,24 +352,7 @@ func (cm *CloudManager) syncAction(ctx context.Context, action string, storage S
 }
 
 func (cm *CloudManager) bisyncDir(ctx context.Context, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-	args := []string{"--use-json-log"}
-	if ops.Verbose {
-		args = append(args, "-vv")
-	}
-
-	if ops.DryRun {
-		args = append(args, "--dry-run")
-	}
-
-	if ops.Include != "" {
-		args = append(args, fmt.Sprintf("--include=%v", ops.Include))
-	}
-
-	if len(ops.CustomFlags) > 0 {
-		trimmed := strings.TrimSpace(ops.CustomFlags)
-		flags := strings.Split(trimmed, " ")
-		args = append(args, flags...)
-	}
+	args := constructArgs(ops)
 
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
 	args = append(args, "bisync", localPath, path)

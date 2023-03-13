@@ -6,6 +6,7 @@
 <body>
     <ul class="topnav">
         <li><div class="activeButton" onclick="openAddGamesMenu()" style="width:auto;">Add Games</div></li>
+        <li><div onclick="onOpenMultisync(this)">Sync Multiple Games</div></li>
         <li><div onclick="onSetCloudClicked(this)">Select Cloud</div></li>
         <li><div onclick="onSyncSettingsClicked(this)">Settings</div></li>
         <div class="search-container">
@@ -37,7 +38,7 @@
         <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{else}}
         <div class="nosavefoundcont"><p>No Save Files found for {{.Def.DisplayName}}</p></div>
-        <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
+        <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" disabled onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{end}}
 
         <button id="{{.Def.DisplayName}}-editbtn" class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>
@@ -172,6 +173,39 @@
   </div>
 </div>
 
+<div id="multisync-modal" class="multisync-modal">
+  <span class="close" onclick="onCloseMultisync(this)" title="Close Modal">&times;</span>
+  <!-- <div class="settings-modal-content"> -->
+    <div class="multisync-title">Sync Multiple Games</div>
+    <div id="multisync-subtitle" class="multisync-subtitle"></div>
+    <button id="multisync-modal-confirm" class="multisyncbtn" onclick="onSyncSelectedClicked()">Sync Selected</button>
+    <button id="multisync-modal-selectall" class="multisyncbtn multisync-selectallbtn" onclick="onMultisyncSelectAllClicked()">Select All</button>
+    <button id="multisync-modal-selectall" class="multisyncbtn multisync-selectallbtn" onclick="onMultisyncUnselectAllClicked()">Unselect All</button>
+    <hr>
+    {{range .Games}}
+    {{if not .Def.Hidden}}
+    <label class="multisync-container">
+      <div>
+        <div id="{{.Def.DisplayName}}-multisync-game-modal-loader" class="multisync-loader-cont"><span class="multisync-loader"></span></div>  
+        <span class="multisync-checkmark"></span>
+          <div class="multisync-check-success-cont">
+          <li id="{{.Def.DisplayName}}-multisync-success" class="multisync-li multisync-check-success"></li>
+          </div>
+          <div class="multisync-check-failure-cont">
+          <li id="{{.Def.DisplayName}}-multisync-failure" class="multisync-li multisync-check-failure"></li>
+        </div>
+        {{.Def.DisplayName}}
+      </div>
+      <input class="multisync-check" id="{{.Def.DisplayName}}-multisync-check" type="checkbox" checked="checked">
+      <span class="multisync-checkmark"></span>
+    </label>
+    {{end}}
+    {{end}}
+    <div class="bisync-modal-content">
+    <div id="multisync-line-cont" class="bisync-line-cont"></div>
+    </div>
+  <!-- </div> -->
+</div>
 
 </body>
 </html> 

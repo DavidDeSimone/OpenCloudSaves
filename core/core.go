@@ -153,7 +153,7 @@ func RequestMainOperation(ctx context.Context, cm *CloudManager, ops *Options, d
 				continue
 			}
 
-			LogMessage(logs, "All Operations Complete, files in sync")
+			LogMessage(logs, "All Operations Complete")
 			logs <- Message{
 				Message:  result,
 				Finished: true,

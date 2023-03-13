@@ -2,6 +2,14 @@
 let pendingSyncGame = null;
 let retryDryRun = false;
 
+function recordSyncMessage(message) {
+    const multisync = document.getElementById('bisync-line-cont');
+    const lineDiv = document.createElement('div');
+    lineDiv.className = "bisync-line";
+    lineDiv.innerText = message;
+    multisync.appendChild(lineDiv);
+}
+
 async function onFinished(result, dryRun) {
     log("Finished Sync");
     const messages = (result && result.Message) ? result.Message.split("\n") : [];
@@ -20,20 +28,19 @@ async function onFinished(result, dryRun) {
     lineContEl.style.display = 'block';
     syncConfirm.disabled = false;
     syncCancel.disabled = false;
-
-
-    let hasSeenOperations = false;
     for (let i = 0; i < messages.length; ++i) {
         if (messages[i] === null || messages[i] === "") {
             continue;
         }
 
         let result = null;
+        // @TODO I don't think we need a JSON parse here
         try {
             result = JSON.parse(messages[i]);
         } catch (e) {
-            log(`Error in message processing ${e}`);
-            continue;
+            result = {msg: messages[i]};
+            // log(`Error in message processing ${e}`);
+            // continue;
         }
 
         // We strip this out for end users - bisync is good enough
@@ -43,37 +50,7 @@ async function onFinished(result, dryRun) {
             continue;
         }
 
-        const lineDiv = document.createElement("div");
-        lineDiv.className = "bisync-line";
-
-        // With current rclone format, we want to present all output lines
-        // up until the last pending operation. The foramt of the result is 
-        // STATEMENT OF OPERATION (COPY FOLDER1 TO FOLDER2)
-        // OPERATIONS
-        // Statement of success
-
-        if (dryRun) {
-            // That statement may be confusing to the end users, so we will omit
-            if (result.object !== undefined) {
-                lineDiv.innerText = `PENDING: ${result.skipped} - ${result.object}; size ${Math.round(((result.size / (1024 * 1024)) + Number.EPSILON) * 100) / 100}MB`;
-                hasSeenOperations = true;
-            } else if (!hasSeenOperations) {
-                lineDiv.innerText = result.msg;
-            } else {
-                continue;
-            }
-        } else {
-            lineDiv.innerText = result.msg;
-        }
-
-        lineContEl.appendChild(lineDiv);
-    }
-
-    if (!dryRun) {
-        const lineDiv = document.createElement("div");
-        lineDiv.className = "bisync-line";
-        lineDiv.innerText = "Sync Complete!";
-        lineContEl.appendChild(lineDiv);    
+        recordSyncMessage(result.msg);
     }
 }
 
@@ -134,6 +111,10 @@ async function sync(gameName, dryRun) {
     syncConfirm.style.display = 'none';
     syncCancel.style.display = 'none';
 
+    recordSyncMessage(`---------------------------------------------------------`);
+    recordSyncMessage(`Syncing: ${gameName}`);
+    recordSyncMessage(`---------------------------------------------------------`);
+
     if (dryRun) {
         bisyncSubtitle.innerText = "Simulating transfer - please wait";
         await getSyncDryRun(gameName);
@@ -166,8 +147,14 @@ async function sync(gameName, dryRun) {
                         syncConfirm.style.display = 'block';
                         syncCancel.style.display = 'block';    
                     }
+
+                    recordSyncMessage(`---------------------------------------------------------`);
+                    recordSyncMessage(`Sync Complete: ${gameName}`);
+                    recordSyncMessage(`---------------------------------------------------------`);                
                 }
-            }    
+            }
+
+            recordSyncMessage(result.Message);
         }
 
         if (!clear) {

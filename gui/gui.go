@@ -106,7 +106,6 @@ func pollLogs(key string) (string, error) {
 func syncGame(key string) {
 	ops := &core.Options{
 		Gamenames: []string{key},
-		Verbose:   []bool{true},
 	}
 	cm := core.MakeCloudManager()
 
@@ -266,7 +265,6 @@ func getSyncDryRun(name string) error {
 	ops := &core.Options{
 		DryRun:    []bool{true},
 		Gamenames: []string{name},
-		Verbose:   []bool{true},
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	channels := core.MakeChannelProviderWithCancelFunction(cancel)
@@ -367,7 +365,6 @@ func cancelPendingSync(gameName string) {
 	if ok && channels.Cancel != nil {
 		channels.Cancel()
 	}
-
 	removeGamedefByKey(gameName)
 }
 
@@ -382,6 +379,47 @@ func deleteCurrentFTPSettings() {
 func getShouldNotPromptForLargeSyncs() bool {
 	cloudperfs := core.GetCurrentCloudPerfsOrDefault()
 	return cloudperfs.ShouldNotPromptForLargeSyncs
+}
+
+func getMultisyncSelectedGames() (string, error) {
+	dm := core.MakeDefaultGameDefManager()
+	err := dm.ApplyUserOverrides()
+	if err != nil {
+		return "", err
+	}
+
+	gamedefs := dm.GetGameDefMap()
+	result := make(map[string]bool)
+	for _, def := range gamedefs {
+		if def.SelectInMultisyncMenu {
+			result[def.DisplayName] = true
+		}
+	}
+
+	resultBytes, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+
+	return string(resultBytes), nil
+}
+
+func commitMultisyncSelectGames(gameNames []string) error {
+	dm := core.MakeDefaultGameDefManager()
+	err := dm.ApplyUserOverrides()
+	if err != nil {
+		return err
+	}
+
+	gamedefs := dm.GetGameDefMap()
+	for _, gamename := range gameNames {
+		result, ok := gamedefs[gamename]
+		if ok {
+			result.SelectInMultisyncMenu = true
+		}
+	}
+
+	return dm.CommitUserOverrides()
 }
 
 func bindFunctions(w webview.WebView) {
@@ -414,6 +452,8 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("deleteCurrentFTPSettings", deleteCurrentFTPSettings)
 	w.Bind("getShouldNotPromptForLargeSyncs", getShouldNotPromptForLargeSyncs)
 	w.Bind("cancelPendingSync", cancelPendingSync)
+	w.Bind("getMultisyncSelectedGames", getMultisyncSelectedGames)
+	w.Bind("commitMultisyncSelectGames", commitMultisyncSelectGames)
 }
 
 func DirSize(path string) (int64, error) {
@@ -513,7 +553,7 @@ func executeTemplate() (string, error) {
 	}
 
 	var b bytes.Buffer
-	htmlWriter := bufio.NewWriterSize(&b, 4*1024*1024)
+	htmlWriter := bufio.NewWriterSize(&b, 8*1024*1024)
 
 	templ := template.Must(template.ParseFS(html, "html/index.html"))
 	err := templ.Execute(htmlWriter, input)
@@ -527,6 +567,11 @@ func executeTemplate() (string, error) {
 	}
 
 	settingsjsbytes, err := fs.ReadFile(html, "html/settings.js")
+	if err != nil {
+		return "", err
+	}
+
+	multisyncbytes, err := fs.ReadFile(html, "html/multisync.js")
 	if err != nil {
 		return "", err
 	}
@@ -553,7 +598,8 @@ func executeTemplate() (string, error) {
 	syncgamejs := fmt.Sprintf("\n<script>%v</script>\n", string(syncgamejsbytes))
 	settingsjs := fmt.Sprintf("\n<script>%v</script>\n", string(settingsjsbytes))
 	confirmjs := fmt.Sprintf("\n<script>%v</script>\n", string(confirmjsbytes))
-	finalResult := css + result + js + syncgamejs + settingsjs + confirmjs
+	multisyncjs := fmt.Sprintf("<script>%v</script>\n", string(multisyncbytes))
+	finalResult := css + result + js + syncgamejs + settingsjs + confirmjs + multisyncjs
 	return finalResult, nil
 }
 

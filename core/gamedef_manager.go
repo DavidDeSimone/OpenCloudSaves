@@ -22,13 +22,14 @@ type Datapath struct {
 }
 
 type GameDef struct {
-	DisplayName string      `json:"display_name"`
-	SteamId     string      `json:"steam_id"`
-	WinPath     []*Datapath `json:"win_path"`
-	LinuxPath   []*Datapath `json:"linux_path"`
-	DarwinPath  []*Datapath `json:"darwin_path"`
-	Hidden      bool        `json:"hidden"`
-	CustomFlags string      `json:"flags"`
+	DisplayName           string      `json:"display_name"`
+	SteamId               string      `json:"steam_id"`
+	WinPath               []*Datapath `json:"win_path"`
+	LinuxPath             []*Datapath `json:"linux_path"`
+	DarwinPath            []*Datapath `json:"darwin_path"`
+	Hidden                bool        `json:"hidden"`
+	CustomFlags           string      `json:"flags"`
+	SelectInMultisyncMenu bool        `json:"selectMultiSync"`
 }
 
 type SyncFile struct {
@@ -51,7 +52,6 @@ func (d *GameDef) GetSteamLocation() string {
 
 func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 	platform := runtime.GOOS
-	prefix := ""
 	separator := string(os.PathSeparator)
 	steamLocation := d.GetSteamLocation()
 
@@ -76,7 +76,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			}
 
 			result = append(result, Datapath{
-				Path:    prefix + winpath + separator,
+				Path:    winpath + separator,
 				Include: datapath.Include,
 			})
 		}
@@ -95,8 +95,12 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 			darwinPath = strings.Replace(darwinPath, "~", homedir, 1)
 			darwinPath = strings.Replace(darwinPath, "$HOME", os.Getenv("HOME"), 1)
 
+			if strings.TrimSpace(darwinPath) == "" {
+				continue
+			}
+
 			result = append(result, Datapath{
-				Path:    prefix + darwinPath + separator,
+				Path:    darwinPath + separator,
 				Include: datapath.Include,
 			})
 		}
@@ -137,8 +141,12 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				linuxPath = linuxPath + "drive_c/" + winpath
 			}
 
+			if strings.TrimSpace(linuxPath) == "" {
+				continue
+			}
+
 			result = append(result, Datapath{
-				Path:    prefix + linuxPath + separator,
+				Path:    linuxPath + separator,
 				Include: datapath.Include,
 			})
 		}
@@ -297,13 +305,13 @@ func (d *FsGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
 }
 
 func (dm *FsGameDefManager) CommitCloudUserOverride() error {
+	cm := dm.cm
 	if dm.cm == nil {
-		InfoLogger.Println("No cloud driver present")
-		return nil
+		cm = MakeCloudManager()
 	}
 
 	userOverride := dm.GetUserOverrideLocation()
-	return ApplyCloudUserOverride(dm.cm, userOverride)
+	return ApplyCloudUserOverride(cm, userOverride)
 }
 
 func ApplyCloudUserOverride(cm *CloudManager, userOverride string) error {
