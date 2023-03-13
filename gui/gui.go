@@ -365,7 +365,7 @@ func cancelPendingSync(gameName string) {
 	if ok && channels.Cancel != nil {
 		channels.Cancel()
 	}
-	removeGamedefByKey(gameName)
+	cleanupPendingChannel(gameName)
 }
 
 func deleteCurrentNextCloudSettings() {
