@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -234,7 +235,7 @@ func (cm *CloudManager) ObscurePassword(password string) (string, error) {
 	return output.String(), nil
 }
 
-func (cm *CloudManager) PerformSyncOperation(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+func (cm *CloudManager) PerformSyncOperation(ctx context.Context, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	InfoLogger.Println("Performing Sync Operation")
 	os.MkdirAll(localPath, os.ModePerm)
 	exists, err := cm.DoesRemoteDirExist(storage, remotePath)

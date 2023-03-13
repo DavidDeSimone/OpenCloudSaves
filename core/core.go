@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -35,6 +36,12 @@ type ChannelProvider struct {
 
 const APP_NAME = "OpenCloudSave"
 
+func MakeDefaultChannelProvider() *ChannelProvider {
+	return &ChannelProvider{
+		Logs: make(chan Message, 100),
+	}
+}
+
 func GetCurrentStorageProvider() Storage {
 	storage, err := GetCurrentCloudStorage()
 	if err != nil {
@@ -50,7 +57,7 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 	}
 }
 
-func RequestMainOperation(cm *CloudManager, ops *Options, dm GameDefManager, channels *ChannelProvider) {
+func RequestMainOperation(ctx context.Context, cm *CloudManager, ops *Options, dm GameDefManager, channels *ChannelProvider) {
 	logs := channels.Logs
 
 	if len(ops.PrintGameDefs) > 0 {
@@ -128,7 +135,7 @@ func RequestMainOperation(cm *CloudManager, ops *Options, dm GameDefManager, cha
 			syncops.CustomFlags = gamedef.CustomFlags
 			syncops.Include = syncpath.Include
 
-			result, err := cm.PerformSyncOperation(storage, syncops, syncpath.Path, remotePath)
+			result, err := cm.PerformSyncOperation(ctx, storage, syncops, syncpath.Path, remotePath)
 			if err != nil {
 				ErrorLogger.Println(err)
 				logs <- Message{

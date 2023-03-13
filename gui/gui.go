@@ -3,6 +3,7 @@ package gui
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -60,6 +61,16 @@ func openDirDialog() (string, error) {
 	return dialog.Directory().Title("Select Folder").Browse()
 }
 
+func cleanupPendingChannel(key string) {
+	chanelMutex.Lock()
+	_, ok := channelMap[key]
+	defer chanelMutex.Unlock()
+
+	if ok {
+		delete(channelMap, key)
+	}
+}
+
 func pollLogs(key string) (string, error) {
 	chanelMutex.Lock()
 	channels, ok := channelMap[key]
@@ -71,7 +82,12 @@ func pollLogs(key string) (string, error) {
 	select {
 	case res := <-channels.Logs:
 		if res.Err != nil {
+			cleanupPendingChannel(key)
 			return "", res.Err
+		}
+
+		if res.Finished {
+			cleanupPendingChannel(key)
 		}
 
 		resultJson, err := json.Marshal(res)
@@ -96,11 +112,11 @@ func syncGame(key string) {
 
 	dm := core.MakeGameDefManager("")
 	dm.SetCloudManager(cm)
-	channels := &core.ChannelProvider{
-		Logs: make(chan core.Message, 100),
-	}
+	channels := core.MakeDefaultChannelProvider()
+	// Second arg is cancel func
+	ctx, _ := context.WithCancel(context.Background())
 
-	go core.RequestMainOperation(cm, ops, dm, channels)
+	go core.RequestMainOperation(ctx, cm, ops, dm, channels)
 	chanelMutex.Lock()
 	defer chanelMutex.Unlock()
 
@@ -253,9 +269,9 @@ func getSyncDryRun(name string) error {
 		Gamenames: []string{name},
 		Verbose:   []bool{true},
 	}
-	channels := &core.ChannelProvider{
-		Logs: make(chan core.Message, 100),
-	}
+	channels := core.MakeDefaultChannelProvider()
+	// Second arg is cancel func
+	ctx, _ := context.WithCancel(context.Background())
 
 	chanelMutex.Lock()
 	channelMap[name] = channels
@@ -265,7 +281,7 @@ func getSyncDryRun(name string) error {
 	dm := core.MakeDefaultGameDefManager()
 	dm.SetCloudManager(cm)
 
-	go core.RequestMainOperation(cm, ops, dm, channels)
+	go core.RequestMainOperation(ctx, cm, ops, dm, channels)
 	return nil
 }
 
