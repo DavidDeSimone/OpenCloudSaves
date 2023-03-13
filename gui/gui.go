@@ -359,6 +359,7 @@ func commitNextCloudSettings(jsonInput string) error {
 }
 
 func cancelPendingSync(gameName string) {
+	core.InfoLogger.Println("Cancel sync of " + gameName)
 	chanelMutex.Lock()
 	channels, ok := channelMap[gameName]
 	chanelMutex.Unlock()
@@ -366,6 +367,8 @@ func cancelPendingSync(gameName string) {
 	if ok && channels.Cancel != nil {
 		channels.Cancel()
 	}
+
+	removeGamedefByKey(gameName)
 }
 
 func deleteCurrentNextCloudSettings() {
