@@ -31,15 +31,23 @@ type Message struct {
 }
 
 type ChannelProvider struct {
-	Logs chan Message
+	Logs   chan Message
+	Cancel context.CancelFunc
 }
 
 const APP_NAME = "OpenCloudSave"
 
 func MakeDefaultChannelProvider() *ChannelProvider {
 	return &ChannelProvider{
-		Logs: make(chan Message, 100),
+		Logs:   make(chan Message, 100),
+		Cancel: nil,
 	}
+}
+
+func MakeChannelProviderWithCancelFunction(cancelFn context.CancelFunc) *ChannelProvider {
+	provider := MakeDefaultChannelProvider()
+	provider.Cancel = cancelFn
+	return provider
 }
 
 func GetCurrentStorageProvider() Storage {

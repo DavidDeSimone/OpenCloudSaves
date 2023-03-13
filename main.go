@@ -69,7 +69,7 @@ func main() {
 			log.Fatal("Attempting to sync cloud data with no cloud provider set. Please set a cloud provider via --set-cloud <CLOUD_PROVIDER>")
 		}
 
-		err = cm.CreateDriveIfNotExists(storage)
+		err = cm.CreateDriveIfNotExists(context.Background(), storage)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -1,6 +1,9 @@
 package core
 
-import "os/exec"
+import (
+	"context"
+	"os/exec"
+)
 
 type NextCloudStorage struct {
 	Url          string `json:"url"`
@@ -13,7 +16,7 @@ func (gs *NextCloudStorage) GetName() string {
 	return "opencloudsave-nextcloud"
 }
 
-func (gs *NextCloudStorage) GetCreationCommand() *exec.Cmd {
+func (gs *NextCloudStorage) GetCreationCommand(ctx context.Context) *exec.Cmd {
 	args := []string{"config", "create", gs.GetName(), "webdav", "vendor=nextcloud"}
 	if gs.Url != "" {
 		args = append(args, "url="+gs.Url)
@@ -28,15 +31,15 @@ func (gs *NextCloudStorage) GetCreationCommand() *exec.Cmd {
 		args = append(args, "bearer_token="+gs.Bearer_token)
 	}
 
-	return makeCommand(getCloudApp(), args...)
+	return makeCommand(ctx, getCloudApp(), args...)
 }
 
 var nextCloudStorage *NextCloudStorage
 
-func DeleteNextCloudStorage() error {
+func DeleteNextCloudStorage(ctx context.Context) error {
 	storage := &NextCloudStorage{}
 	cm := MakeCloudManager()
-	return cm.DeleteCloudEntry(storage)
+	return cm.DeleteCloudEntry(ctx, storage)
 }
 
 func SetNextCloudStorage(ns *NextCloudStorage) {

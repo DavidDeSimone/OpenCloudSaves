@@ -112,9 +112,8 @@ func syncGame(key string) {
 
 	dm := core.MakeGameDefManager("")
 	dm.SetCloudManager(cm)
-	channels := core.MakeDefaultChannelProvider()
-	// Second arg is cancel func
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	channels := core.MakeChannelProviderWithCancelFunction(cancel)
 
 	go core.RequestMainOperation(ctx, cm, ops, dm, channels)
 	chanelMutex.Lock()
@@ -237,7 +236,7 @@ func load(w webview.WebView, path string) error {
 	return nil
 }
 
-func commitCloudService(service int) error {
+func commitCloudService(ctx context.Context, service int) error {
 	cloudperfs := core.GetCurrentCloudPerfsOrDefault()
 	cloudperfs.Cloud = service
 	err := core.CommitCloudPerfs(cloudperfs)
@@ -251,7 +250,7 @@ func commitCloudService(service int) error {
 	}
 
 	cm := core.MakeCloudManager()
-	return cm.CreateDriveIfNotExists(storage)
+	return cm.CreateDriveIfNotExists(ctx, storage)
 }
 
 func getCloudService() (int, error) {
@@ -269,9 +268,8 @@ func getSyncDryRun(name string) error {
 		Gamenames: []string{name},
 		Verbose:   []bool{true},
 	}
-	channels := core.MakeDefaultChannelProvider()
-	// Second arg is cancel func
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	channels := core.MakeChannelProviderWithCancelFunction(cancel)
 
 	chanelMutex.Lock()
 	channelMap[name] = channels
@@ -327,7 +325,7 @@ func commitFTPSettings(jsonInput string) error {
 
 	if ftp.Password != "" {
 		cm := core.MakeCloudManager()
-		obscuredpw, err := cm.ObscurePassword(ftp.Password)
+		obscuredpw, err := cm.ObscurePassword(context.Background(), ftp.Password)
 		if err != nil {
 			return err
 		}
@@ -348,7 +346,7 @@ func commitNextCloudSettings(jsonInput string) error {
 
 	if nextCloud.Pass != "" {
 		cm := core.MakeCloudManager()
-		obscuredpw, err := cm.ObscurePassword(nextCloud.Pass)
+		obscuredpw, err := cm.ObscurePassword(context.Background(), nextCloud.Pass)
 		if err != nil {
 			return err
 		}
@@ -360,12 +358,22 @@ func commitNextCloudSettings(jsonInput string) error {
 	return nil
 }
 
+func cancelPendingSync(gameName string) {
+	chanelMutex.Lock()
+	channels, ok := channelMap[gameName]
+	chanelMutex.Unlock()
+
+	if ok && channels.Cancel != nil {
+		channels.Cancel()
+	}
+}
+
 func deleteCurrentNextCloudSettings() {
-	core.DeleteNextCloudStorage()
+	core.DeleteNextCloudStorage(context.Background())
 }
 
 func deleteCurrentFTPSettings() {
-	core.DeleteFtpDriveStorage()
+	core.DeleteFtpDriveStorage(context.Background())
 }
 
 func getShouldNotPromptForLargeSyncs() bool {
@@ -402,6 +410,7 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("commitNextCloudSettings", commitNextCloudSettings)
 	w.Bind("deleteCurrentFTPSettings", deleteCurrentFTPSettings)
 	w.Bind("getShouldNotPromptForLargeSyncs", getShouldNotPromptForLargeSyncs)
+	w.Bind("cancelPendingSync", cancelPendingSync)
 }
 
 func DirSize(path string) (int64, error) {

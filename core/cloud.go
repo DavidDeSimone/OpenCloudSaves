@@ -25,7 +25,7 @@ var relativeLinuxPath = true
 
 type Storage interface {
 	GetName() string
-	GetCreationCommand() *exec.Cmd
+	GetCreationCommand(ctx context.Context) *exec.Cmd
 }
 
 type CloudManager struct {
@@ -77,12 +77,12 @@ func getCloudApp() string {
 	return "Unsupported Platform"
 }
 
-func makeCommand(cmd_string string, arg ...string) *exec.Cmd {
+func makeCommand(ctx context.Context, cmd_string string, arg ...string) *exec.Cmd {
 	if printCommands {
 		InfoLogger.Println("Running Command ", cmd_string, arg)
 	}
 
-	cmd := exec.Command(cmd_string, arg...)
+	cmd := exec.CommandContext(ctx, cmd_string, arg...)
 	StripWindow(cmd)
 	return cmd
 }
@@ -98,14 +98,14 @@ func MakeCloudManager() *CloudManager {
 	return &CloudManager{}
 }
 
-func (cm *CloudManager) CreateDriveIfNotExists(storage Storage) error {
+func (cm *CloudManager) CreateDriveIfNotExists(ctx context.Context, storage Storage) error {
 	InfoLogger.Println("Checking if drive exists")
-	if cm.ContainsStorageDrive(storage) {
+	if cm.ContainsStorageDrive(ctx, storage) {
 		return nil
 	}
 
 	InfoLogger.Println("Creating new drive for storage")
-	err := cm.MakeStorageDrive(storage)
+	err := cm.MakeStorageDrive(ctx, storage)
 	if err != nil {
 		ErrorLogger.Println(err)
 		return err
@@ -114,8 +114,8 @@ func (cm *CloudManager) CreateDriveIfNotExists(storage Storage) error {
 	return nil
 }
 
-func (cm *CloudManager) ContainsStorageDrive(storage Storage) bool {
-	cmd := makeCommand(getCloudApp(), "config", "dump")
+func (cm *CloudManager) ContainsStorageDrive(ctx context.Context, storage Storage) bool {
+	cmd := makeCommand(ctx, getCloudApp(), "config", "dump")
 	stdout, err := cmd.Output()
 
 	if err != nil {
@@ -135,8 +135,8 @@ func (cm *CloudManager) ContainsStorageDrive(storage Storage) bool {
 	return ok
 }
 
-func (cm *CloudManager) MakeStorageDrive(storage Storage) error {
-	cmd := storage.GetCreationCommand()
+func (cm *CloudManager) MakeStorageDrive(ctx context.Context, storage Storage) error {
+	cmd := storage.GetCreationCommand(ctx)
 	InfoLogger.Println("Running creation command", cmd)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
@@ -149,9 +149,9 @@ func (cm *CloudManager) MakeStorageDrive(storage Storage) error {
 	return nil
 }
 
-func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (bool, error) {
+func (cm *CloudManager) DoesRemoteDirExist(ctx context.Context, storage Storage, remotePath string) (bool, error) {
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	cmd := makeCommand(getCloudApp(), "lsjson", path+"/")
+	cmd := makeCommand(ctx, getCloudApp(), "lsjson", path+"/")
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 
@@ -164,9 +164,9 @@ func (cm *CloudManager) DoesRemoteDirExist(storage Storage, remotePath string) (
 	return true, nil
 }
 
-func (cm *CloudManager) MakeRemoteDir(storage Storage, remotePath string) error {
+func (cm *CloudManager) MakeRemoteDir(ctx context.Context, storage Storage, remotePath string) error {
 	path := fmt.Sprintf("%v:%v/", storage.GetName(), remotePath)
-	cmd := makeCommand(getCloudApp(), "mkdir", path)
+	cmd := makeCommand(ctx, getCloudApp(), "mkdir", path)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 
@@ -178,14 +178,14 @@ func (cm *CloudManager) MakeRemoteDir(storage Storage, remotePath string) error 
 	return nil
 }
 
-func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) ([]CloudFile, error) {
+func (cm *CloudManager) ListFiles(ctx context.Context, ops *CloudOperationOptions, localPath string) ([]CloudFile, error) {
 	defaultFlag := "--use-json-log"
 	include := defaultFlag
 	if ops.Include != "" {
 		include = fmt.Sprintf("--include=%v", ops.Include)
 	}
 
-	cmd := makeCommand(getCloudApp(), defaultFlag, include, "lsjson", localPath)
+	cmd := makeCommand(ctx, getCloudApp(), defaultFlag, include, "lsjson", localPath)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 
@@ -206,9 +206,9 @@ func (cm *CloudManager) ListFiles(ops *CloudOperationOptions, localPath string) 
 	return arr, nil
 }
 
-func (cm *CloudManager) DeleteCloudEntry(storage Storage) error {
+func (cm *CloudManager) DeleteCloudEntry(ctx context.Context, storage Storage) error {
 	name := storage.GetName()
-	cmd := makeCommand(getCloudApp(), "config", "delete", name)
+	cmd := makeCommand(ctx, getCloudApp(), "config", "delete", name)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 
@@ -220,8 +220,8 @@ func (cm *CloudManager) DeleteCloudEntry(storage Storage) error {
 	return nil
 }
 
-func (cm *CloudManager) ObscurePassword(password string) (string, error) {
-	cmd := makeCommand(getCloudApp(), "obscure", password)
+func (cm *CloudManager) ObscurePassword(ctx context.Context, password string) (string, error) {
+	cmd := makeCommand(ctx, getCloudApp(), "obscure", password)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 
@@ -238,12 +238,12 @@ func (cm *CloudManager) ObscurePassword(password string) (string, error) {
 func (cm *CloudManager) PerformSyncOperation(ctx context.Context, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	InfoLogger.Println("Performing Sync Operation")
 	os.MkdirAll(localPath, os.ModePerm)
-	exists, err := cm.DoesRemoteDirExist(storage, remotePath)
+	exists, err := cm.DoesRemoteDirExist(ctx, storage, remotePath)
 	if err != nil {
 		return "", err
 	}
 	if !exists {
-		err = cm.MakeRemoteDir(storage, remotePath)
+		err = cm.MakeRemoteDir(ctx, storage, remotePath)
 		if err != nil {
 			return "", err
 		}
@@ -251,16 +251,15 @@ func (cm *CloudManager) PerformSyncOperation(ctx context.Context, storage Storag
 
 	cloudperfs := GetCurrentCloudPerfsOrDefault()
 	if cloudperfs.UseBiSync {
-		return cm.bisyncDir(storage, ops, localPath, remotePath)
+		return cm.bisyncDir(ctx, storage, ops, localPath, remotePath)
 	} else {
-		return cm.syncDir(storage, ops, localPath, remotePath)
+		return cm.syncDir(ctx, storage, ops, localPath, remotePath)
 	}
 }
 
-// @TODO support cancellation
-func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+func (cm *CloudManager) syncDir(ctx context.Context, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
-	exists, err := cm.DoesRemoteDirExist(storage, remotePath)
+	exists, err := cm.DoesRemoteDirExist(ctx, storage, remotePath)
 	if err != nil {
 		return "", err
 	}
@@ -272,14 +271,14 @@ func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, loc
 		ops.UpdateOnly = true
 		ops.Checksum = true
 
-		copy, err = cm.copy(storage, ops, path, localPath)
+		copy, err = cm.copy(ctx, storage, ops, path, localPath)
 		if err != nil {
 			return "", err
 		}
 		ops.UpdateOnly = exisitingUFlag
 		ops.Checksum = exisitingChecksumFlag
 	}
-	result, err := cm.sync(storage, ops, localPath, path)
+	result, err := cm.sync(ctx, storage, ops, localPath, path)
 	if err != nil {
 		return "", err
 	}
@@ -287,15 +286,15 @@ func (cm *CloudManager) syncDir(storage Storage, ops *CloudOperationOptions, loc
 	return copy + "\n" + result, nil
 }
 
-func (cm *CloudManager) copy(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-	return cm.syncAction("copy", storage, ops, localPath, remotePath)
+func (cm *CloudManager) copy(ctx context.Context, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+	return cm.syncAction(ctx, "copy", storage, ops, localPath, remotePath)
 }
 
-func (cm *CloudManager) sync(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
-	return cm.syncAction("sync", storage, ops, localPath, remotePath)
+func (cm *CloudManager) sync(ctx context.Context, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+	return cm.syncAction(ctx, "sync", storage, ops, localPath, remotePath)
 }
 
-func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+func (cm *CloudManager) syncAction(ctx context.Context, action string, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	args := []string{"--use-json-log"}
 	if ops.Verbose {
 		args = append(args, "-vv")
@@ -325,13 +324,12 @@ func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOpe
 
 	args = append(args, action, localPath, remotePath)
 
-	cmd := makeCommand(getCloudApp(), args...)
+	cmd := makeCommand(ctx, getCloudApp(), args...)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 
 	var stdout strings.Builder
 	cmd.Stdout = &stdout
-
 	err := cmd.Run()
 	if err != nil {
 		return "", fmt.Errorf(stderr.String())
@@ -348,7 +346,7 @@ func (cm *CloudManager) syncAction(action string, storage Storage, ops *CloudOpe
 	return result, nil
 }
 
-func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
+func (cm *CloudManager) bisyncDir(ctx context.Context, storage Storage, ops *CloudOperationOptions, localPath string, remotePath string) (string, error) {
 	args := []string{"--use-json-log"}
 	if ops.Verbose {
 		args = append(args, "-vv")
@@ -371,7 +369,7 @@ func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, l
 	path := fmt.Sprintf("%v:%v", storage.GetName(), remotePath)
 	args = append(args, "bisync", localPath, path)
 
-	cmd := makeCommand(getCloudApp(), args...)
+	cmd := makeCommand(ctx, getCloudApp(), args...)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 
@@ -384,7 +382,7 @@ func (cm *CloudManager) bisyncDir(storage Storage, ops *CloudOperationOptions, l
 		if exiterr.ExitCode() == 2 {
 			InfoLogger.Println("Need to run resync")
 			args = append(args, "--resync")
-			cmd := makeCommand(getCloudApp(), args...)
+			cmd := makeCommand(ctx, getCloudApp(), args...)
 			var resyncstderr strings.Builder
 			cmd.Stderr = &resyncstderr
 

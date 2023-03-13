@@ -1,6 +1,9 @@
 package core
 
-import "os/exec"
+import (
+	"context"
+	"os/exec"
+)
 
 type FtpStorage struct {
 	Host     string `json:"host"`
@@ -13,7 +16,7 @@ func (ftpfs *FtpStorage) GetName() string {
 	return "opencloudsave-ftp"
 }
 
-func (ftpfs *FtpStorage) GetCreationCommand() *exec.Cmd {
+func (ftpfs *FtpStorage) GetCreationCommand(ctx context.Context) *exec.Cmd {
 	args := []string{"config", "create", ftpfs.GetName(), "ftp"}
 	if ftpfs.Host != "" {
 		args = append(args, "host="+ftpfs.Host)
@@ -28,15 +31,15 @@ func (ftpfs *FtpStorage) GetCreationCommand() *exec.Cmd {
 		args = append(args, "pass="+ftpfs.Password)
 	}
 
-	return makeCommand(getCloudApp(), args...)
+	return makeCommand(ctx, getCloudApp(), args...)
 }
 
 var ftpDrive *FtpStorage
 
-func DeleteFtpDriveStorage() error {
+func DeleteFtpDriveStorage(ctx context.Context) error {
 	storage := &FtpStorage{}
 	cm := MakeCloudManager()
-	return cm.DeleteCloudEntry(storage)
+	return cm.DeleteCloudEntry(ctx, storage)
 }
 
 func SetFtpDriveStorage(ftp *FtpStorage) {

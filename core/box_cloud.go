@@ -1,6 +1,9 @@
 package core
 
-import "os/exec"
+import (
+	"context"
+	"os/exec"
+)
 
 type BoxStorage struct {
 }
@@ -9,8 +12,8 @@ func (gs *BoxStorage) GetName() string {
 	return "opencloudsave-box"
 }
 
-func (gs *BoxStorage) GetCreationCommand() *exec.Cmd {
-	return makeCommand(getCloudApp(), "config", "create", gs.GetName(), "box")
+func (gs *BoxStorage) GetCreationCommand(ctx context.Context) *exec.Cmd {
+	return makeCommand(ctx, getCloudApp(), "config", "create", gs.GetName(), "box")
 }
 
 var boxStorage *BoxStorage
