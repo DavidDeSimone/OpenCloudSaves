@@ -138,7 +138,7 @@ func RequestMainOperation(cm *CloudManager, ops *Options, dm GameDefManager, cha
 				continue
 			}
 
-			LogMessage(logs, "All Operations Complete, files in sync")
+			LogMessage(logs, "All Operations Complete")
 			logs <- Message{
 				Message:  result,
 				Finished: true,

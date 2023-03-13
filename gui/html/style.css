@@ -449,6 +449,182 @@ hr {
   display: table;
 }
 
+.multisync-modal {
+  display: none; 
+  position: fixed; 
+  z-index: 1; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  overflow: auto; 
+  background-color: #474e5d;
+  padding-top: 50px;
+}
+
+
+.multisync-modal-content {
+  background-color: #3e3e3e;
+  margin: 5% auto 15% auto; 
+  border: 1px solid #888;
+  width: 95%; 
+}
+
+.multisync-title {
+  font-size: 24;
+  color: rgb(255, 255, 255);
+  text-align: center;
+  outline: 3px;
+  margin-bottom: 20px;
+  margin-top: 40px;
+}
+
+.multisync-subtitle {
+  font-size: 16;
+  color: white;
+  text-align: center;
+  outline: 3px;
+  margin-bottom: 15px;
+}
+
+.multisync-container {
+  display: block;
+  position: relative;
+  padding-left: 35px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 22px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  color:rgb(255, 255, 255)
+}
+
+.multisync-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.multisync-checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 25px;
+  width: 25px;
+  background-color: #eee;
+}
+
+.multisync-container:hover input ~ .multisync-checkmark {
+  background-color: #ccc;
+}
+
+.multisync-container input:checked ~ .multisync-checkmark {
+  background-color: #2196F3;
+}
+
+.multisync-check-failure-cont .multisync-li:before {
+  content: '\274c';
+  display: inline-block;
+  /* margin-left: -30px; */
+  padding: 0 6px 0 0;
+}
+
+/* 2583 code for minus block */
+.multisync-check-success-cont .multisync-li:before {
+  content: '\2713';
+  display: inline-block;
+  /* margin-left: -25px; */
+  padding: 0 6px 0 0;
+}
+
+.multisync-check-success {
+  display: none;
+  color: #04ff00;
+}
+
+.multisync-check-failure {
+  display: none;
+  color: red
+}
+
+.multisync-check .multisync-li {
+  list-style-type: none;
+  font-size: 1em;
+}
+
+.multisync-checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.multisync-container input:checked ~ .multisync-checkmark:after {
+  display: block;
+}
+
+.multisync-container .multisync-checkmark:after {
+  left: 9px;
+  top: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+.multisync-loader {
+  width: 12px;
+  height: 12px;
+  float: left;
+  margin-left: -25px;
+  margin-top: 5px;
+
+  border-radius: 50%;
+  /* display: inline-block; */
+  position: relative;
+  border: 3px solid;
+  border-color: transparent transparent #04ff00 #04ff00;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+.multisyncbtn {
+  padding: 14px 20px;
+  background-color: #04AA6D;
+  float: left;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  opacity: 0.9;
+}
+
+.multisyncbtn:hover {
+  background-color: #038e5b;
+  opacity: 0.7;
+}
+
+.multisync-selectallbtn {
+  margin-top: 0;
+  width: 50%;
+  float: left;
+  border: 1px solid black;
+  border-color: #111;
+  background-color: #474e5d;
+}
+
+.multisync-loader-cont {
+  display: none;
+}
+
 .loader-cont {
   margin-left: 47%;
   margin-top: 5%;
