@@ -54,6 +54,7 @@ func consoleLog(s string) {
 	fmt.Println(s)
 }
 
+// @TODO roll this into a class that manages the channel providers
 var chanelMutex sync.Mutex
 var channelMap map[string]*core.ChannelProvider = make(map[string]*core.ChannelProvider)
 
