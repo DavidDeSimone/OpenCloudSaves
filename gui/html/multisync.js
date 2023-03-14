@@ -1,4 +1,9 @@
-let dryRunComplete = false;
+const MultiSyncState = {
+    hasActiveSyncOperation: false,
+    dryRunComplete: false,
+    gameToSync: null,
+    pendingCancel: false,
+};
 
 async function onOpenMultisync(element) {
     const modal = document.getElementById('multisync-modal');
@@ -7,7 +12,10 @@ async function onOpenMultisync(element) {
     modal.style.display = 'block';
     subTitle.innerText = "Please select and view what games you would like to sync.";
     multisync.innerHTML = "";
-    dryRunComplete = false;
+    MultiSyncState.dryRunComplete = false;
+    MultiSyncState.hasActiveSyncOperation = false;
+    MultiSyncState.pendingCancel = false;
+    MultiSyncState.gameToSync = null;
 
     const gameNamesJson = await getMultisyncSelectedGames();
     const gameNames = JSON.parse(gameNamesJson);
@@ -40,10 +48,34 @@ async function resetSuccessAndFailureMarkers() {
     }
 }
 
+async function confirmCancellation() {
+    makeConfirmationPopup({
+        title: `Are you sure you want to cancel perform a sync of multiple games?`,
+        subtitle: `Hitting confirm will cancel your pending sync operation.`,
+        onConfirm: async () => {
+            if (MultiSyncState.gameToSync !== '') {
+                await cancelPendingSync(MultiSyncState.gameToSync);
+            }
+            
+            MultiSyncState.gameToSync = null;
+            MultiSyncState.hasActiveSyncOperation = false;
+            MultiSyncState.pendingCancel = true;
+            refresh();
+        },
+    });
+}
+
 async function onCloseMultisync(element) {
+    if (MultiSyncState.hasActiveSyncOperation) {
+        await confirmCancellation();
+        return;
+    }
+
+
     const modal = document.getElementById('multisync-modal');
     modal.style.display = 'none';
-    dryRunComplete = false;
+    MultiSyncState.dryRunComplete = false;
+    MultiSyncState.hasActiveSyncOperation = false;
 
     const gameNames = [];
     const checks = document.getElementsByClassName("multisync-check");
@@ -82,7 +114,7 @@ async function onSyncSelectedClicked() {
 
 
     const dryRunSettings = await getShouldPerformDryRun();
-    const dryRun = dryRunSettings && !dryRunComplete;
+    const dryRun = dryRunSettings && !MultiSyncState.dryRunComplete;
 
     const multisync = document.getElementById('multisync-line-cont');
     multisync.innerHTML = "";
@@ -109,17 +141,28 @@ async function onSyncSelectedClicked() {
  
     const multisyncButton = document.getElementById('multisync-modal-confirm');
     multisyncButton.disabled = true;
+    MultiSyncState.hasActiveSyncOperation = true;
 
     for (let i = 0; i < gamesToSync.length; ++i) {
+        if (MultiSyncState.pendingCancel) {
+            return;
+        }
+
         const gameName = gamesToSync[i]; 
         try {
+            MultiSyncState.gameToSync = gameName;
             await performSingleGameSync(gameName, dryRun);
         } catch(e) {
             await onSyncGameFailure(gameName);
             continue;
+        } finally {
+            MultiSyncState.gameToSync = null;
         }
+
         await onSyncGameComplete(gameName);
     }
+
+    MultiSyncState.hasActiveSyncOperation = false;
 
     for (let i = 0; i < checkSpans.length; ++i) {
         checkSpans[i].style.display = 'block';
@@ -130,14 +173,14 @@ async function onSyncSelectedClicked() {
 
     // If we have just completed our sync post-dryrun,
     // we will reset dryRunComplete.
-    if (dryRunComplete) {
-        dryRunComplete = false;
+    if (MultiSyncState.dryRunComplete) {
+        MultiSyncState.dryRunComplete = false;
     }
 
     // Since this was a dry-run, we will mark dryRunComplete
     // as true so that we will actually sync next run.
     if (dryRun) {
-        dryRunComplete = true;
+        MultiSyncState.dryRunComplete = true;
     }
 
     multisyncButton.disabled = false;
