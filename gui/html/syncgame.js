@@ -184,8 +184,8 @@ async function setupSyncModal(gameName) {
 
 async function confirmCancellation() {
     makeConfirmationPopup({
-        title: `Are you sure you want to cancel sync'ing ${CurrentSyncState.gameToSync}?`,
-        subtitle: `Hitting confirm will cancel your pending sync operation.`,
+        title: `Are you sure you want to cancel this operation?`,
+        subtitle: `If this was not a dry-run, your sync may be partially complete.`,
         onConfirm: async () => {
             await cancelPendingSync(CurrentSyncState.gameToSync);
             CurrentSyncState.gameToSync = null;
