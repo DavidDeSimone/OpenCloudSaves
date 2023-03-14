@@ -3,6 +3,7 @@ package gui
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -53,11 +54,22 @@ func consoleLog(s string) {
 	fmt.Println(s)
 }
 
+// @TODO roll this into a class that manages the channel providers
 var chanelMutex sync.Mutex
 var channelMap map[string]*core.ChannelProvider = make(map[string]*core.ChannelProvider)
 
 func openDirDialog() (string, error) {
 	return dialog.Directory().Title("Select Folder").Browse()
+}
+
+func cleanupPendingChannel(key string) {
+	chanelMutex.Lock()
+	_, ok := channelMap[key]
+	defer chanelMutex.Unlock()
+
+	if ok {
+		delete(channelMap, key)
+	}
 }
 
 func pollLogs(key string) (string, error) {
@@ -71,7 +83,12 @@ func pollLogs(key string) (string, error) {
 	select {
 	case res := <-channels.Logs:
 		if res.Err != nil {
+			cleanupPendingChannel(key)
 			return "", res.Err
+		}
+
+		if res.Finished {
+			cleanupPendingChannel(key)
 		}
 
 		resultJson, err := json.Marshal(res)
@@ -95,11 +112,10 @@ func syncGame(key string) {
 
 	dm := core.MakeGameDefManager("")
 	dm.SetCloudManager(cm)
-	channels := &core.ChannelProvider{
-		Logs: make(chan core.Message, 100),
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	channels := core.MakeChannelProviderWithCancelFunction(cancel)
 
-	go core.RequestMainOperation(cm, ops, dm, channels)
+	go core.RequestMainOperation(ctx, cm, ops, dm, channels)
 	chanelMutex.Lock()
 	defer chanelMutex.Unlock()
 
@@ -220,7 +236,7 @@ func load(w webview.WebView, path string) error {
 	return nil
 }
 
-func commitCloudService(service int) error {
+func commitCloudService(ctx context.Context, service int) error {
 	cloudperfs := core.GetCurrentCloudPerfsOrDefault()
 	cloudperfs.Cloud = service
 	err := core.CommitCloudPerfs(cloudperfs)
@@ -234,7 +250,7 @@ func commitCloudService(service int) error {
 	}
 
 	cm := core.MakeCloudManager()
-	return cm.CreateDriveIfNotExists(storage)
+	return cm.CreateDriveIfNotExists(ctx, storage)
 }
 
 func getCloudService() (int, error) {
@@ -251,9 +267,8 @@ func getSyncDryRun(name string) error {
 		DryRun:    []bool{true},
 		Gamenames: []string{name},
 	}
-	channels := &core.ChannelProvider{
-		Logs: make(chan core.Message, 100),
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	channels := core.MakeChannelProviderWithCancelFunction(cancel)
 
 	chanelMutex.Lock()
 	channelMap[name] = channels
@@ -263,7 +278,7 @@ func getSyncDryRun(name string) error {
 	dm := core.MakeDefaultGameDefManager()
 	dm.SetCloudManager(cm)
 
-	go core.RequestMainOperation(cm, ops, dm, channels)
+	go core.RequestMainOperation(ctx, cm, ops, dm, channels)
 	return nil
 }
 
@@ -309,7 +324,7 @@ func commitFTPSettings(jsonInput string) error {
 
 	if ftp.Password != "" {
 		cm := core.MakeCloudManager()
-		obscuredpw, err := cm.ObscurePassword(ftp.Password)
+		obscuredpw, err := cm.ObscurePassword(context.Background(), ftp.Password)
 		if err != nil {
 			return err
 		}
@@ -330,7 +345,7 @@ func commitNextCloudSettings(jsonInput string) error {
 
 	if nextCloud.Pass != "" {
 		cm := core.MakeCloudManager()
-		obscuredpw, err := cm.ObscurePassword(nextCloud.Pass)
+		obscuredpw, err := cm.ObscurePassword(context.Background(), nextCloud.Pass)
 		if err != nil {
 			return err
 		}
@@ -342,12 +357,24 @@ func commitNextCloudSettings(jsonInput string) error {
 	return nil
 }
 
+func cancelPendingSync(gameName string) {
+	core.InfoLogger.Println("Cancel sync of " + gameName)
+	chanelMutex.Lock()
+	channels, ok := channelMap[gameName]
+	chanelMutex.Unlock()
+
+	if ok && channels.Cancel != nil {
+		channels.Cancel()
+	}
+	cleanupPendingChannel(gameName)
+}
+
 func deleteCurrentNextCloudSettings() {
-	core.DeleteNextCloudStorage()
+	core.DeleteNextCloudStorage(context.Background())
 }
 
 func deleteCurrentFTPSettings() {
-	core.DeleteFtpDriveStorage()
+	core.DeleteFtpDriveStorage(context.Background())
 }
 
 func getShouldNotPromptForLargeSyncs() bool {
@@ -425,6 +452,7 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("commitNextCloudSettings", commitNextCloudSettings)
 	w.Bind("deleteCurrentFTPSettings", deleteCurrentFTPSettings)
 	w.Bind("getShouldNotPromptForLargeSyncs", getShouldNotPromptForLargeSyncs)
+	w.Bind("cancelPendingSync", cancelPendingSync)
 	w.Bind("getMultisyncSelectedGames", getMultisyncSelectedGames)
 	w.Bind("commitMultisyncSelectGames", commitMultisyncSelectGames)
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"runtime"
@@ -68,7 +69,7 @@ func main() {
 			log.Fatal("Attempting to sync cloud data with no cloud provider set. Please set a cloud provider via --set-cloud <CLOUD_PROVIDER>")
 		}
 
-		err = cm.CreateDriveIfNotExists(storage)
+		err = cm.CreateDriveIfNotExists(context.Background(), storage)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -88,11 +89,9 @@ func main() {
 	dm.CommitUserOverrides()
 
 	if noGui {
-		channels := &core.ChannelProvider{
-			Logs: make(chan core.Message, 100),
-		}
+		channels := core.MakeDefaultChannelProvider()
 		go core.ConsoleLogger(channels.Logs)
-		core.RequestMainOperation(cm, ops, dm, channels)
+		core.RequestMainOperation(context.Background(), cm, ops, dm, channels)
 	} else {
 		gui.GuiMain(ops, dm)
 	}

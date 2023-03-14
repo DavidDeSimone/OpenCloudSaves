@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -85,7 +86,7 @@ func writeCloudPerfs(cloudperfs *CloudPerfs) error {
 	cm := MakeCloudManager()
 	storage := GetCurrentStorageProvider()
 	ops := GetDefaultCloudOptions()
-	go cm.PerformSyncOperation(storage, ops, path, ToplevelCloudFolder+"user_settings/")
+	go cm.PerformSyncOperation(context.Background(), storage, ops, path, ToplevelCloudFolder+"user_settings/")
 
 	return nil
 }

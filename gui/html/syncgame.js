@@ -1,6 +1,10 @@
-// window.pendingSyncGame = null;
-let pendingSyncGame = null;
-let retryDryRun = false;
+const CurrentSyncState = {
+    // If there is an active rclone sync operation pending.
+    hasActiveSyncOperation: false,
+    // The name of the game represented by the sync system.
+    gameToSync: null,
+    retryDryRun: false,
+};
 
 function recordSyncMessage(message) {
     const multisync = document.getElementById('bisync-line-cont');
@@ -33,24 +37,7 @@ async function onFinished(result, dryRun) {
             continue;
         }
 
-        let result = null;
-        // @TODO I don't think we need a JSON parse here
-        try {
-            result = JSON.parse(messages[i]);
-        } catch (e) {
-            result = {msg: messages[i]};
-            // log(`Error in message processing ${e}`);
-            // continue;
-        }
-
-        // We strip this out for end users - bisync is good enough
-        // for our application, and we will warn on our main page prior 
-        // to usage
-        if (result.msg.startsWith("bisync is EXPERIMENTAL")) {
-            continue;
-        }
-
-        recordSyncMessage(result.msg);
+        recordSyncMessage(messages[i]);
     }
 }
 
@@ -79,7 +66,7 @@ async function onSyncError(error, dryRun) {
     lineContEl.appendChild(lineDiv);
 
     syncConfirm.innerText = "Retry";
-    retryDryRun = dryRun;
+    CurrentSyncState.retryDryRun = dryRun;
 
     syncConfirm.style.display = 'block';
     syncCancel.style.display = 'block';
@@ -98,9 +85,62 @@ function resetSyncModal() {
     syncCancel.style.display = 'block';
     syncConfirm.style.display = 'block';
     loaderEl.style.display = 'block';
-    pendingSyncGame = null;
-    retryDryRun = false;
+    CurrentSyncState.gameToSync = null;
+    CurrentSyncState.retryDryRun = false;
+    CurrentSyncState.hasActiveSyncOperation = false;
     syncConfirm.innerText = "Confirm";
+}
+
+async function pollIteration(gameName, dryRun) {
+    const syncConfirm = document.getElementById('sync-modal-confirm');
+    const syncCancel = document.getElementById('sync-modal-cancel');
+
+    let error = null;
+    const resultStr = await pollLogs(gameName)
+                .catch(e => {
+                    onSyncError(e, dryRun);
+                    error = e;
+                });
+
+    if (error !== null) {
+        return true;
+    }
+
+    if (resultStr === "") {
+        return false;
+    }
+
+    const result = JSON.parse(resultStr);
+    if (result && result.Finished) {
+        await onFinished(result, dryRun)
+            .catch(e => log(`Error: ${e}`));
+        if (dryRun) {
+            syncConfirm.style.display = 'block';
+            syncCancel.style.display = 'block';    
+        }
+
+        return true;
+    }
+
+    recordSyncMessage(result.Message);
+    return false;
+}
+
+async function pollLoopForSyncGame(gameName, dryRun) {
+    const timerValue = 250;
+    return new Promise(async (resolve) => {
+        const func = async () => {
+            const complete = await pollIteration(gameName, dryRun);
+
+            if (complete) {
+                resolve();
+            } else {
+                setTimeout(func, timerValue);
+            }
+        }
+
+        setTimeout(func, timerValue);
+    });
 }
 
 async function sync(gameName, dryRun) {
@@ -123,46 +163,13 @@ async function sync(gameName, dryRun) {
         await syncGame(gameName);
     }
 
-    const timerValue = 250;
-    var timerFunc = async () => {
-        var clear = false;
-        let resultStr = "";
-        try {
-            resultStr = await pollLogs(gameName);
-        } catch (error) {
-            await onSyncError(error, dryRun);
-            return;
-        }
+    CurrentSyncState.hasActiveSyncOperation = true;
+    await pollLoopForSyncGame(gameName, dryRun);
+    CurrentSyncState.hasActiveSyncOperation = false;
 
-        if (resultStr !== "") {
-            const result = JSON.parse(resultStr);
-            if (result && result.Finished) {
-                clear = true;
-                try {
-                    await onFinished(result, dryRun);
-                } catch (e) {
-                    await log(`Error : ${e}`);
-                } finally {
-                    if (dryRun) {
-                        syncConfirm.style.display = 'block';
-                        syncCancel.style.display = 'block';    
-                    }
-
-                    recordSyncMessage(`---------------------------------------------------------`);
-                    recordSyncMessage(`Sync Complete: ${gameName}`);
-                    recordSyncMessage(`---------------------------------------------------------`);                
-                }
-            }
-
-            recordSyncMessage(result.Message);
-        }
-
-        if (!clear) {
-            setTimeout(timerFunc, timerValue);
-        }
-    };
-
-    setTimeout(timerFunc, timerValue);
+    recordSyncMessage(`---------------------------------------------------------`);
+    recordSyncMessage(`Sync Complete: ${gameName}`);
+    recordSyncMessage(`---------------------------------------------------------`);                     
 }
 
 async function setupSyncModal(gameName) {
@@ -170,12 +177,30 @@ async function setupSyncModal(gameName) {
     resetSyncModal();
     document.getElementById('accordion-cont').style.display='none';
 
-    pendingSyncGame = gameName;
+    CurrentSyncState.gameToSync = gameName;
     const shouldPerformDryRun = await getShouldPerformDryRun();
-    await sync(gameName, shouldPerformDryRun);
+    sync(gameName, shouldPerformDryRun);
+}
+
+async function confirmCancellation() {
+    makeConfirmationPopup({
+        title: `Are you sure you want to cancel sync'ing ${CurrentSyncState.gameToSync}?`,
+        subtitle: `Hitting confirm will cancel your pending sync operation.`,
+        onConfirm: async () => {
+            await cancelPendingSync(CurrentSyncState.gameToSync);
+            CurrentSyncState.gameToSync = null;
+            CurrentSyncState.hasActiveSyncOperation = false;
+            refresh();
+        },
+    });
 }
 
 async function onSyncGameModalClosed(element) {
+    if (CurrentSyncState.hasActiveSyncOperation) {
+        await confirmCancellation();
+        return;
+    }
+
     const model = document.getElementById("bisync-confirm");
     model.style.display = 'none';
     document.getElementById('accordion-cont').style.display='block';
@@ -188,7 +213,7 @@ async function onSyncGameConfirm(element) {
 
     loaderEl.style.display = 'block';
     lineContEl.innerHTML = "";
-    const dryRun = retryDryRun;
-    retryDryRun = false;
-    await sync(pendingSyncGame, dryRun);
+    const dryRun = CurrentSyncState.retryDryRun;
+    CurrentSyncState.retryDryRun = false;
+    await sync(CurrentSyncState.gameToSync, dryRun);
 }
