@@ -241,9 +241,13 @@ func load(w webview.WebView, path string) error {
 
 var pendingCloudChannelProvider *core.ChannelProvider
 
-func cancelPendingCloudSelection() {
+func cancelPendingCloudSelection(block bool) {
 	if pendingCloudChannelProvider != nil {
 		pendingCloudChannelProvider.Cancel()
+		if block {
+			msg := <-pendingCloudChannelProvider.Logs
+			fmt.Println(msg)
+		}
 		pendingCloudChannelProvider = nil
 	}
 }
@@ -496,7 +500,9 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("cancelPendingSync", cancelPendingSync)
 	w.Bind("getMultisyncSelectedGames", getMultisyncSelectedGames)
 	w.Bind("commitMultisyncSelectGames", commitMultisyncSelectGames)
-	w.Bind("cancelPendingCloudSelection", cancelPendingCloudSelection)
+	w.Bind("cancelPendingCloudSelection", func() {
+		cancelPendingCloudSelection(false)
+	})
 	w.Bind("isCloudSelectionComplete", isCloudSelectionComplete)
 }
 
@@ -703,7 +709,7 @@ func GuiMain(ops *core.Options, dm core.GameDefManager) {
 		// This may not work on macOS due to a combination of issues
 		// https://github.com/webview/webview/issues/669
 		// https://github.com/webview/webview/issues/372
-		cancelPendingCloudSelection()
+		cancelPendingCloudSelection(true)
 	})()
 
 	w.Run()
