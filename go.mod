@@ -8,10 +8,10 @@ require (
 	github.com/sqweek/dialog v0.0.0-20220809060634-e981b270ebbf
 	github.com/webview/webview v0.0.0-20230110200822-73aee3dae745
 	golang.org/x/sys v0.3.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
 	github.com/TheTitanrain/w32 v0.0.0-20180517000239-4f5cfb03fabf // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
