@@ -48,10 +48,10 @@ async function resetSuccessAndFailureMarkers() {
     }
 }
 
-async function confirmCancellation() {
+async function multisyncConfirmationCancellation() {
     makeConfirmationPopup({
-        title: `Are you sure you want to cancel perform a sync of multiple games?`,
-        subtitle: `Hitting confirm will cancel your pending sync operation.`,
+        title: `Are you sure you want to cancel this operation?`,
+        subtitle: `If this was not a dry-run, your sync may be partially complete.`,
         onConfirm: async () => {
             if (MultiSyncState.gameToSync !== '') {
                 await cancelPendingSync(MultiSyncState.gameToSync);
@@ -67,7 +67,7 @@ async function confirmCancellation() {
 
 async function onCloseMultisync(element) {
     if (MultiSyncState.hasActiveSyncOperation) {
-        await confirmCancellation();
+        await multisyncConfirmationCancellation();
         return;
     }
 
