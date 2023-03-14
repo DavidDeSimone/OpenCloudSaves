@@ -18,8 +18,7 @@ async function cloudSelected(cloudService) {
     const closeModal = document.getElementById("closemodal");
     closeModal.style.display = 'none';
 
-    log("Selected " + cloudService);
-    await setCloud(cloudService, "(Pending)");
+    await setCloud(cloudService, " (Pending)");
     CloudSelectionState.pendingCloudInitialization = true;
     await commitCloudService(cloudService);
 
