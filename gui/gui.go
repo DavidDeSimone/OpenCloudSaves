@@ -699,10 +699,13 @@ func GuiMain(ops *core.Options, dm core.GameDefManager) {
 		}
 	}
 
+	defer (func() {
+		// This may not work on macOS due to a combination of issues
+		// https://github.com/webview/webview/issues/669
+		// https://github.com/webview/webview/issues/372
+		cancelPendingCloudSelection()
+	})()
+
 	w.Run()
 
-	// This may not work on macOS due to a combination of issues
-	// https://github.com/webview/webview/issues/669
-	// https://github.com/webview/webview/issues/372
-	cancelPendingCloudSelection()
 }
