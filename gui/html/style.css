@@ -529,7 +529,6 @@ hr {
 .multisync-check-failure-cont .multisync-li:before {
   content: '\274c';
   display: inline-block;
-  /* margin-left: -30px; */
   padding: 0 6px 0 0;
 }
 
@@ -537,7 +536,6 @@ hr {
 .multisync-check-success-cont .multisync-li:before {
   content: '\2713';
   display: inline-block;
-  /* margin-left: -25px; */
   padding: 0 6px 0 0;
 }
 
@@ -605,6 +603,8 @@ hr {
   cursor: pointer;
   width: 100%;
   opacity: 0.9;
+  border: 1px solid black;
+  border-color: #111;
 }
 
 .multisyncbtn:hover {
@@ -616,9 +616,8 @@ hr {
   margin-top: 0;
   width: 50%;
   float: left;
-  border: 1px solid black;
-  border-color: #111;
-  background-color: #474e5d;
+
+  background-color: #04AA6D;
 }
 
 .multisync-loader-cont {
