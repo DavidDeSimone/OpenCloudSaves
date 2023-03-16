@@ -22,6 +22,9 @@ import (
 	"github.com/webview/webview"
 )
 
+// @TODO We don't need to do JS-level polling, instead we can dispatch a
+// callback using w.Dispatch / w.Eval
+
 //go:embed html
 var html embed.FS
 
@@ -236,7 +239,45 @@ func load(w webview.WebView, path string) error {
 	return nil
 }
 
-func commitCloudService(ctx context.Context, service int) error {
+var pendingCloudChannelProvider *core.ChannelProvider
+
+func cancelPendingCloudSelection(block bool) {
+	if pendingCloudChannelProvider != nil {
+		pendingCloudChannelProvider.Cancel()
+		if block {
+			msg := <-pendingCloudChannelProvider.Logs
+			fmt.Println(msg)
+		}
+		pendingCloudChannelProvider = nil
+	}
+}
+
+func isCloudSelectionComplete() (bool, error) {
+	if pendingCloudChannelProvider != nil {
+		select {
+		case msg := <-pendingCloudChannelProvider.Logs:
+			if msg.Finished || msg.Err != nil {
+				pendingCloudChannelProvider = nil
+				return true, msg.Err
+			}
+		default:
+			// no-op
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func createDrive(ctx context.Context, cm *core.CloudManager, storage core.Storage, chnl *core.ChannelProvider) {
+	err := cm.CreateDriveIfNotExists(ctx, storage)
+	chnl.Logs <- core.Message{
+		Err:      err,
+		Finished: true,
+	}
+}
+
+func commitCloudService(service int) error {
 	cloudperfs := core.GetCurrentCloudPerfsOrDefault()
 	cloudperfs.Cloud = service
 	err := core.CommitCloudPerfs(cloudperfs)
@@ -249,8 +290,12 @@ func commitCloudService(ctx context.Context, service int) error {
 		return err
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	pendingCloudChannelProvider = core.MakeChannelProviderWithCancelFunction(cancel)
+
 	cm := core.MakeCloudManager()
-	return cm.CreateDriveIfNotExists(ctx, storage)
+	go createDrive(ctx, cm, storage, pendingCloudChannelProvider)
+	return nil
 }
 
 func getCloudService() (int, error) {
@@ -455,6 +500,10 @@ func bindFunctions(w webview.WebView) {
 	w.Bind("cancelPendingSync", cancelPendingSync)
 	w.Bind("getMultisyncSelectedGames", getMultisyncSelectedGames)
 	w.Bind("commitMultisyncSelectGames", commitMultisyncSelectGames)
+	w.Bind("cancelPendingCloudSelection", func() {
+		cancelPendingCloudSelection(false)
+	})
+	w.Bind("isCloudSelectionComplete", isCloudSelectionComplete)
 }
 
 func DirSize(path string) (int64, error) {
@@ -656,5 +705,13 @@ func GuiMain(ops *core.Options, dm core.GameDefManager) {
 		}
 	}
 
+	defer (func() {
+		// This may not work on macOS due to a combination of issues
+		// https://github.com/webview/webview/issues/669
+		// https://github.com/webview/webview/issues/372
+		cancelPendingCloudSelection(true)
+	})()
+
 	w.Run()
+
 }

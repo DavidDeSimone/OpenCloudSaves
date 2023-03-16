@@ -1,17 +1,52 @@
+const CloudSelectionState = {
+    pendingCloudInitialization: false,
+};
+
+
 async function closeSelectCloud(element) {
+    CloudSelectionState.pendingCloudInitialization = false;
     refresh();
 }
 
+// @TODO if you close the window, this will not kill the pending rclone
+// process, and subsequent syncs will fail. 
 async function cloudSelected(cloudService) {
-    await log("Selected " + cloudService);
+    if (CloudSelectionState.pendingCloudInitialization) {
+        await cancelPendingCloudSelection();
+    }
+
+    const closeModal = document.getElementById("closemodal");
+    closeModal.style.display = 'none';
+
+    await setCloud(cloudService, " (Pending)");
+    CloudSelectionState.pendingCloudInitialization = true;
     await commitCloudService(cloudService);
-    refresh();
+
+    const timer = 250;
+    const poll = async () => {
+        const result = await isCloudSelectionComplete()
+                        .catch(e => {
+                            log(`Error setting up cloud ${e}`);
+                        });
+        if (result) {
+            refresh();
+        } else {
+            setTimeout(poll, timer);
+
+        }
+    };
+    setTimeout(poll, timer);
 }
+
 
 async function setCurrentCloud() {
+    const service = await getCloudService();
+    await setCloud(service);
+}
+
+async function setCloud(service, postfix = "") {
     const currentCloudEl = document.getElementById("currentcloudcont");
     const closeModal = document.getElementById("closemodal");
-    const service = await getCloudService();
     const prefix = "Current Cloud Storage: ";
     let value = "";
 
@@ -45,7 +80,7 @@ async function setCurrentCloud() {
     }
 
     if (value !== "") {
-        currentCloudEl.innerText = prefix + value;
+        currentCloudEl.innerText = prefix + value + postfix;
     }
 }
 
