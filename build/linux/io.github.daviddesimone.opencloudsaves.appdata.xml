@@ -11,7 +11,7 @@
   <project_license>MIT</project_license>
   <content_rating type="oars-1.1" />
   <releases>
-    <release version="0.17.8" date="2023-03-08"/>
+    <release version="0.18.0" date="2023-03-22"/>
   </releases>
 
   <url type="homepage">https://daviddesimone.github.io/OpenCloudSaves/</url>
@@ -32,13 +32,18 @@
       Open Cloud Save gives an advantage over existing cloud solutions:
     </p>
     <p>
-      1. Allows cloud saves for games without developer support 2. Allows for the exclusion of certain files or filetypes. This can prevent games syncing graphical settings in addition to syncing save data. 3. Allows for sync between storefronts (you own a Steam on linux and a Epic Game Store version on windows
+      1. Allows cloud saves for games without developer support 
+      2. Allows for the exclusion of certain files or filetypes. This can prevent games syncing graphical settings in addition to syncing save data. 
+      3. Allows for sync between storefronts - you own a Steam on linux and a Epic Game Store version on windows
     </p>
     <p>
       Key Features:
     </p>
     <p>
-      1. Inclusion of specific save files based on [pattern matching](https://rclone.org/filtering/) 2. Customizable save data locations - you can tailor the app to your specific save locations 3. Ability to create new save definitions - you do not need to wait for developers to support cloud saves for their games. 4. Data protection - by default, OpenCloudSave will perform a dry-run before all syncs. This way you can see what changes will be made to your save data before they happen. (You can disable this functionality if you just want to immediately sync)
+      1. Inclusion of specific save files based on [pattern matching](https://rclone.org/filtering/) 
+      2. Customizable save data locations - you can tailor the app to your specific save locations 
+      3. Ability to create new save definitions - you do not need to wait for developers to support cloud saves for their games. 
+      4. Data protection - by default, OpenCloudSave will perform a dry-run before all syncs. This way you can see what changes will be made to your save data before they happen. (You can disable this functionality if you just want to immediately sync)
     </p>
   </description>
   
