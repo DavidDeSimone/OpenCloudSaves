@@ -30,8 +30,8 @@ modules:
     sources:
       - type: git
         url: https://github.com/DavidDeSimone/OpenCloudSaves
-        tag: v0.18.0.0
-        commit: d48a12265ec829bb912c84212f2642367d8f7973
+        tag: v0.18.0
+        commit: adadd42a0171951ce9e7ea26f4e151eb6940300b
   - name: rclone
     buildsystem: simple
     build-commands:
