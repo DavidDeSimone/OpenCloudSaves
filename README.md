@@ -7,7 +7,7 @@ Open Cloud Saves is an open source application for managing your saves games acr
 Open Cloud Save gives an advantage over existing cloud solutions:
 
 1. Allows cloud saves for games without developer support
-2. Allows for the exclusion of certain files or filetypes. This can prevent games syncing graphical settings in addition to syncing save data.
+2. Allows for the inclusion of only certain files or filetypes. This can prevent games syncing graphical settings in addition to syncing save data.
 3. Allows for sync between storefronts (you own a Steam on linux and a Epic Game Store version on windows
 
 Key Features:
