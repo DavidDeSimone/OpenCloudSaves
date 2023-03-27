@@ -65,7 +65,7 @@ func LogMessage(logs chan Message, format string, msg ...any) {
 	}
 }
 
-func RequestMainOperation(ctx context.Context, cm *CloudManager, ops *Options, dm GameDefManager, channels *ChannelProvider) {
+func RequestMainOperation(ctx context.Context, cm *BasicCloudManager, ops *Options, dm GameDefManager, channels *ChannelProvider) {
 	logs := channels.Logs
 
 	if len(ops.PrintGameDefs) > 0 {

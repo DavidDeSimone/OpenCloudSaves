@@ -113,7 +113,7 @@ func syncGame(key string) {
 	}
 	cm := core.MakeCloudManager()
 
-	dm := core.MakeGameDefManager("")
+	dm := core.MakeDefaultGameDefManager()
 	dm.SetCloudManager(cm)
 	ctx, cancel := context.WithCancel(context.Background())
 	channels := core.MakeChannelProviderWithCancelFunction(cancel)
@@ -269,7 +269,7 @@ func isCloudSelectionComplete() (bool, error) {
 	return true, nil
 }
 
-func createDrive(ctx context.Context, cm *core.CloudManager, storage core.Storage, chnl *core.ChannelProvider) {
+func createDrive(ctx context.Context, cm *core.BasicCloudManager, storage core.Storage, chnl *core.ChannelProvider) {
 	err := cm.CreateDriveIfNotExists(ctx, storage)
 	chnl.Logs <- core.Message{
 		Err:      err,

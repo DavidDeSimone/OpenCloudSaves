@@ -160,7 +160,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 type FsGameDefManager struct {
 	gamedefs            map[string]*GameDef
 	userOverrideLoction string
-	cm                  *CloudManager
+	cm                  *BasicCloudManager
 }
 
 type GameDefManager interface {
@@ -171,10 +171,10 @@ type GameDefManager interface {
 	RemoveGameDef(key string)
 	GetSyncpathForGame(id string) ([]Datapath, error)
 	GetUserOverrideLocation() string
-	SetCloudManager(cm *CloudManager)
+	SetCloudManager(cm *BasicCloudManager)
 }
 
-func (d *FsGameDefManager) SetCloudManager(cm *CloudManager) {
+func (d *FsGameDefManager) SetCloudManager(cm *BasicCloudManager) {
 	d.cm = cm
 }
 
@@ -314,7 +314,7 @@ func (dm *FsGameDefManager) CommitCloudUserOverride() error {
 	return ApplyCloudUserOverride(cm, userOverride)
 }
 
-func ApplyCloudUserOverride(cm *CloudManager, userOverride string) error {
+func ApplyCloudUserOverride(cm *BasicCloudManager, userOverride string) error {
 	storage := GetCurrentStorageProvider()
 	if storage == nil {
 		return fmt.Errorf("no cloud storage set")

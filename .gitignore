@@ -23,3 +23,6 @@ build/linux/.flatpak-builder/*
 tests/Test*
 repo/
 build/linux/pkg/
+
+# testing related files
+core/test.json
