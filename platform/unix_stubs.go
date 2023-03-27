@@ -1,6 +1,6 @@
 //go:build !windows
 
-package core
+package platform
 
 import "os/exec"
 

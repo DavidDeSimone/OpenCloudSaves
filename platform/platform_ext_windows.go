@@ -1,6 +1,6 @@
 //go:build windows
 
-package core
+package platform
 
 import (
 	"encoding/json"
@@ -14,6 +14,10 @@ import (
 	"github.com/andygrunwald/vdf"
 	"golang.org/x/sys/windows/registry"
 )
+
+func GetPath() string {
+	return "./bin/rclone.exe"
+}
 
 func StripWindow(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}

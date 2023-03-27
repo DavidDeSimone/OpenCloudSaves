@@ -9,13 +9,14 @@ import (
 
 	"opencloudsave/core"
 	"opencloudsave/gui"
+	"opencloudsave/platform"
 
 	"github.com/jessevdk/go-flags"
 )
 
 func main() {
 	if runtime.GOOS == "windows" {
-		core.SetupWindowsConsole()
+		platform.SetupWindowsConsole()
 	}
 
 	ops := &core.Options{}

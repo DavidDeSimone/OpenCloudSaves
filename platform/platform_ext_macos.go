@@ -1,6 +1,6 @@
 //go:build darwin
 
-package core
+package platform
 
 import (
 	_ "embed"
@@ -11,7 +11,7 @@ import (
 var checkedPath = false
 var useMacRelativePath = false
 
-func GetMacOsPath() string {
+func GetPath() string {
 	if !checkedPath {
 		_, err := os.Stat("./bin/rclone")
 		if err == nil {
