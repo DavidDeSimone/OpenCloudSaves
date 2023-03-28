@@ -5,7 +5,6 @@ package platform
 import (
 	_ "embed"
 	"os"
-	"path/filepath"
 )
 
 var checkedLinuxPath = false
