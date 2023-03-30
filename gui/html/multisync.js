@@ -6,6 +6,9 @@ const MultiSyncState = {
 };
 
 async function onOpenMultisync(element) {
+    document.getElementById('accordion-cont').style.display='none';
+    document.getElementById('id01').style.display='block';
+
     const modal = document.getElementById('multisync-modal');
     const subTitle = document.getElementById('multisync-subtitle');
     const multisync = document.getElementById('multisync-line-cont');
@@ -66,6 +69,9 @@ async function multisyncConfirmationCancellation() {
 }
 
 async function onCloseMultisync(element) {
+    document.getElementById('id01').style.display='none';
+    document.getElementById('accordion-cont').style.display='block';
+
     if (MultiSyncState.hasActiveSyncOperation) {
         await multisyncConfirmationCancellation();
         return;
