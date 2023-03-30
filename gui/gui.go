@@ -111,10 +111,9 @@ func syncGame(key string) {
 	ops := &core.Options{
 		Gamenames: []string{key},
 	}
-	cm := core.MakeCloudManager()
 
-	dm := core.MakeGameDefManager("")
-	dm.SetCloudManager(cm)
+	cm := core.MakeCloudManager()
+	dm := core.MakeDefaultGameDefManager()
 	ctx, cancel := context.WithCancel(context.Background())
 	channels := core.MakeChannelProviderWithCancelFunction(cancel)
 
@@ -321,7 +320,6 @@ func getSyncDryRun(name string) error {
 
 	cm := core.MakeCloudManager()
 	dm := core.MakeDefaultGameDefManager()
-	dm.SetCloudManager(cm)
 
 	go core.RequestMainOperation(ctx, cm, ops, dm, channels)
 	return nil
