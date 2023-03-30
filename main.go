@@ -86,7 +86,13 @@ func main() {
 	}
 
 	dm := core.MakeGameDefManager(userOverrideLocation)
-	dm.SetCloudManager(cm)
+	// @TODO we would want to re-work this to have a way to signal the GPU when this operation is done.
+	core.GetUserSettingsManager().RequestSyncNonBlocking(context.Background(), userOverrideLocation, nil)
+	// err = dm.CommitCloudUserOverride()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	dm.CommitUserOverrides()
 
 	if noGui {
