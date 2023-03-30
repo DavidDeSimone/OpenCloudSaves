@@ -1,6 +1,6 @@
 //go:build windows && debug
 
-package core
+package platform
 
 import (
 	"fmt"

@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"opencloudsave/platform"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 )
 
@@ -15,13 +14,6 @@ const ToplevelCloudFolder = "opencloudsaves/"
 
 // Used for debugging
 const printCommands = true
-
-// This is a real hack, but we fallback to $PATH if we can't
-// find rclone locally in linux. This is really only for the
-// flatpak - we control what version of rclone will be on $PATH
-// within the flatpak
-var checkedLinuxPath = false
-var relativeLinuxPath = true
 
 type Storage interface {
 	GetName() string
@@ -50,31 +42,7 @@ type CloudFile struct {
 }
 
 func getCloudApp() string {
-	switch runtime.GOOS {
-	case "linux":
-		if !checkedLinuxPath {
-			_, err := os.Stat("./bin/rclone")
-			if err != nil {
-				relativeLinuxPath = false
-			}
-			checkedLinuxPath = true
-		}
-
-		if relativeLinuxPath {
-			return "./bin/rclone"
-		} else {
-			return "rclone"
-		}
-
-	case "windows":
-		return "./bin/rclone.exe"
-	case "darwin":
-		return GetMacOsPath()
-	default:
-		log.Fatal("Unsupported Platform")
-	}
-
-	return "Unsupported Platform"
+	return platform.GetPath()
 }
 
 func makeCommand(ctx context.Context, cmd_string string, arg ...string) *exec.Cmd {
@@ -83,7 +51,7 @@ func makeCommand(ctx context.Context, cmd_string string, arg ...string) *exec.Cm
 	}
 
 	cmd := exec.CommandContext(ctx, cmd_string, arg...)
-	StripWindow(cmd)
+	platform.StripWindow(cmd)
 	return cmd
 }
 
