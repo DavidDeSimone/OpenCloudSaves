@@ -75,7 +75,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = core.ApplyCloudUserOverride(cm, userOverrideLocation)
+		err = core.GetUserSettingsManager().RequestSync(context.Background(), userOverrideLocation)
 		if err != nil {
 			core.ErrorLogger.Println(err)
 			log.Fatal(err)
@@ -87,13 +87,9 @@ func main() {
 
 	dm := core.MakeGameDefManager(userOverrideLocation)
 	// @TODO we would want to re-work this to have a way to signal the GPU when this operation is done.
-	core.GetUserSettingsManager().RequestSyncNonBlocking(context.Background(), userOverrideLocation, nil)
-	// err = dm.CommitCloudUserOverride()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	dm.CommitUserOverrides()
+	// core.GetUserSettingsManager().RequestSyncNonBlocking(context.Background(), userOverrideLocation, nil)
+	core.GetUserSettingsManager().RequestSync(context.Background(), userOverrideLocation)
+	dm.ApplyUserOverrides()
 
 	if noGui {
 		channels := core.MakeDefaultChannelProvider()

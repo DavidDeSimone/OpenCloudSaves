@@ -182,7 +182,7 @@ type GameDefManager interface {
 	GetSyncpathForGame(id string) ([]Datapath, error)
 	GetUserOverrideLocation() string
 
-	CommitCloudUserOverride() error
+	CommitCloudUserOverride(context.Context) error
 }
 
 func (d *FsGameDefManager) RemoveGameDef(key string) {
@@ -229,6 +229,7 @@ func (d *FsGameDefManager) GetUserOverrideLocation() string {
 }
 
 func (d *FsGameDefManager) CommitUserOverrides() error {
+	InfoLogger.Println("Commiting Gamedef Map...")
 	newResult, err := json.Marshal(d.gamedefs)
 	if err != nil {
 		return err
@@ -317,14 +318,8 @@ func (d *FsGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
 	return driver.GetSyncpaths()
 }
 
-func (dm *FsGameDefManager) CommitCloudUserOverride() error {
+func (dm *FsGameDefManager) CommitCloudUserOverride(ctx context.Context) error {
 	fsmtx.Lock()
 	defer fsmtx.Unlock()
-	return GetUserSettingsManager().RequestSync(context.Background(), dm.GetUserOverrideLocation())
-}
-
-func ApplyCloudUserOverride(cm *CloudManager, userOverride string) error {
-	fsmtx.Lock()
-	defer fsmtx.Unlock()
-	return GetUserSettingsManager().RequestSync(context.Background(), userOverride)
+	return GetUserSettingsManager().RequestSync(ctx, dm.GetUserOverrideLocation())
 }
