@@ -38,7 +38,7 @@
         <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{else}}
         <div class="nosavefoundcont"><p>No Save Files found for {{.Def.DisplayName}}</p></div>
-        <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" disabled onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
+        <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{end}}
 
         <button id="{{.Def.DisplayName}}-editbtn" class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>
