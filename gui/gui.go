@@ -685,7 +685,8 @@ func setCloudSelectScreen(w webview.WebView) error {
 func GuiMain(ops *core.Options, dm core.GameDefManager) {
 	debug := true
 	w := webview.New(debug)
-	defer w.Destroy()
+	SetRootWindow(w)
+	defer DestroyRootWindow()
 	w.SetTitle("Open Cloud Save")
 	w.SetSize(800, 600, 0)
 	bindFunctions(w)
