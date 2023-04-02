@@ -699,5 +699,21 @@
             }
         ],
         "darwin_path": []
+    },
+    "The Sims 4": {
+        "display_name": "The Sims 4",
+        "win_path": [
+            {
+                "path": "%USERPROFILE%\\Documents\\Electronic Arts\\The Sims 4\\saves\\",
+                "inc": ""
+            }
+        ],
+        "linux_path": [
+            {
+                "path": "%STEAM%/steamapps/compatdata/1222670/pfx/",
+                "inc": ""
+            }
+        ],
+        "darwin_path": []
     }
 }
