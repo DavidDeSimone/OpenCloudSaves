@@ -715,5 +715,52 @@
             }
         ],
         "darwin_path": []
-    }
+    },
+    "Hades": {
+        "display_name": "Hades",
+        "win_path": [
+        { "path": "%USERPROFILE%\\Documents\\Saved Games\\Hades\\", "inc": "" }
+        ],
+        "linux_path": [
+        { "path": "%STEAM%/steamapps/compatdata/1145360/pfx/", "inc": "" }
+        ],
+        "darwin_path": [
+        {
+            "path": "$HOME/Library/Application Support/Supergiant Games/Hades/",
+            "inc": ""
+        }
+        ]
+    },
+    "Hogwarts_Legacy": {
+        "display_name": "Hogwarts Legacy",
+        "win_path": [
+        {
+            "path": "%LOCALAPPDATA%\\Hogwarts Legacy\\Saved\\SaveGames\\",
+            "inc": ""
+        },
+        {
+            "path": "%LOCALAPPDATA%\\Hogwarts\\Saved\\SaveGames\\",
+            "inc": ""
+        }
+        ],
+        "linux_path": [
+        { "path": "%STEAM%/steamapps/compatdata/990080/pfx/", "inc": "" }
+        ],
+        "darwin_path": []
+    },
+    "Little_Inferno": {
+        "display_name": "Little Inferno",
+        "win_path": [
+        { "path": "%APPDATA%\\Little Inferno\\profiles.bin", "inc": "" }
+        ],
+        "linux_path": [
+        { "path": "$XDG_DATA_HOME/littleinferno/profiles.bin", "inc": "" }
+        ],
+        "darwin_path": [
+        {
+            "path": "~/Library/Application Support/Little Inferno/profiles.bin",
+            "inc": ""
+        }
+        ]
+    } 
 }
