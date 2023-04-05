@@ -24,7 +24,7 @@ async function onSyncButtonSuccess(element, name) {
 
 async function onSyncButtonClicked(element, name) {
     const sizeEl = document.getElementById(`${name}-total-size`);
-    const size = parseInt(sizeEl.innerText);
+    const size = sizeEl !== null ? parseInt(sizeEl.innerText) : 0;
     const shouldNotPrompt = await getShouldNotPromptForLargeSyncs();
     if (!shouldNotPrompt && size >= BIG_SYNC_SIZE) {
         makeConfirmationPopup({

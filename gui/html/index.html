@@ -38,7 +38,7 @@
         <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{else}}
         <div class="nosavefoundcont"><p>No Save Files found for {{.Def.DisplayName}}</p></div>
-        <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" disabled onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
+        <button id="{{.Def.DisplayName}}-syncbtn" class="btn success" onclick="onSyncButtonClicked(this, '{{.Name}}')">Sync Game</button>
         {{end}}
 
         <button id="{{.Def.DisplayName}}-editbtn" class="btnaddl neutralbtn" onclick="onEditButtonClicked(this, '{{.Name}}')">Edit</button>
@@ -187,7 +187,6 @@
     </div>
     <hr>
     {{range .Games}}
-    {{if not .Def.Hidden}}
     <label id="{{.Def.DisplayName}}-cont" class="multisync-container">
       <div>
         <div id="{{.Def.DisplayName}}-multisync-game-modal-loader" class="multisync-loader-cont"><span class="multisync-loader"></span></div>  
@@ -203,7 +202,6 @@
       <input class="multisync-check" id="{{.Def.DisplayName}}-multisync-check" type="checkbox" checked="checked">
       <span class="multisync-checkmark"></span>
     </label>
-    {{end}}
     {{end}}
     <div class="bisync-modal-content">
     <div id="multisync-line-cont" class="bisync-line-cont"></div>
