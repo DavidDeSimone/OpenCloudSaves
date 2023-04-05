@@ -86,11 +86,6 @@ func main() {
 	}
 
 	dm := core.MakeGameDefManager(userOverrideLocation)
-	// @TODO we would want to re-work this to have a way to signal the GPU when this operation is done.
-	// core.GetUserSettingsManager().RequestSyncNonBlocking(context.Background(), userOverrideLocation, nil)
-	core.GetUserSettingsManager().RequestSync(context.Background(), userOverrideLocation)
-	dm.ApplyUserOverrides()
-
 	if noGui {
 		channels := core.MakeDefaultChannelProvider()
 		go core.ConsoleLogger(channels.Logs)

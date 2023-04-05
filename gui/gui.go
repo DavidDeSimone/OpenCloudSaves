@@ -698,7 +698,7 @@ func GuiMain(ops *core.Options, dm core.GameDefManager) {
 			log.Fatal(err)
 		}
 	} else {
-		err := refreshMainContent(w)
+		err := showDefinitionSyncScreen(dm)
 		if err != nil {
 			log.Fatal(err)
 		}
