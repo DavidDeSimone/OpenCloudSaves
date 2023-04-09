@@ -4,6 +4,9 @@ github.com/TheTitanrain/w32
 # github.com/andygrunwald/vdf v1.1.0
 ## explicit; go 1.15
 github.com/andygrunwald/vdf
+# github.com/go-yaml/yaml v2.1.0+incompatible
+## explicit
+github.com/go-yaml/yaml
 # github.com/jessevdk/go-flags v1.5.0
 ## explicit; go 1.15
 github.com/jessevdk/go-flags

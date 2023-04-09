@@ -11,6 +11,7 @@ import (
 	"opencloudsave/gui"
 	"opencloudsave/platform"
 
+	_ "github.com/go-yaml/yaml"
 	"github.com/jessevdk/go-flags"
 )
 

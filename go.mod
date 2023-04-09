@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/andygrunwald/vdf v1.1.0
+	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/sqweek/dialog v0.0.0-20220809060634-e981b270ebbf
 	github.com/webview/webview v0.0.0-20230110200822-73aee3dae745
