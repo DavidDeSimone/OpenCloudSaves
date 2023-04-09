@@ -111,10 +111,9 @@ func syncGame(key string) {
 	ops := &core.Options{
 		Gamenames: []string{key},
 	}
-	cm := core.MakeCloudManager()
 
-	dm := core.MakeGameDefManager("")
-	dm.SetCloudManager(cm)
+	cm := core.MakeCloudManager()
+	dm := core.MakeDefaultGameDefManager()
 	ctx, cancel := context.WithCancel(context.Background())
 	channels := core.MakeChannelProviderWithCancelFunction(cancel)
 
@@ -321,7 +320,6 @@ func getSyncDryRun(name string) error {
 
 	cm := core.MakeCloudManager()
 	dm := core.MakeDefaultGameDefManager()
-	dm.SetCloudManager(cm)
 
 	go core.RequestMainOperation(ctx, cm, ops, dm, channels)
 	return nil
@@ -687,7 +685,8 @@ func setCloudSelectScreen(w webview.WebView) error {
 func GuiMain(ops *core.Options, dm core.GameDefManager) {
 	debug := true
 	w := webview.New(debug)
-	defer w.Destroy()
+	SetRootWindow(w)
+	defer DestroyRootWindow()
 	w.SetTitle("Open Cloud Save")
 	w.SetSize(800, 600, 0)
 	bindFunctions(w)
@@ -699,7 +698,7 @@ func GuiMain(ops *core.Options, dm core.GameDefManager) {
 			log.Fatal(err)
 		}
 	} else {
-		err := refreshMainContent(w)
+		err := showDefinitionSyncScreen(dm)
 		if err != nil {
 			log.Fatal(err)
 		}

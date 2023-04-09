@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 //go:embed gamedef_map.json
@@ -37,13 +38,21 @@ type SyncFile struct {
 	IsDir bool
 }
 
+const (
+	WindowsPlatform = "windows"
+	DarwinPlatform  = "darwin"
+	LinuxPlatform   = "linux"
+)
+
+const UserOverrideFilename = "user_overrides.json"
+
 func (d *GameDef) GetSteamLocation() string {
 	switch runtime.GOOS {
-	case "windows":
+	case WindowsPlatform:
 		return "C:\\Program Files (x86)\\Steam"
-	case "darwin":
+	case DarwinPlatform:
 		return "/Applications/Steam"
-	case "linux":
+	case LinuxPlatform:
 		return "~/.local/share/Steam"
 	default:
 		return ""
@@ -58,7 +67,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 	// d.GetInstallLocationFromSteamId()
 
 	result := []Datapath{}
-	if platform == "windows" {
+	if platform == WindowsPlatform {
 		if len(d.WinPath) == 0 {
 			return nil, fmt.Errorf("game %v save files not supported for platform %v", d.DisplayName, platform)
 		}
@@ -80,7 +89,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				Include: datapath.Include,
 			})
 		}
-	} else if platform == "darwin" {
+	} else if platform == DarwinPlatform {
 		if len(d.DarwinPath) == 0 {
 			return nil, fmt.Errorf("game %v save files not supported for platform %v", d.DisplayName, platform)
 		}
@@ -104,7 +113,7 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				Include: datapath.Include,
 			})
 		}
-	} else if platform == "linux" {
+	} else if platform == LinuxPlatform {
 		if len(d.LinuxPath) == 0 {
 			return nil, fmt.Errorf("game %v save files not supported for platform %v", d.DisplayName, platform)
 		}
@@ -157,10 +166,11 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 	return result, nil
 }
 
+var fsmtx sync.Mutex
+
 type FsGameDefManager struct {
 	gamedefs            map[string]*GameDef
 	userOverrideLoction string
-	cm                  *CloudManager
 }
 
 type GameDefManager interface {
@@ -171,11 +181,8 @@ type GameDefManager interface {
 	RemoveGameDef(key string)
 	GetSyncpathForGame(id string) ([]Datapath, error)
 	GetUserOverrideLocation() string
-	SetCloudManager(cm *CloudManager)
-}
 
-func (d *FsGameDefManager) SetCloudManager(cm *CloudManager) {
-	d.cm = cm
+	CommitCloudUserOverride(context.Context) error
 }
 
 func (d *FsGameDefManager) RemoveGameDef(key string) {
@@ -188,7 +195,9 @@ func (d *FsGameDefManager) RemoveGameDef(key string) {
 
 func (d *FsGameDefManager) ApplyUserOverrides() error {
 	fileName := d.GetUserOverrideLocation()
+	fsmtx.Lock()
 	content, err := os.ReadFile(fileName)
+	fsmtx.Unlock()
 	if err != nil {
 		InfoLogger.Println(err)
 		return err
@@ -220,18 +229,23 @@ func (d *FsGameDefManager) GetUserOverrideLocation() string {
 }
 
 func (d *FsGameDefManager) CommitUserOverrides() error {
+	InfoLogger.Println("Commiting Gamedef Map...")
 	newResult, err := json.Marshal(d.gamedefs)
 	if err != nil {
 		return err
 	}
 
 	fileName := d.GetUserOverrideLocation()
+	fsmtx.Lock()
 	err = os.WriteFile(fileName, newResult, os.ModePerm)
+	fsmtx.Unlock()
+
 	if err != nil {
 		return err
 	}
 
-	go d.CommitCloudUserOverride()
+	GetUserSettingsManager().RequestSyncNonBlocking(context.Background(), GetDefaultUserOverridePath(), nil)
+	// go d.CommitCloudUserOverride()
 
 	return nil
 }
@@ -257,8 +271,8 @@ func GetDefaultUserOverridePath() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	separator := string(os.PathSeparator)
-	return cacheDir + separator + APP_NAME + separator + "user_overrides.json"
+
+	return filepath.Join(cacheDir, APP_NAME, UserOverrideFilename)
 }
 
 func MakeDefaultGameDefManager() GameDefManager {
@@ -304,28 +318,8 @@ func (d *FsGameDefManager) GetSyncpathForGame(id string) ([]Datapath, error) {
 	return driver.GetSyncpaths()
 }
 
-func (dm *FsGameDefManager) CommitCloudUserOverride() error {
-	cm := dm.cm
-	if dm.cm == nil {
-		cm = MakeCloudManager()
-	}
-
-	userOverride := dm.GetUserOverrideLocation()
-	return ApplyCloudUserOverride(cm, userOverride)
-}
-
-func ApplyCloudUserOverride(cm *CloudManager, userOverride string) error {
-	storage := GetCurrentStorageProvider()
-	if storage == nil {
-		return fmt.Errorf("no cloud storage set")
-	}
-
-	if userOverride == "" {
-		userOverride = GetDefaultUserOverridePath()
-	}
-
-	path := filepath.Dir(userOverride)
-	ops := GetDefaultCloudOptions()
-	_, err := cm.PerformSyncOperation(context.Background(), storage, ops, path, ToplevelCloudFolder+"user_settings/")
-	return err
+func (dm *FsGameDefManager) CommitCloudUserOverride(ctx context.Context) error {
+	fsmtx.Lock()
+	defer fsmtx.Unlock()
+	return GetUserSettingsManager().RequestSync(ctx, dm.GetUserOverrideLocation())
 }

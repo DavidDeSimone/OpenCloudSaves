@@ -17,11 +17,11 @@ type Options struct {
 	AddCustomGames   map[string]string `short:"a" long:"add-custom-games" description:"<KEY>:<JSON_VALUE> Adds a custom game description to user_overrides.json. This accepts a JSON blobs in the format defined in gamedef_map.json"`
 	UserOverride     []string          `short:"o" long:"user-override" description:"--user-override <FILE> Provide location for custom user override JSON file for game definitions"`
 	PrintGameDefs    []bool            `short:"p" long:"print-gamedefs" description:"Print current gamedef map as JSON"`
-	SyncUserSettings []bool            `short:"s" long:"--sync-user-settings" description:"Attempt to sync user settings from the current cloud provider. If no cloud provider is set, will be a NO-OP."`
-	SetCloud         []string          `short:"c" long:"--set-cloud" description:"Sets the current cloud. 0 - GOOGLE, 1 - ONEDRIVE, 2 - DROPBOX, 3 - BOX, 4 - NEXTCLOUD, 5 - FTP"`
-	DryRun           []bool            `short:"d" long:"--dry-run" description:"Does not actually perform any network operations."`
-	Verbose          []bool            `short:"v" long:"--verbose" description:"Enable verbose logging"`
-	LogLocation      []string          `short:"l" long:"--log-location" description:"Specifies path to logfile. Defaults to User's Cache Dir / opencloudsave.log"`
+	SyncUserSettings []bool            `short:"s" long:"sync-user-settings" description:"Attempt to sync user settings from the current cloud provider. If no cloud provider is set, will be a NO-OP."`
+	SetCloud         []string          `short:"c" long:"set-cloud" description:"Sets the current cloud. 0 - GOOGLE, 1 - ONEDRIVE, 2 - DROPBOX, 3 - BOX, 4 - NEXTCLOUD, 5 - FTP"`
+	DryRun           []bool            `short:"d" long:"dry-run" description:"Does not actually perform any network operations."`
+	Verbose          []bool            `short:"v" long:"verbose" description:"Enable verbose logging"`
+	LogLocation      []string          `short:"l" long:"log-location" description:"Specifies path to logfile. Defaults to User's Cache Dir / opencloudsave.log"`
 }
 
 type Message struct {

@@ -75,7 +75,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = core.ApplyCloudUserOverride(cm, userOverrideLocation)
+		err = core.GetUserSettingsManager().RequestSync(context.Background(), userOverrideLocation)
 		if err != nil {
 			core.ErrorLogger.Println(err)
 			log.Fatal(err)
@@ -86,9 +86,6 @@ func main() {
 	}
 
 	dm := core.MakeGameDefManager(userOverrideLocation)
-	dm.SetCloudManager(cm)
-	dm.CommitUserOverrides()
-
 	if noGui {
 		channels := core.MakeDefaultChannelProvider()
 		go core.ConsoleLogger(channels.Logs)
