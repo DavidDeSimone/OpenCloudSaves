@@ -27,6 +27,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// TMP
+	if len(ops.Experimental) > 0 {
+		grm := core.GetGameRecordManager()
+		grm.VisitGameRecords(func(key string, grm *core.GameRecord) error {
+			fmt.Println(key)
+			return nil
+		})
+		return
+	}
+	// TMP
+
 	if len(ops.LogLocation) > 0 {
 		err := core.InitLoggingWithPath(ops.LogLocation[0])
 		if err != nil {

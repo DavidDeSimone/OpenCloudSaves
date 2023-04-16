@@ -1,7 +1,6 @@
 package core
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -18,7 +17,7 @@ key2:
 `
 
 func createTestManifestFile(content string) (string, error) {
-	tmpFile, err := ioutil.TempFile("", "manifest-*.yaml")
+	tmpFile, err := os.CreateTemp("", "manifest-*.yaml")
 	if err != nil {
 		return "", err
 	}

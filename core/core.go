@@ -22,6 +22,7 @@ type Options struct {
 	DryRun           []bool            `short:"d" long:"dry-run" description:"Does not actually perform any network operations."`
 	Verbose          []bool            `short:"v" long:"verbose" description:"Enable verbose logging"`
 	LogLocation      []string          `short:"l" long:"log-location" description:"Specifies path to logfile. Defaults to User's Cache Dir / opencloudsave.log"`
+	Experimental     []bool            `short:"e" long:"experimental" description:"E"`
 }
 
 type Message struct {

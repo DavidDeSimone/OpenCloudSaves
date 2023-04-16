@@ -2,23 +2,13 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/go-yaml/yaml"
-	_ "github.com/stretchr/testify/assert"
 )
-
-type GameRecordManifestFetcher interface {
-	Fetch()
-}
-
-type GameRecordManifestFetcherImpl struct {
-}
-
-func (fetcher *GameRecordManifestFetcherImpl) Fetch() {
-	// @TODO
-}
 
 type FileConstraint struct {
 	Os    Os
@@ -75,10 +65,14 @@ type GameRecord struct {
 
 type GameRecordManager interface {
 	SetManifestLocation(filepath string)
+	GetManifestLocation() string
 	GetGameRecordByKey(key string) (*GameRecord, error)
 	SetGameRecordByKey(key string, grm *GameRecord) error
+	SetGameRecordManifest(map[string]*GameRecord) error
 	RefreshManifestFromDisk() error
 	CommitCustomGameRecords() error
+	VisitGameRecords(func(key string, grm *GameRecord) error) error
+	VisitGameRecord(key string, cb func(grm *GameRecord) error) error
 }
 
 type GameRecordManagerImpl struct {
@@ -87,14 +81,109 @@ type GameRecordManagerImpl struct {
 	mu               sync.Mutex
 }
 
-func NewGameRecordManager() GameRecordManager {
-	return &GameRecordManagerImpl{
-		gameRecords: make(map[string]*GameRecord),
+var gameRecordManagerInstance GameRecordManager
+
+func GetGameRecordManager() GameRecordManager {
+	if gameRecordManagerInstance == nil {
+		gameRecordManagerInstance = NewGameRecordManager()
+		InitializeGameRecordManager(gameRecordManagerInstance)
 	}
+
+	return gameRecordManagerInstance
+}
+
+// parse a game record manifest from a []byte
+func ParseGameRecordManifest(content []byte) (map[string]*GameRecord, error) {
+	fmt.Println(string(content))
+	records := make(map[string]*GameRecord)
+	err := yaml.Unmarshal(content, &records)
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
+}
+
+// create a game record fetcher,
+// fetch the manifest,
+// parse the manifest,
+// and store the game records in the game record manager
+func InitializeGameRecordManager(grm GameRecordManager) {
+	fetcher := NewGameRecordManifestFetcher()
+	content, _, err := fetcher.Fetch()
+	if err != nil {
+		if errors.Is(err, ErrManifestNotModified) {
+			content, err = os.ReadFile(grm.GetManifestLocation())
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			panic(err)
+		}
+	}
+
+	// parse the manifest
+	gameRecords, err := ParseGameRecordManifest(content)
+	if err != nil {
+		panic(err)
+	}
+
+	// store the game records in the game record manager
+	err = grm.SetGameRecordManifest(gameRecords)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func NewGameRecordManager() GameRecordManager {
+	cacheDir, _ := os.UserConfigDir()
+
+	return &GameRecordManagerImpl{
+		gameRecords:      make(map[string]*GameRecord),
+		manifestLocation: filepath.Join(cacheDir, APP_NAME, "manifest.yml"),
+	}
+}
+
+func (grm *GameRecordManagerImpl) VisitGameRecords(fn func(key string, grm *GameRecord) error) error {
+	grm.mu.Lock()
+	defer grm.mu.Unlock()
+
+	for key, gr := range grm.gameRecords {
+		err := fn(key, gr)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (grm *GameRecordManagerImpl) VisitGameRecord(key string, fn func(grm *GameRecord) error) error {
+	grm.mu.Lock()
+	defer grm.mu.Unlock()
+
+	gr, exists := grm.gameRecords[key]
+	if !exists {
+		return errors.New("game record not found")
+	}
+
+	return fn(gr)
+}
+
+func (grm *GameRecordManagerImpl) SetGameRecordManifest(records map[string]*GameRecord) error {
+	grm.mu.Lock()
+	defer grm.mu.Unlock()
+
+	grm.gameRecords = records
+	return nil
 }
 
 func (grm *GameRecordManagerImpl) SetManifestLocation(filepath string) {
 	grm.manifestLocation = filepath
+}
+
+func (grm *GameRecordManagerImpl) GetManifestLocation() string {
+	return grm.manifestLocation
 }
 
 func (grm *GameRecordManagerImpl) GetGameRecordByKey(key string) (*GameRecord, error) {
