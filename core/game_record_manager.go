@@ -16,13 +16,13 @@ type FileConstraint struct {
 }
 
 type LaunchConstraint struct {
-	Bit   Bit
-	Os    Os
-	Store Store
+	Bit   Bit   // 32 or 64
+	Os    Os    // windows, linux, darwin
+	Store Store // steam, gog, etc.
 }
 
 type RegistryConstraint struct {
-	Store Store
+	Store Store // steam, gog, etc.
 }
 
 type Bit int
@@ -94,7 +94,6 @@ func GetGameRecordManager() GameRecordManager {
 
 // parse a game record manifest from a []byte
 func ParseGameRecordManifest(content []byte) (map[string]*GameRecord, error) {
-	fmt.Println(string(content))
 	records := make(map[string]*GameRecord)
 	err := yaml.Unmarshal(content, &records)
 	if err != nil {
@@ -115,11 +114,19 @@ func InitializeGameRecordManager(grm GameRecordManager) {
 		if errors.Is(err, ErrManifestNotModified) {
 			content, err = os.ReadFile(grm.GetManifestLocation())
 			if err != nil {
+				// @TODO delete tag file, try fetching again
 				panic(err)
 			}
 		} else {
 			panic(err)
 		}
+	} else {
+		go func() {
+			err = os.WriteFile(grm.GetManifestLocation(), content, 0644)
+			if err != nil {
+				panic(err)
+			}
+		}()
 	}
 
 	// parse the manifest
@@ -148,6 +155,7 @@ func (grm *GameRecordManagerImpl) VisitGameRecords(fn func(key string, grm *Game
 	grm.mu.Lock()
 	defer grm.mu.Unlock()
 
+	fmt.Println("Conunt = " + fmt.Sprint(len(grm.gameRecords)))
 	for key, gr := range grm.gameRecords {
 		err := fn(key, gr)
 		if err != nil {

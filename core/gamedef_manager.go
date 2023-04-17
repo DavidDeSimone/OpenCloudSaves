@@ -84,6 +84,10 @@ func (d *GameDef) GetSyncpaths() ([]Datapath, error) {
 				winpath = strings.ReplaceAll(winpath, "%USERID%", current.Username)
 			}
 
+			winpath = strings.Replace(winpath, "$HOME", current.HomeDir, 1)
+			winpath = strings.Replace(winpath, "~", current.HomeDir, 1)
+			winpath = strings.Replace(winpath, "%DOCUMENTS%", filepath.Join(current.HomeDir, "Documents"), 1)
+
 			result = append(result, Datapath{
 				Path:    winpath + separator,
 				Include: datapath.Include,

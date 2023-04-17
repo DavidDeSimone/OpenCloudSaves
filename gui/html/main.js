@@ -199,6 +199,21 @@ function setupAccordionHandler() {
     }
 }
 
+async function onGameImportClicked(name) {
+    await log(name);
+    makeConfirmationPopup({
+        title: `Import ${name}`,
+        subtitle: `Are you sure you want to import ${name}? This will overwrite any existing save data for this game.`,
+        onConfirm: async () => {
+            await log("Importing game...");
+            const result = await convertGameRecordToGameDef(name);
+            await log(JSON.stringify(result));
+            // await importGame(name);
+            refresh();
+        }
+    });
+}
+
 setTimeout(async () => { 
     setupAccordionHandler();
     await require('html/fuzzy-search.js');
