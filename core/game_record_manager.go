@@ -1,6 +1,8 @@
 package core
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"os"
@@ -110,9 +112,23 @@ func ParseGameRecordManifest(content []byte) (map[string]*GameRecord, error) {
 func InitializeGameRecordManager(grm GameRecordManager) {
 	fetcher := NewGameRecordManifestFetcher()
 	content, _, err := fetcher.Fetch()
+	var gameRecords map[string]*GameRecord
 	if err != nil {
 		if errors.Is(err, ErrManifestNotModified) {
-			content, err = os.ReadFile(grm.GetManifestLocation())
+			rawBytes, err := os.ReadFile(grm.GetManifestLocation())
+			if err != nil {
+				panic(err)
+			}
+
+			var b bytes.Buffer
+			decoder := gob.NewDecoder(&b)
+			b.Write(rawBytes)
+			err = decoder.Decode(&gameRecords)
+			if err != nil {
+				panic(err)
+			}
+			content = b.Bytes()
+
 			if err != nil {
 				// @TODO delete tag file, try fetching again
 				panic(err)
@@ -121,18 +137,23 @@ func InitializeGameRecordManager(grm GameRecordManager) {
 			panic(err)
 		}
 	} else {
+		gameRecords, err = ParseGameRecordManifest(content)
+		if err != nil {
+			panic(err)
+		}
 		go func() {
-			err = os.WriteFile(grm.GetManifestLocation(), content, 0644)
+			var b bytes.Buffer
+			encoder := gob.NewEncoder(&b)
+			err = encoder.Encode(gameRecords)
+			if err != nil {
+				panic(err)
+			}
+
+			err = os.WriteFile(grm.GetManifestLocation(), b.Bytes(), 0644)
 			if err != nil {
 				panic(err)
 			}
 		}()
-	}
-
-	// parse the manifest
-	gameRecords, err := ParseGameRecordManifest(content)
-	if err != nil {
-		panic(err)
 	}
 
 	// store the game records in the game record manager
@@ -147,7 +168,7 @@ func NewGameRecordManager() GameRecordManager {
 
 	return &GameRecordManagerImpl{
 		gameRecords:      make(map[string]*GameRecord),
-		manifestLocation: filepath.Join(cacheDir, APP_NAME, "manifest.yml"),
+		manifestLocation: filepath.Join(cacheDir, APP_NAME, "manifest.blob"),
 	}
 }
 

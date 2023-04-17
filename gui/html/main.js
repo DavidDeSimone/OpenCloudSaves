@@ -203,10 +203,12 @@ async function onGameImportClicked(name) {
     await log(name);
     makeConfirmationPopup({
         title: `Import ${name}`,
-        subtitle: `Are you sure you want to import ${name}? This will overwrite any existing save data for this game.`,
+        subtitle: `Are you sure you want to import ${name}? This will overwrite any existing definitions for this game. This will not sync your save data.`,
         onConfirm: async () => {
             await log("Importing game...");
             const result = await convertGameRecordToGameDef(name);
+            await commitGamedef(result);
+            
             await log(JSON.stringify(result));
             // await importGame(name);
             refresh();
