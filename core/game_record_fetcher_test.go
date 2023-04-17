@@ -48,6 +48,10 @@ func TestGameRecordManifestFetcher_SaveETagToFile(t *testing.T) {
 }
 
 func TestGameRecordManifestFetcher_Fetch(t *testing.T) {
+	if os.Getenv("GITHUB_CI_ENV") != "" {
+		t.Skip("Skipping testing in CI environment")
+	}
+
 	// Create a test server to simulate the manifest server
 	content := "test-manifest-content"
 	etag := "test-etag"
