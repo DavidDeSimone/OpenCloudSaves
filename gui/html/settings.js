@@ -65,8 +65,7 @@ async function onDeleteAllDrivesClicked() {
     };
 
     window.OnDeleteAllDrivesComplete = () => {
-        // @TODO this needs to show the cloud selection again
-        refresh();
+        initializeGui();
     };
 
     makeConfirmationPopup({
