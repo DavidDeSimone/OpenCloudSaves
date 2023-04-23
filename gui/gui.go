@@ -45,8 +45,13 @@ type Game struct {
 	SaveFilesFound bool
 }
 
+type Record struct {
+	Name string
+}
+
 type HtmlInput struct {
 	Games     []Game
+	Records   []Record
 	Platforms []string
 	Notice    string
 	Version   string
@@ -147,18 +152,7 @@ func removeGamedefByKey(key string) {
 	dm.CommitUserOverrides()
 }
 
-func fetchGamedef(key string) (*GuiGamedef, error) {
-	dm := core.MakeDefaultGameDefManager()
-	gamedefMap := dm.GetGameDefMap()
-	def, ok := gamedefMap[key]
-	if !ok {
-		return nil, fmt.Errorf("gamedef not found")
-	}
-
-	if strings.TrimSpace(def.CustomFlags) == "undefined" || strings.TrimSpace(def.CustomFlags) == "" {
-		def.CustomFlags = ""
-	}
-
+func convertGameDefToGuiGameDef(def *core.GameDef) *GuiGamedef {
 	resultDef := &GuiGamedef{
 		Name:        def.DisplayName,
 		CustomFlags: def.CustomFlags,
@@ -185,6 +179,21 @@ func fetchGamedef(key string) (*GuiGamedef, error) {
 		})
 	}
 
+	return resultDef
+}
+
+func fetchGamedef(key string) (*GuiGamedef, error) {
+	dm := core.MakeDefaultGameDefManager()
+	gamedefMap := dm.GetGameDefMap()
+	def, ok := gamedefMap[key]
+	if !ok {
+		return nil, fmt.Errorf("gamedef not found")
+	}
+
+	if strings.TrimSpace(def.CustomFlags) == "undefined" || strings.TrimSpace(def.CustomFlags) == "" {
+		def.CustomFlags = ""
+	}
+	resultDef := convertGameDefToGuiGameDef(def)
 	return resultDef, nil
 }
 
@@ -466,6 +475,23 @@ func commitMultisyncSelectGames(gameNames []string) error {
 	return dm.CommitUserOverrides()
 }
 
+func convertGameRecordToGameDef(key string) (*GuiGamedef, error) {
+	grm := core.GetGameRecordManager()
+	gr, err := grm.GetGameRecordByKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	converter := core.GetGameRecordConverter()
+
+	def, err := converter.Convert(key, gr)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertGameDefToGuiGameDef(def), nil
+}
+
 func bindFunctions(w webview.WebView) {
 	w.Bind("log", consoleLog)
 	w.Bind("syncGame", syncGame)
@@ -502,6 +528,7 @@ func bindFunctions(w webview.WebView) {
 		cancelPendingCloudSelection(false)
 	})
 	w.Bind("isCloudSelectionComplete", isCloudSelectionComplete)
+	w.Bind("convertGameRecordToGameDef", convertGameRecordToGameDef)
 }
 
 func DirSize(path string) (int64, error) {
@@ -586,9 +613,34 @@ func buildGamelist(dm core.GameDefManager) []Game {
 	return games
 }
 
+func buildRecordList() []Record {
+	records := []Record{}
+	grm := core.GetGameRecordManager()
+	grm.VisitGameRecords(func(key string, grm *core.GameRecord) error {
+		if len(grm.Files) == 0 {
+			return nil
+		}
+
+		record := Record{
+			Name: key,
+		}
+		if grm.Files != nil {
+			records = append(records, record)
+		}
+		return nil
+	})
+	return records
+}
+
 func executeTemplate() (string, error) {
 	dm := core.MakeDefaultGameDefManager()
 	games := buildGamelist(dm)
+	records := buildRecordList()
+	core.InfoLogger.Println("Records length is", len(records))
+	// sort records array by name in ascending order
+	sort.Slice(records, func(i, j int) bool {
+		return records[i].Name < records[j].Name
+	})
 
 	sort.Slice(games, func(i, j int) bool {
 		return games[i].Def.DisplayName < games[j].Def.DisplayName
@@ -596,12 +648,13 @@ func executeTemplate() (string, error) {
 	input := HtmlInput{
 		Games:     games,
 		Platforms: []string{"Windows", "MacOS", "Linux"},
+		Records:   records,
 		Notice:    notice,
 		Version:   core.VersionRevision,
 	}
 
 	var b bytes.Buffer
-	htmlWriter := bufio.NewWriterSize(&b, 8*1024*1024)
+	htmlWriter := bufio.NewWriter(&b)
 
 	templ := template.Must(template.ParseFS(html, "html/index.html"))
 	err := templ.Execute(htmlWriter, input)

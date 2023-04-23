@@ -27,6 +27,10 @@
   </div>
 </div>
 
+<hr>
+<div class="settings-title">Actively Tracked Games</div>
+<hr>
+
 <div id="accordion-cont">
 {{range .Games}}
 {{if not .Def.Hidden}}
@@ -67,6 +71,14 @@
 </div>
 {{end}} <!-- if not .Def.Hidden -->
 {{end}} <!-- range .Games -->
+
+<hr>
+<div class="settings-title">Archived Game Definitions</div>
+<hr>
+
+{{range .Records}}
+<div class="import-game" id="{{.Name}}-import-game" onclick="onGameImportClicked('{{.Name}}')">Import {{.Name}}</div>
+{{end}}
 </div>
 
 

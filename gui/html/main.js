@@ -165,11 +165,26 @@ async function onChangeSearch(element) {
             continue
         }
 
-        const res = fuzzyMatch(name.toLowerCase(), acc[i].id.replace("-accordion", "").toLowerCase())
+        const res = fuzzyMatch(name.toLowerCase(), acc[i].id.replace("-accordion", "").toLowerCase());
         if (res[0] || res[1] > DEFAULT_SEARCH_SCORE) {
             acc[i].style.display = "block";
         } else {
             acc[i].style.display = "none";
+        }
+    }
+
+    var records = document.getElementsByClassName("import-game");
+    for (i = 0; i < records.length; i++) {
+        if (name === "") {
+            records[i].style.display = "block";
+            continue
+        }
+
+        const res = fuzzyMatch(name.toLowerCase(), records[i].id.replace("-import-game", "").toLowerCase());
+        if (res[0] || res[1] > DEFAULT_SEARCH_SCORE) {
+            records[i].style.display = "block";
+        } else {
+            records[i].style.display = "none";
         }
     }
 }
@@ -197,6 +212,23 @@ function setupAccordionHandler() {
         }
       });
     }
+}
+
+async function onGameImportClicked(name) {
+    await log(name);
+    makeConfirmationPopup({
+        title: `Import ${name}`,
+        subtitle: `Are you sure you want to import ${name}? This will overwrite any existing definitions for this game. This will not sync your save data.`,
+        onConfirm: async () => {
+            await log("Importing game...");
+            const result = await convertGameRecordToGameDef(name);
+            await commitGamedef(result);
+            
+            await log(JSON.stringify(result));
+            // await importGame(name);
+            refresh();
+        }
+    });
 }
 
 setTimeout(async () => { 

@@ -11,6 +11,7 @@ import (
 	"opencloudsave/gui"
 	"opencloudsave/platform"
 
+	_ "github.com/go-yaml/yaml"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -25,6 +26,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// TMP
+	if len(ops.Experimental) > 0 {
+		grm := core.GetGameRecordManager()
+		grm.VisitGameRecords(func(key string, grm *core.GameRecord) error {
+			fmt.Println(key)
+			return nil
+		})
+		return
+	}
+	// TMP
 
 	if len(ops.LogLocation) > 0 {
 		err := core.InitLoggingWithPath(ops.LogLocation[0])
