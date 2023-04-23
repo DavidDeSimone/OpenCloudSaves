@@ -29,7 +29,7 @@ async function cloudSelected(cloudService) {
                             log(`Error setting up cloud ${e}`);
                         });
         if (result) {
-            refresh();
+            initializeGui();
         } else {
             setTimeout(poll, timer);
 

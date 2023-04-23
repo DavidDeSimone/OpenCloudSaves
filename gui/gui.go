@@ -296,19 +296,13 @@ func deleteAllDrives(ctx context.Context, cm *core.CloudManager) error {
 	return nil
 }
 
-func commitDeleteAllDrices() {
+func commitDeleteAllDrives() {
 	cm := core.MakeCloudManager()
 	w := GetRootWindow()
 
 	go func() {
-		err := deleteAllDrives(context.Background(), cm)
+		deleteAllDrives(context.Background(), cm)
 		core.DeleteCloudPerfs()
-		if err != nil {
-			w.Dispatch(func() {
-				w.Eval(fmt.Sprintf("OnDeleteAllDrivesError(`%v`)", err.Error()))
-			})
-		}
-
 		w.Dispatch(func() {
 			w.Eval("OnDeleteAllDrivesComplete()")
 		})
@@ -559,7 +553,7 @@ func bindFunctions(w webview.WebView) {
 	})
 	w.Bind("isCloudSelectionComplete", isCloudSelectionComplete)
 	w.Bind("convertGameRecordToGameDef", convertGameRecordToGameDef)
-	w.Bind("commitDeleteAllDrices", commitDeleteAllDrices)
+	w.Bind("commitDeleteAllDrives", commitDeleteAllDrives)
 	w.Bind("initializeGui", func() {
 		initializeGui(w, core.MakeDefaultGameDefManager())
 	})

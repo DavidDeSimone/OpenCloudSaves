@@ -78,7 +78,7 @@ func (cm *CloudManager) CreateDriveIfNotExists(ctx context.Context, storage Stor
 }
 
 func (cm *CloudManager) DeleteStorageDrive(ctx context.Context, storage Storage) error {
-	cmd := makeCommand(ctx, getCloudApp(), "delete", storage.GetName())
+	cmd := makeCommand(ctx, getCloudApp(), "config", "delete", storage.GetName())
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 
