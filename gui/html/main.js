@@ -165,11 +165,26 @@ async function onChangeSearch(element) {
             continue
         }
 
-        const res = fuzzyMatch(name.toLowerCase(), acc[i].id.replace("-accordion", "").toLowerCase())
+        const res = fuzzyMatch(name.toLowerCase(), acc[i].id.replace("-accordion", "").toLowerCase());
         if (res[0] || res[1] > DEFAULT_SEARCH_SCORE) {
             acc[i].style.display = "block";
         } else {
             acc[i].style.display = "none";
+        }
+    }
+
+    var records = document.getElementsByClassName("import-game");
+    for (i = 0; i < records.length; i++) {
+        if (name === "") {
+            records[i].style.display = "block";
+            continue
+        }
+
+        const res = fuzzyMatch(name.toLowerCase(), records[i].id.replace("-import-game", "").toLowerCase());
+        if (res[0] || res[1] > DEFAULT_SEARCH_SCORE) {
+            records[i].style.display = "block";
+        } else {
+            records[i].style.display = "none";
         }
     }
 }
