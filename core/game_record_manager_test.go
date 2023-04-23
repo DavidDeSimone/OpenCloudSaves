@@ -1,6 +1,8 @@
 package core
 
 import (
+	"bytes"
+	"encoding/gob"
 	"os"
 	"testing"
 
@@ -17,11 +19,23 @@ key2:
 `
 
 func createTestManifestFile(content string) (string, error) {
-	tmpFile, err := os.CreateTemp("", "manifest-*.yaml")
+	tmpFile, err := os.CreateTemp("", "manifest-*.blob")
 	if err != nil {
 		return "", err
 	}
-	_, err = tmpFile.Write([]byte(content))
+	record, err := ParseGameRecordManifest([]byte(content))
+	if err != nil {
+		return "", err
+	}
+
+	var b bytes.Buffer
+	encoder := gob.NewEncoder(&b)
+	err = encoder.Encode(record)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = tmpFile.Write(b.Bytes())
 	if err != nil {
 		return "", err
 	}
