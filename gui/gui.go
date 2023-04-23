@@ -617,6 +617,10 @@ func buildRecordList() []Record {
 	records := []Record{}
 	grm := core.GetGameRecordManager()
 	grm.VisitGameRecords(func(key string, grm *core.GameRecord) error {
+		if len(grm.Files) == 0 {
+			return nil
+		}
+
 		record := Record{
 			Name: key,
 		}
@@ -632,6 +636,7 @@ func executeTemplate() (string, error) {
 	dm := core.MakeDefaultGameDefManager()
 	games := buildGamelist(dm)
 	records := buildRecordList()
+	core.InfoLogger.Println("Records length is", len(records))
 	// sort records array by name in ascending order
 	sort.Slice(records, func(i, j int) bool {
 		return records[i].Name < records[j].Name
