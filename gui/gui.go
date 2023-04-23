@@ -285,6 +285,35 @@ func createDrive(ctx context.Context, cm *core.CloudManager, storage core.Storag
 	}
 }
 
+func deleteAllDrives(ctx context.Context, cm *core.CloudManager) error {
+	drives := core.GetAllStorageProviders()
+	for _, drive := range drives {
+		err := cm.DeleteStorageDrive(ctx, drive)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func commitDeleteAllDrices() {
+	cm := core.MakeCloudManager()
+	w := GetRootWindow()
+
+	go func() {
+		err := deleteAllDrives(context.Background(), cm)
+		if err != nil {
+			w.Dispatch(func() {
+				w.Eval(fmt.Sprintf("OnDeleteAllDrivesError(`%v`)", err.Error()))
+			})
+		}
+
+		w.Dispatch(func() {
+			w.Eval("OnDeleteAllDrivesComplete()")
+		})
+	}()
+}
+
 func commitCloudService(service int) error {
 	cloudperfs := core.GetCurrentCloudPerfsOrDefault()
 	cloudperfs.Cloud = service
@@ -529,6 +558,7 @@ func bindFunctions(w webview.WebView) {
 	})
 	w.Bind("isCloudSelectionComplete", isCloudSelectionComplete)
 	w.Bind("convertGameRecordToGameDef", convertGameRecordToGameDef)
+	w.Bind("commitDeleteAllDrices", commitDeleteAllDrices)
 }
 
 func DirSize(path string) (int64, error) {

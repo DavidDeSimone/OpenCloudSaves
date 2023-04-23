@@ -15,11 +15,6 @@ const ToplevelCloudFolder = "opencloudsaves/"
 // Used for debugging
 const printCommands = true
 
-type Storage interface {
-	GetName() string
-	GetCreationCommand(ctx context.Context) *exec.Cmd
-}
-
 type CloudManager struct {
 }
 
@@ -77,6 +72,19 @@ func (cm *CloudManager) CreateDriveIfNotExists(ctx context.Context, storage Stor
 	if err != nil {
 		ErrorLogger.Println(err)
 		return err
+	}
+
+	return nil
+}
+
+func (cm *CloudManager) DeleteStorageDrive(ctx context.Context, storage Storage) error {
+	cmd := makeCommand(ctx, getCloudApp(), "delete", storage.GetName())
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf(stderr.String())
 	}
 
 	return nil
