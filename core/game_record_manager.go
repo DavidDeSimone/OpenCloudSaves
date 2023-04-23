@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -125,12 +124,7 @@ func InitializeGameRecordManager(grm GameRecordManager) {
 			b.Write(rawBytes)
 			err = decoder.Decode(&gameRecords)
 			if err != nil {
-				panic(err)
-			}
-			content = b.Bytes()
-
-			if err != nil {
-				// @TODO delete tag file, try fetching again
+				// @TODO don't panic here, fallback to fetching the manifest
 				panic(err)
 			}
 		} else {
@@ -176,7 +170,6 @@ func (grm *GameRecordManagerImpl) VisitGameRecords(fn func(key string, grm *Game
 	grm.mu.Lock()
 	defer grm.mu.Unlock()
 
-	fmt.Println("Conunt = " + fmt.Sprint(len(grm.gameRecords)))
 	for key, gr := range grm.gameRecords {
 		err := fn(key, gr)
 		if err != nil {
@@ -244,7 +237,10 @@ func (grm *GameRecordManagerImpl) RefreshManifestFromDisk() error {
 		return err
 	}
 
-	err = yaml.Unmarshal(data, &grm.gameRecords)
+	var b bytes.Buffer
+	decoder := gob.NewDecoder(&b)
+	b.Write(data)
+	err = decoder.Decode(&grm.gameRecords)
 	if err != nil {
 		return err
 	}
@@ -256,12 +252,14 @@ func (grm *GameRecordManagerImpl) CommitCustomGameRecords() error {
 	grm.mu.Lock()
 	defer grm.mu.Unlock()
 
-	data, err := yaml.Marshal(grm.gameRecords)
+	var b bytes.Buffer
+	encoder := gob.NewEncoder(&b)
+	err := encoder.Encode(grm.gameRecords)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(grm.manifestLocation, data, os.ModePerm)
+	err = os.WriteFile(grm.manifestLocation, b.Bytes(), 0644)
 	if err != nil {
 		return err
 	}
