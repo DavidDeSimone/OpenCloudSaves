@@ -285,6 +285,30 @@ func createDrive(ctx context.Context, cm *core.CloudManager, storage core.Storag
 	}
 }
 
+func deleteAllDrives(ctx context.Context, cm *core.CloudManager) error {
+	drives := core.GetAllStorageProviders()
+	for _, drive := range drives {
+		err := cm.DeleteStorageDrive(ctx, drive)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func commitDeleteAllDrives() {
+	cm := core.MakeCloudManager()
+	w := GetRootWindow()
+
+	go func() {
+		deleteAllDrives(context.Background(), cm)
+		core.DeleteCloudPerfs()
+		w.Dispatch(func() {
+			w.Eval("OnDeleteAllDrivesComplete()")
+		})
+	}()
+}
+
 func commitCloudService(service int) error {
 	cloudperfs := core.GetCurrentCloudPerfsOrDefault()
 	cloudperfs.Cloud = service
@@ -529,6 +553,10 @@ func bindFunctions(w webview.WebView) {
 	})
 	w.Bind("isCloudSelectionComplete", isCloudSelectionComplete)
 	w.Bind("convertGameRecordToGameDef", convertGameRecordToGameDef)
+	w.Bind("commitDeleteAllDrives", commitDeleteAllDrives)
+	w.Bind("initializeGui", func() {
+		initializeGui(w, core.MakeDefaultGameDefManager())
+	})
 }
 
 func DirSize(path string) (int64, error) {
@@ -714,6 +742,21 @@ func refreshMainContent(w webview.WebView) error {
 	return nil
 }
 
+func initializeGui(w webview.WebView, dm core.GameDefManager) {
+	storage := core.GetCurrentStorageProvider()
+	if storage == nil {
+		err := setCloudSelectScreen(w)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		err := showDefinitionSyncScreen(dm)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func setCloudSelectScreen(w webview.WebView) error {
 	htmlbytes, err := fs.ReadFile(html, "html/selectcloud.html")
 	if err != nil {
@@ -743,19 +786,7 @@ func GuiMain(ops *core.Options, dm core.GameDefManager) {
 	w.SetTitle("Open Cloud Save")
 	w.SetSize(800, 600, 0)
 	bindFunctions(w)
-
-	storage := core.GetCurrentStorageProvider()
-	if storage == nil {
-		err := setCloudSelectScreen(w)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		err := showDefinitionSyncScreen(dm)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	initializeGui(w, dm)
 
 	defer (func() {
 		// This may not work on macOS due to a combination of issues

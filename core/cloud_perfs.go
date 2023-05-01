@@ -148,3 +148,12 @@ func UpdateCloudProvider(cloud int) error {
 func CommitCloudPerfs(cloudperfs *CloudPerfs) error {
 	return writeCloudPerfs(cloudperfs)
 }
+
+func DeleteCloudPerfs() error {
+	path, err := getCloudPath()
+	if err != nil {
+		return err
+	}
+
+	return os.Remove(path)
+}

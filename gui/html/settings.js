@@ -57,6 +57,19 @@ async function onNoticeClicked() {
 async function onNoticeClosed() {
     const noticeModal = document.getElementById('notice-modal');
     noticeModal.style.display = 'none';
+}
 
+async function onDeleteAllDrivesClicked() {
+    window.OnDeleteAllDrivesComplete = () => {
+        initializeGui();
+    };
+
+    makeConfirmationPopup({
+        title: "Reset RClone config",
+        subtitle: "Are you sure you want to reset your rclone config for OpenCloudSave? This will only reset the cloud config's that OpenCloudSave defined. Your save data will not be affected",
+        onConfirm: async () => {
+            await commitDeleteAllDrives();
+        }
+    })
 }
 
