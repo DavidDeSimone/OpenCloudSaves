@@ -1,6 +1,6 @@
 # Open Cloud Saves 
 
-Join us over at [Our Discord](https://discord.gg/BPQ3peQxXA). We also have a [website](https://opencloudsaves.com) now!
+This project is now archived - the code and binaries are available, but we are not accepting PRs or change sets. 
 
 Open Cloud Saves is an open source application for managing your saves games across Windows, MacOS, and Linux (including SteamOS). Open Cloud Saves is available for use officially as a “beta”. As a beta test, we recommend that you manually make a backup of your save data before usage. Until Open Cloud Save is more battle tested, we will issue a warning for users to use caution with “critical, beloved” save data.
 
